@@ -14,9 +14,9 @@ export function AboutSection() {
           viewport={{ once: true }}
           className="mb-10 text-center"
         >
-          <h2 className="text-2xl font-bold text-slate-800 sm:text-3xl">من نحن</h2>
-          <p className="mx-auto mt-3 max-w-2xl text-slate-600">
-            مدرسة غزتنا مؤسسة تعليمية رقمية تهدف إلى تمكين الطلاب من خلال بيئة
+          <h2 className="text-2xl font-bold text-p-black sm:text-3xl">من نحن</h2>
+          <p className="mx-auto mt-3 max-w-2xl text-p-black/60">
+            مدرسة غَزتنا مؤسسة تعليمية رقمية تهدف إلى تمكين الطلاب من خلال بيئة
             تعلم آمنة، مبتكرة، ومتصلة بالمستقبل.
           </p>
         </motion.div>
@@ -28,11 +28,11 @@ export function AboutSection() {
             viewport={{ once: true }}
           >
             <Card className="h-full">
-              <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-full bg-violet-100">
-                <Target className="h-5 w-5 text-violet-600" />
+              <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-full bg-p-green/10">
+                <Target className="h-5 w-5 text-p-green" />
               </div>
-              <h3 className="text-lg font-bold text-slate-800">رؤيتنا</h3>
-              <p className="mt-2 leading-relaxed text-slate-600">
+              <h3 className="text-lg font-bold text-p-black">رؤيتنا</h3>
+              <p className="mt-2 leading-relaxed text-p-black/60">
                 أن نكون المدرسة الرقمية الرائدة في فلسطين، نُخرّج جيلاً قادراً
                 على المنافسة عالمياً مع الحفاظ على الهوية والقيم.
               </p>
@@ -45,11 +45,11 @@ export function AboutSection() {
             viewport={{ once: true }}
           >
             <Card className="h-full">
-              <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-full bg-teal-100">
-                <Heart className="h-5 w-5 text-teal-600" />
+              <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-full bg-p-green/10">
+                <Heart className="h-5 w-5 text-p-green" />
               </div>
-              <h3 className="text-lg font-bold text-slate-800">رسالتنا</h3>
-              <p className="mt-2 leading-relaxed text-slate-600">
+              <h3 className="text-lg font-bold text-p-black">رسالتنا</h3>
+              <p className="mt-2 leading-relaxed text-p-black/60">
                 توفير تعليم عالي الجودة يجمع بين المناهج الأكاديمية والمهارات
                 الرقمية، مع دعم شامل لأولياء الأمور والمجتمع.
               </p>

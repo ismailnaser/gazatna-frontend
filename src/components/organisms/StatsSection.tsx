@@ -7,21 +7,21 @@ import { stats } from "@/data/home";
 
 export function StatsSection() {
   return (
-    <section className="py-16 sm:py-20">
-      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+    <section className="bg-white py-16 sm:py-20">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           className="mb-10 flex items-center gap-3"
         >
-          <span className="flex h-11 w-11 items-center justify-center rounded-full bg-teal-100">
-            <BarChart3 className="h-5 w-5 text-teal-600" />
+          <span className="flex h-11 w-11 items-center justify-center rounded-full bg-p-red/10">
+            <BarChart3 className="h-5 w-5 text-p-red" />
           </span>
           <div>
-            <h2 className="text-2xl font-bold text-slate-800">إنجازاتنا بالأرقام</h2>
-            <p className="mt-1 text-sm text-slate-500">
-              مؤشرات تعكس جودة التعليم في مدرسة غزتنا
+            <h2 className="text-2xl font-bold text-p-green">إنجازاتنا بالأرقام</h2>
+            <p className="mt-1 text-sm text-p-black/50">
+              مؤشرات تعكس جودة التعليم في مدرسة غَزتنا
             </p>
           </div>
         </motion.div>

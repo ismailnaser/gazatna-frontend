@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Cairo } from "next/font/google";
+import { AuthProvider } from "@/context/AuthContext";
 import "./globals.css";
 
 const cairo = Cairo({
@@ -9,9 +10,9 @@ const cairo = Cairo({
 });
 
 export const metadata: Metadata = {
-  title: "مدرسة غزتنا | المنصة التعليمية الرقمية",
+  title: "مدرسة غَزتنا | المنصة التعليمية الرقمية",
   description:
-    "الصفحة الرئيسية لمدرسة غزتنا — تعليم رقمي متميز، أخبار، برامج أكاديمية، وتسجيل إلكتروني.",
+    "الصفحة الرئيسية لمدرسة غَزتنا — تعليم رقمي متميز، أخبار، برامج أكاديمية، وتسجيل إلكتروني.",
 };
 
 export default function RootLayout({
@@ -21,7 +22,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ar" dir="rtl" className={`${cairo.variable} h-full`}>
-      <body className="min-h-full antialiased">{children}</body>
+      <body className="min-h-full antialiased">
+        <AuthProvider>{children}</AuthProvider>
+      </body>
     </html>
   );
 }

@@ -39,8 +39,8 @@ export function StatCard({
           <Icon className={cn("h-6 w-6", iconColor)} />
         </div>
         <div>
-          <p className="text-3xl font-bold text-slate-800">{value}</p>
-          <p className="mt-1 text-sm text-slate-500">{label}</p>
+          <p className="text-3xl font-bold text-p-black">{value}</p>
+          <p className="mt-1 text-sm text-p-black/50">{label}</p>
         </div>
       </Card>
     </motion.div>

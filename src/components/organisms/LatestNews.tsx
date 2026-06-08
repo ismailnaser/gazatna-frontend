@@ -7,8 +7,8 @@ import { newsItems } from "@/data/home";
 
 export function LatestNews() {
   return (
-    <section id="البرامج" className="bg-slate-50 py-16 sm:py-20">
-      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+    <section className="bg-white py-16 sm:py-20">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -16,19 +16,19 @@ export function LatestNews() {
           className="mb-10 flex flex-wrap items-end justify-between gap-4"
         >
           <div className="flex items-center gap-3">
-            <span className="flex h-11 w-11 items-center justify-center rounded-full bg-violet-100">
-              <Newspaper className="h-5 w-5 text-violet-600" />
+            <span className="flex h-11 w-11 items-center justify-center rounded-full bg-p-green/10">
+              <Newspaper className="h-5 w-5 text-p-green" />
             </span>
             <div>
-              <h2 className="text-2xl font-bold text-slate-800">آخر الأخبار</h2>
-              <p className="mt-1 text-sm text-slate-500">
+              <h2 className="text-2xl font-bold text-p-green">آخر الأخبار</h2>
+              <p className="mt-1 text-sm text-p-black/50">
                 أحدث الفعاليات والإنجازات في مدرستنا
               </p>
             </div>
           </div>
           <a
             href="#"
-            className="text-sm font-semibold text-violet-600 hover:text-violet-700"
+            className="text-sm font-semibold text-p-red hover:text-p-red-light"
           >
             عرض الكل
           </a>

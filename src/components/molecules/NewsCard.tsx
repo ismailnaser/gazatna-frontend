@@ -32,10 +32,10 @@ export function NewsCard({ title, gradient, index = 0 }: NewsCardProps) {
           </span>
         </div>
         <div className="flex items-start justify-between gap-3 p-5">
-          <h3 className="text-base font-bold leading-snug text-slate-800">
+          <h3 className="text-base font-bold leading-snug text-p-black">
             {title}
           </h3>
-          <span className="mt-1 shrink-0 text-violet-500 transition-transform group-hover:-translate-x-1">
+          <span className="mt-1 shrink-0 text-p-green transition-transform group-hover:-translate-x-1">
             <ArrowLeft className="h-4 w-4" />
           </span>
         </div>

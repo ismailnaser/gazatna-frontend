@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 
-type ButtonVariant = "primary" | "outline" | "ghost";
+type ButtonVariant = "primary" | "accent" | "outline" | "ghost" | "danger";
 
 type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: ButtonVariant;
@@ -9,25 +9,32 @@ type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
 
 const variants: Record<ButtonVariant, string> = {
   primary:
-    "bg-violet-600 text-white shadow-sm hover:bg-violet-700 focus-visible:ring-violet-500",
+    "bg-[#064e3b] !text-white shadow-sm hover:bg-[#0d6b4f] focus-visible:ring-[#064e3b] disabled:bg-[#064e3b]/50",
+  accent:
+    "bg-[#881337] !text-white shadow-sm hover:bg-[#9f1239] focus-visible:ring-[#881337] disabled:bg-[#881337]/50",
   outline:
-    "border border-violet-200 bg-white text-violet-700 hover:bg-violet-50 focus-visible:ring-violet-400",
-  ghost: "text-slate-600 hover:bg-slate-100 focus-visible:ring-slate-400",
+    "border-2 border-[#064e3b] bg-white !text-[#064e3b] hover:bg-[#064e3b] hover:!text-white focus-visible:ring-[#064e3b]",
+  ghost:
+    "bg-transparent !text-[#064e3b] hover:bg-[#064e3b]/10 focus-visible:ring-[#064e3b]",
+  danger:
+    "bg-transparent !text-[#881337] hover:bg-[#881337]/10 focus-visible:ring-[#881337]",
 };
 
 const base =
-  "inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2";
+  "inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60";
 
 export function Button({
   variant = "primary",
   className,
   children,
   href,
+  type = "button",
+  disabled,
   ...props
 }: ButtonProps) {
   const classes = cn(base, variants[variant], className);
 
-  if (href) {
+  if (href && !disabled) {
     return (
       <a href={href} className={classes}>
         {children}
@@ -36,7 +43,7 @@ export function Button({
   }
 
   return (
-    <button type="button" className={classes} {...props}>
+    <button type={type} className={classes} disabled={disabled} {...props}>
       {children}
     </button>
   );

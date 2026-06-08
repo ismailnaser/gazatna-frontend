@@ -1,56 +1,72 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Sparkles } from "lucide-react";
+import Image from "next/image";
 import { Button } from "@/components/atoms/Button";
 
 export function Hero() {
   return (
     <section
       id="الرئيسية"
-      className="relative overflow-hidden bg-gradient-to-bl from-violet-50 via-slate-50 to-teal-50"
+      className="relative min-h-[100dvh] overflow-hidden bg-white"
     >
-      <div
-        className="pointer-events-none absolute -start-24 top-10 h-72 w-72 rounded-full bg-violet-200/40 blur-3xl"
-        aria-hidden
-      />
-      <div
-        className="pointer-events-none absolute -end-16 bottom-0 h-64 w-64 rounded-full bg-teal-200/40 blur-3xl"
+      {/* شاشات طولية (هاتف، تابلت عمودي) */}
+      <Image
+        src="/images/hero-bg-portrait.png"
+        alt=""
+        fill
+        priority
+        className="object-cover object-center portrait:block landscape:hidden"
+        sizes="100vw"
         aria-hidden
       />
 
-      <div className="relative mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-28 lg:px-8 lg:py-32">
+      {/* شاشات عرضية (كمبيوتر، هاتف أفقي) */}
+      <Image
+        src="/images/hero-bg.png"
+        alt=""
+        fill
+        priority
+        className="hidden object-cover object-center portrait:hidden landscape:block"
+        sizes="100vw"
+        aria-hidden
+      />
+
+      <div className="relative z-10 mx-auto flex min-h-[100dvh] max-w-4xl flex-col items-center justify-center px-4 py-12 text-center sm:px-6 sm:py-16 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="mx-auto max-w-2xl text-center"
         >
-          <span className="mb-6 inline-flex items-center gap-2 rounded-full bg-white/80 px-4 py-1.5 text-sm font-medium text-violet-700 shadow-sm ring-1 ring-violet-100">
-            <Sparkles className="h-4 w-4" />
-            التعليم الرقمي بمعايير عالمية
-          </span>
+          <p className="text-lg font-medium text-[#1a1a1a] sm:text-xl">
+            مرحبا بكم في
+          </p>
 
-          <h1 className="text-4xl font-extrabold leading-tight tracking-tight text-slate-800 sm:text-5xl lg:text-6xl">
-            مرحباً بكم في{" "}
-            <span className="bg-gradient-to-l from-violet-600 to-teal-500 bg-clip-text text-transparent">
-              مدرسة غزتنا
-            </span>
+          <h1 className="mt-2 text-4xl font-extrabold leading-tight text-[#064e3b] sm:text-6xl lg:text-7xl">
+            مدرسة غَزتنا
           </h1>
+          <div className="mx-auto mt-3 h-1.5 w-48 rounded-full bg-[#064e3b] sm:w-64" />
 
-          <p className="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-slate-600">
+          <p className="mt-8 text-xl font-bold text-[#1a1a1a] sm:text-2xl">
+            التعليم الرقمي بمعايير عالمية
+          </p>
+
+          <p className="mx-auto mt-6 max-w-lg text-base leading-relaxed text-[#1a1a1a]/70 sm:text-lg">
             منصة تعليمية حديثة تجمع بين التميز الأكاديمي والتقنية، لبناء جيل
-            واعٍ ومبدع في غزة.
+            واعٍ ومبدع في غزة
           </p>
 
           <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row-reverse">
-            <Button href="#التسجيل" className="min-w-[160px] px-8 py-3 text-base">
+            <Button
+              href="/register"
+              className="min-w-[180px] rounded-full px-10 py-3.5 text-base"
+            >
               ابدأ رحلتك
             </Button>
             <Button
-              href="#من-نحن"
+              href="/about"
               variant="outline"
-              className="min-w-[160px] px-8 py-3 text-base"
+              className="min-w-[180px] rounded-full px-10 py-3.5 text-base"
             >
               تعرّف علينا
             </Button>

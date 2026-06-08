@@ -1,17 +1,25 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f8fafc;
-  --foreground: #1e293b;
-  --primary: #6d28d9;
-  --accent: #14b8a6;
+  --background: #ffffff;
+  --foreground: #1a1a1a;
+  --palestine-green: #064e3b;
+  --palestine-green-light: #0d6b4f;
+  --palestine-red: #881337;
+  --palestine-red-light: #9f1239;
+  --palestine-black: #1a1a1a;
+  --palestine-cream: #f5f5f0;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --color-primary: var(--primary);
-  --color-accent: var(--accent);
+  --color-p-green: var(--palestine-green);
+  --color-p-green-light: var(--palestine-green-light);
+  --color-p-red: var(--palestine-red);
+  --color-p-red-light: var(--palestine-red-light);
+  --color-p-black: var(--palestine-black);
+  --color-p-cream: var(--palestine-cream);
   --font-sans: var(--font-cairo);
 }
 
@@ -23,4 +31,27 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-cairo), system-ui, sans-serif;
+}
+
+/* ضمان وضوح النص على الأزرار والروابط الملوّنة */
+a[class*="bg-["] {
+  text-decoration: none;
+}
+
+/* Palestinian heritage pattern utility */
+.pattern-tatreez {
+  background-image: repeating-linear-gradient(
+      45deg,
+      #881337 0,
+      #881337 2px,
+      transparent 2px,
+      transparent 8px
+    ),
+    repeating-linear-gradient(
+      -45deg,
+      #064e3b 0,
+      #064e3b 2px,
+      transparent 2px,
+      transparent 8px
+    );
 }
