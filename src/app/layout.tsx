@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Cairo } from "next/font/google";
 import { AuthProvider } from "@/context/AuthContext";
+import { SchoolProvider } from "@/context/SchoolContext";
 import "./globals.css";
 
 const cairo = Cairo({
@@ -23,7 +24,9 @@ export default function RootLayout({
   return (
     <html lang="ar" dir="rtl" className={`${cairo.variable} h-full`}>
       <body className="min-h-full antialiased">
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider>
+          <SchoolProvider>{children}</SchoolProvider>
+        </AuthProvider>
       </body>
     </html>
   );

@@ -6,8 +6,6 @@ import { useState } from "react";
 import { Alert } from "@/components/atoms/Alert";
 import { Button } from "@/components/atoms/Button";
 import { Input } from "@/components/atoms/Input";
-import { AlAqsaCircuit } from "@/components/decor/AlAqsaCircuit";
-import { TatreezCircuit } from "@/components/decor/TatreezCircuit";
 import { useAuth } from "@/context/AuthContext";
 
 const demoAccounts = [
@@ -31,11 +29,8 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-white px-4">
-      <TatreezCircuit className="pointer-events-none absolute -start-8 top-0 hidden h-full w-48 opacity-60 lg:block" />
-      <AlAqsaCircuit className="pointer-events-none absolute -end-8 bottom-0 hidden w-64 opacity-60 lg:block" />
-
-      <div className="relative w-full max-w-md">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-white px-4">
+      <div className="w-full max-w-md">
         <div className="mb-8 text-center">
           <Link href="/" className="inline-flex items-center gap-2">
             <GraduationCap className="h-10 w-10 text-p-green" />
