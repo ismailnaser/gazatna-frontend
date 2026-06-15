@@ -1,22 +1,39 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import { Card } from "@/components/atoms/Card";
 import { PublicPage } from "@/components/molecules/PublicPage";
-import { accreditations } from "@/data/public";
-import { Shield } from "lucide-react";
+import { api } from "@/lib/api";
+
+type Accreditation = { id: string; name: string; desc: string };
 
 export default function AccreditationsPage() {
+  const [items, setItems] = useState<Accreditation[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    api.getAccreditations()
+      .then((data) => setItems(data as Accreditation[]))
+      .catch(() => setItems([]))
+      .finally(() => setLoading(false));
+  }, []);
+
   return (
-    <PublicPage title="الاعتمادات والشراكات" description="شعارات ومعلومات عن المؤسسات المعتمدة.">
-      <div className="grid gap-6 sm:grid-cols-3">
-        {accreditations.map((a) => (
-          <Card key={a.id} className="text-center">
-            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-p-green/10">
-              <Shield className="h-7 w-7 text-p-green" />
-            </div>
-            <h3 className="font-bold text-p-black">{a.name}</h3>
-            <p className="mt-2 text-sm text-p-black/50">{a.desc}</p>
-          </Card>
-        ))}
-      </div>
+    <PublicPage title="الاعتمادات" description="شهادات واعتمادات المدرسة الرسمية.">
+      {loading ? (
+        <p className="text-center text-neutral-500">جاري التحميل...</p>
+      ) : items.length === 0 ? (
+        <p className="text-center text-neutral-500">لا توجد اعتمادات معروضة حالياً.</p>
+      ) : (
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {items.map((a) => (
+            <Card key={a.id} className="text-center">
+              <h3 className="text-lg font-bold text-p-black">{a.name}</h3>
+              <p className="mt-2 text-sm text-p-black/60">{a.desc}</p>
+            </Card>
+          ))}
+        </div>
+      )}
     </PublicPage>
   );
 }

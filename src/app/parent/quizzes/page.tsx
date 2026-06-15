@@ -1,14 +1,16 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { Badge } from "@/components/atoms/Badge";
 import { Button } from "@/components/atoms/Button";
 import { Card } from "@/components/atoms/Card";
 import { PageHeader } from "@/components/molecules/PageHeader";
 import { useAssignments } from "@/context/AssignmentsContext";
 import { useAuth } from "@/context/AuthContext";
-import { getChildByParentUserId } from "@/data/students";
+import { api } from "@/lib/api";
 import { formatDateTime, getQuizPhase } from "@/lib/quiz-timing";
+import type { ParentChild } from "@/types";
 import { Calendar, CheckCircle2, Clock, Play } from "lucide-react";
 
 const phaseLabels = {
@@ -19,8 +21,14 @@ const phaseLabels = {
 
 export default function ParentQuizzesPage() {
   const { user } = useAuth();
-  const child = user ? getChildByParentUserId(user.id) : undefined;
+  const [child, setChild] = useState<ParentChild | undefined>();
   const { getQuizzesByClass, getQuizSubmission } = useAssignments();
+
+  useEffect(() => {
+    if (user) {
+      api.getParentChild().then((c) => setChild(c as ParentChild)).catch(() => {});
+    }
+  }, [user]);
 
   if (!child) {
     return <p className="text-neutral-500">لم يتم ربط حسابك بملف طالب.</p>;

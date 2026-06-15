@@ -8,23 +8,21 @@ import { Input } from "@/components/atoms/Input";
 import { Logo } from "@/components/atoms/Logo";
 import { useAuth } from "@/context/AuthContext";
 
-const demoAccounts = [
-  { email: "admin@ghazatna.edu.ps", role: "مدير" },
-  { email: "teacher@ghazatna.edu.ps", role: "معلم" },
-  { email: "parent@ghazatna.edu.ps", role: "ولي أمر / طالب" },
-];
-
 export default function LoginPage() {
   const { login } = useAuth();
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
-    if (!login(email, password)) {
-      setError("بيانات الدخول غير صحيحة. استخدم أحد الحسابات التجريبية أدناه.");
+    setSubmitting(true);
+    const ok = await login(username, password);
+    setSubmitting(false);
+    if (!ok) {
+      setError("بيانات الدخول غير صحيحة.");
     }
   }
 
@@ -35,9 +33,6 @@ export default function LoginPage() {
           <Logo variant="icon" className="mx-auto h-12 w-12" />
           <h1 className="mt-4 text-2xl font-bold text-p-green">تسجيل الدخول</h1>
           <div className="mx-auto mt-2 h-1 w-12 rounded-full bg-p-red" />
-          <p className="mt-3 text-sm text-p-black/50">
-            النظام يوجّهك تلقائياً للوحة التحكم المناسبة لدورك
-          </p>
         </div>
 
         <form
@@ -52,49 +47,28 @@ export default function LoginPage() {
 
           <div className="space-y-4">
             <Input
-              label="البريد الإلكتروني"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="example@ghazatna.edu.ps"
+              label="اسم المستخدم"
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
               required
+              autoComplete="username"
+              dir="ltr"
             />
             <Input
               label="كلمة المرور"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="أي كلمة مرور (عرض تجريبي)"
               required
+              autoComplete="current-password"
             />
           </div>
 
-          <Button type="submit" className="mt-6 w-full">
-            دخول
+          <Button type="submit" className="mt-6 w-full" disabled={submitting}>
+            {submitting ? "جاري الدخول..." : "دخول"}
           </Button>
         </form>
-
-        <div className="mt-6 rounded-2xl border border-neutral-100 bg-white/80 p-4">
-          <p className="mb-3 text-xs font-semibold text-p-black/60">حسابات تجريبية:</p>
-          <div className="space-y-2">
-            {demoAccounts.map((acc) => (
-              <button
-                key={acc.email}
-                type="button"
-                onClick={() => {
-                  setEmail(acc.email);
-                  setPassword("demo");
-                }}
-                className="flex w-full items-center justify-between rounded-lg bg-gray-50 px-3 py-2 text-start text-xs hover:bg-brand-teal/5"
-              >
-                <span className="font-medium text-p-black/80">{acc.role}</span>
-                <span className="text-p-black/50" dir="ltr">
-                  {acc.email}
-                </span>
-              </button>
-            ))}
-          </div>
-        </div>
 
         <p className="mt-6 text-center text-sm text-p-black/50">
           <Link href="/" className="text-p-green hover:underline">

@@ -30,24 +30,24 @@ export function HomeworkPanel({
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<Homework | null>(null);
 
-  function handleCreate(data: {
+  async function handleCreate(data: {
     title: string;
     description: string;
     dueDate: string;
     status: Homework["status"];
   }) {
-    addHomework({ ...data, classId, teacherId });
+    await addHomework({ ...data, classId, teacherId });
     setShowForm(false);
   }
 
-  function handleUpdate(data: {
+  async function handleUpdate(data: {
     title: string;
     description: string;
     dueDate: string;
     status: Homework["status"];
   }) {
     if (!editing) return;
-    updateHomework(editing.id, data);
+    await updateHomework(editing.id, data);
     setEditing(null);
   }
 

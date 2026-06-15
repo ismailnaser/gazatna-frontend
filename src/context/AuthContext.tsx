@@ -2,13 +2,19 @@
 
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getDashboardPath, getStoredUser, login as authLogin, logout as authLogout } from "@/lib/auth";
+import {
+  fetchCurrentUser,
+  getDashboardPath,
+  getStoredAuthUser,
+  login as authLogin,
+  logout as authLogout,
+} from "@/lib/auth";
 import type { AuthUser } from "@/types";
 
 type AuthContextValue = {
   user: AuthUser | null;
   loading: boolean;
-  login: (email: string, password: string) => boolean;
+  login: (username: string, password: string) => Promise<boolean>;
   logout: () => void;
 };
 
@@ -20,13 +26,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
   useEffect(() => {
-    setUser(getStoredUser());
-    setLoading(false);
+    const stored = getStoredAuthUser();
+    if (stored) {
+      setUser(stored);
+      fetchCurrentUser().then((fresh) => {
+        if (fresh) setUser(fresh);
+        setLoading(false);
+      });
+    } else {
+      setLoading(false);
+    }
   }, []);
 
   const login = useCallback(
-    (email: string, password: string) => {
-      const result = authLogin(email, password);
+    async (username: string, password: string) => {
+      const result = await authLogin(username, password);
       if (!result) return false;
       setUser(result);
       router.push(getDashboardPath(result.role));

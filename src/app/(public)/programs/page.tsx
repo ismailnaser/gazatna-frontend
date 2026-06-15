@@ -1,13 +1,33 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { BookOpen, CheckCircle2, GraduationCap } from "lucide-react";
 import { PremiumPageHero } from "@/components/molecules/PremiumPageHero";
 import { PublicPage } from "@/components/molecules/PublicPage";
-import { programs } from "@/data/public";
+import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
+type Program = {
+  id: string;
+  title: string;
+  grades: string;
+  desc: string;
+  features: string[];
+  accent: string;
+};
+
 export default function ProgramsPage() {
+  const [items, setItems] = useState<Program[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    api.getPrograms()
+      .then((data) => setItems(data as Program[]))
+      .catch(() => setItems([]))
+      .finally(() => setLoading(false));
+  }, []);
+
   return (
     <PublicPage title="" description="">
       <PremiumPageHero
@@ -25,7 +45,12 @@ export default function ProgramsPage() {
       </div>
 
       <div className="space-y-8">
-        {programs.map((p, i) => (
+        {loading ? (
+          <p className="text-center text-neutral-500">جاري التحميل...</p>
+        ) : items.length === 0 ? (
+          <p className="text-center text-neutral-500">لا توجد برامج معروضة حالياً.</p>
+        ) : (
+          items.map((p, i) => (
           <motion.article
             key={p.id}
             initial={{ opacity: 0, y: 28 }}
@@ -66,7 +91,8 @@ export default function ProgramsPage() {
               </ul>
             </div>
           </motion.article>
-        ))}
+          ))
+        )}
       </div>
     </PublicPage>
   );

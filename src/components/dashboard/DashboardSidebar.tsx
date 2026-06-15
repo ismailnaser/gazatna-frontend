@@ -2,17 +2,20 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { dashboardNav } from "@/data/navigation";
+import { getDashboardNav } from "@/data/navigation";
 import { cn } from "@/lib/utils";
+import { isAdminRole } from "@/lib/adminRoles";
 import type { UserRole } from "@/types";
 
 export function DashboardSidebar({ role }: { role: UserRole }) {
   const pathname = usePathname();
-  const items = dashboardNav[role];
+  const items = getDashboardNav(role);
 
   const uniqueItems = items.filter(
     (item, index, arr) => arr.findIndex((i) => i.href === item.href) === index
   );
+
+  const basePath = isAdminRole(role) ? "/admin" : `/${role}`;
 
   return (
     <aside className="hidden w-56 shrink-0 border-s border-neutral-200 bg-white md:block">
@@ -20,7 +23,7 @@ export function DashboardSidebar({ role }: { role: UserRole }) {
         {uniqueItems.map((item) => {
           const active =
             pathname === item.href ||
-            (item.href !== `/${role}` && pathname.startsWith(item.href));
+            (item.href !== basePath && pathname.startsWith(item.href));
           const Icon = item.icon;
           return (
             <Link

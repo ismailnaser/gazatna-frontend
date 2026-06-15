@@ -7,12 +7,10 @@ import {
   useEffect,
   useState,
 } from "react";
-import {
-  initialAssignments,
-  initialTeachers,
-  schoolClasses,
-} from "@/data/teachers";
-import type { SchoolClass, TeacherProfile } from "@/types/teacher";
+import { api } from "@/lib/api";
+import { useAuth } from "@/context/AuthContext";
+import { isAdminRole } from "@/lib/adminRoles";
+import type { SchoolClass, Subject, TeacherProfile } from "@/types/teacher";
 
 type SchoolState = {
   teachers: TeacherProfile[];
@@ -21,104 +19,179 @@ type SchoolState = {
 
 type SchoolContextValue = SchoolState & {
   classes: SchoolClass[];
+  subjects: Subject[];
+  currentTeacher: TeacherProfile | null;
+  loading: boolean;
   getTeacherClasses: (teacherId: string) => SchoolClass[];
   getTeacherClassesByUserId: (userId: string) => SchoolClass[];
-  setTeacherClasses: (teacherId: string, classIds: string[]) => void;
-  addTeacher: (teacher: Omit<TeacherProfile, "id">) => void;
-  updateTeacher: (id: string, data: Partial<TeacherProfile>) => void;
-  removeTeacher: (id: string) => void;
+  setTeacherClasses: (teacherId: string, classIds: string[]) => Promise<void>;
+  addTeacher: (teacher: Omit<TeacherProfile, "id">, image?: File) => Promise<TeacherProfile>;
+  updateTeacher: (id: string, data: Partial<TeacherProfile>, image?: File) => Promise<TeacherProfile>;
+  removeTeacher: (id: string) => Promise<void>;
+  addClass: (gradeLevel: string, section: string) => Promise<SchoolClass>;
+  removeClass: (id: string) => Promise<void>;
+  addSubject: (name: string) => Promise<Subject>;
+  removeSubject: (id: string) => Promise<void>;
+  refresh: () => Promise<void>;
 };
-
-const STORAGE_KEY = "ghazatna_school";
 
 const SchoolContext = createContext<SchoolContextValue | null>(null);
 
-function mergeTeachers(stored: TeacherProfile[]): TeacherProfile[] {
-  return stored.map((t) => {
-    const seed = initialTeachers.find((s) => s.id === t.id);
-    return {
-      ...t,
-      experience: t.experience ?? seed?.experience ?? "—",
-      bio: t.bio ?? seed?.bio ?? "",
-    };
-  });
-}
-
-function loadState(): SchoolState {
-  if (typeof window === "undefined") {
-    return { teachers: initialTeachers, assignments: initialAssignments };
+function buildAssignments(teachers: TeacherProfile[]): Record<string, string[]> {
+  const map: Record<string, string[]> = {};
+  for (const t of teachers) {
+    map[t.id] = t.classIds ?? [];
   }
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return { teachers: initialTeachers, assignments: initialAssignments };
-    const parsed = JSON.parse(raw) as SchoolState;
-    return {
-      teachers: mergeTeachers(parsed.teachers),
-      assignments: parsed.assignments,
-    };
-  } catch {
-    return { teachers: initialTeachers, assignments: initialAssignments };
-  }
+  return map;
 }
 
 export function SchoolProvider({ children }: { children: React.ReactNode }) {
+  const { user } = useAuth();
   const [state, setState] = useState<SchoolState>({
-    teachers: initialTeachers,
-    assignments: initialAssignments,
+    teachers: [],
+    assignments: {},
   });
-  const [hydrated, setHydrated] = useState(false);
+  const [classes, setClasses] = useState<SchoolClass[]>([]);
+  const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [currentTeacher, setCurrentTeacher] = useState<TeacherProfile | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    setState(loadState());
-    setHydrated(true);
-  }, []);
-
-  useEffect(() => {
-    if (hydrated) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  const refresh = useCallback(async () => {
+    setLoading(true);
+    try {
+      if (user?.role && isAdminRole(user.role)) {
+        const [teachersData, classesData, subjectsData] = await Promise.all([
+          api.getAdminTeachers(),
+          api.getAdminClasses(),
+          api.getAdminSubjects(),
+        ]);
+        const teachers = teachersData as TeacherProfile[];
+        setCurrentTeacher(null);
+        setState({ teachers, assignments: buildAssignments(teachers) });
+        setClasses(classesData as SchoolClass[]);
+        setSubjects(subjectsData as Subject[]);
+      } else if (user?.role === "teacher") {
+        const [classesData, profile] = await Promise.all([
+          api.getTeacherClasses(),
+          api.getTeacherProfile(),
+        ]);
+        const teacher = profile as TeacherProfile;
+        setClasses(classesData as SchoolClass[]);
+        setCurrentTeacher(teacher);
+        setState({
+          teachers: [teacher],
+          assignments: buildAssignments([teacher]),
+        });
+      } else {
+        const teachersData = await api.getTeachers();
+        const teachers = teachersData as TeacherProfile[];
+        setCurrentTeacher(null);
+        setState({ teachers, assignments: buildAssignments(teachers) });
+      }
+    } catch {
+      setCurrentTeacher(null);
+      setState({ teachers: [], assignments: {} });
+      setClasses([]);
+      setSubjects([]);
+    } finally {
+      setLoading(false);
     }
-  }, [state, hydrated]);
+  }, [user]);
+
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
 
   const getTeacherClasses = useCallback(
     (teacherId: string) => {
       const ids = state.assignments[teacherId] ?? [];
-      return schoolClasses.filter((c) => ids.includes(c.id));
+      return classes.filter((c) => ids.includes(c.id));
     },
-    [state.assignments]
+    [state.assignments, classes]
   );
 
   const getTeacherClassesByUserId = useCallback(
     (userId: string) => {
+      if (user?.role === "teacher" && user.id === userId) {
+        return classes;
+      }
       const teacher = state.teachers.find((t) => t.userId === userId);
       if (!teacher) return [];
       return getTeacherClasses(teacher.id);
     },
-    [state.teachers, getTeacherClasses]
+    [state.teachers, getTeacherClasses, classes, user]
   );
 
-  const setTeacherClasses = useCallback((teacherId: string, classIds: string[]) => {
+  const setTeacherClasses = useCallback(async (teacherId: string, classIds: string[]) => {
+    const teacher = state.teachers.find((t) => t.id === teacherId);
+    if (!teacher) return;
+    await api.updateAdminTeacher(teacherId, { classIds: classIds.map(Number) });
     setState((prev) => ({
       ...prev,
       assignments: { ...prev.assignments, [teacherId]: classIds },
+      teachers: prev.teachers.map((t) =>
+        t.id === teacherId ? { ...t, classIds } : t
+      ),
     }));
-  }, []);
+  }, [state.teachers]);
 
-  const addTeacher = useCallback((teacher: Omit<TeacherProfile, "id">) => {
-    const id = `t${Date.now()}`;
+  const addTeacher = useCallback(async (teacher: Omit<TeacherProfile, "id">, image?: File) => {
+    const base = {
+      name: teacher.name,
+      experience: teacher.experience,
+      bio: teacher.bio,
+      imageGradient: teacher.imageGradient,
+      classIds: [] as number[],
+    };
+
+    let created: TeacherProfile;
+    if (image) {
+      const formData = new FormData();
+      formData.append("name", teacher.name);
+      formData.append("experience", teacher.experience);
+      formData.append("bio", teacher.bio);
+      formData.append("imageGradient", teacher.imageGradient);
+      teacher.subjectIds?.forEach((id) => formData.append("subjectIds", id));
+      formData.append("image", image);
+      created = (await api.createAdminTeacher(formData)) as TeacherProfile;
+    } else {
+      const payload: Record<string, unknown> = { ...base };
+      if (teacher.subjectIds?.length) {
+        payload.subjectIds = teacher.subjectIds.map(Number);
+      }
+      created = (await api.createAdminTeacher(payload)) as TeacherProfile;
+    }
     setState((prev) => ({
-      teachers: [...prev.teachers, { ...teacher, id }],
-      assignments: { ...prev.assignments, [id]: [] },
+      teachers: [...prev.teachers, created],
+      assignments: { ...prev.assignments, [created.id]: [] },
     }));
+    return created;
   }, []);
 
-  const updateTeacher = useCallback((id: string, data: Partial<TeacherProfile>) => {
+  const updateTeacher = useCallback(async (id: string, data: Partial<TeacherProfile>, image?: File) => {
+    let updated: TeacherProfile;
+    if (image) {
+      const formData = new FormData();
+      formData.append("image", image);
+      updated = (await api.updateAdminTeacher(id, formData)) as TeacherProfile;
+    } else {
+      const payload: Record<string, unknown> = { ...data };
+      if (data.subjectIds) {
+        payload.subjectIds = data.subjectIds.map(Number);
+        delete payload.subject;
+        delete payload.subjects;
+      }
+      updated = (await api.updateAdminTeacher(id, payload)) as TeacherProfile;
+    }
     setState((prev) => ({
       ...prev,
-      teachers: prev.teachers.map((t) => (t.id === id ? { ...t, ...data } : t)),
+      teachers: prev.teachers.map((t) => (t.id === id ? { ...t, ...updated } : t)),
     }));
+    return updated;
   }, []);
 
-  const removeTeacher = useCallback((id: string) => {
+  const removeTeacher = useCallback(async (id: string) => {
+    await api.deleteAdminTeacher(id);
     setState((prev) => {
       const { [id]: _, ...rest } = prev.assignments;
       return {
@@ -128,17 +201,56 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
+  const addClass = useCallback(async (gradeLevel: string, section: string) => {
+    const created = (await api.createAdminClass({ gradeLevel, section })) as SchoolClass;
+    setClasses((prev) => [...prev, created].sort((a, b) => a.name.localeCompare(b.name, "ar")));
+    return created;
+  }, []);
+
+  const removeClass = useCallback(async (id: string) => {
+    await api.deleteAdminClass(id);
+    setClasses((prev) => prev.filter((c) => c.id !== id));
+    setState((prev) => {
+      const assignments = { ...prev.assignments };
+      for (const teacherId of Object.keys(assignments)) {
+        assignments[teacherId] = assignments[teacherId].filter((cid) => cid !== id);
+      }
+      return { ...prev, assignments };
+    });
+  }, []);
+
+  const addSubject = useCallback(async (name: string) => {
+    const created = (await api.createAdminSubject({ name })) as Subject;
+    setSubjects((prev) =>
+      [...prev, created].sort((a, b) => a.name.localeCompare(b.name, "ar"))
+    );
+    return created;
+  }, []);
+
+  const removeSubject = useCallback(async (id: string) => {
+    await api.deleteAdminSubject(id);
+    setSubjects((prev) => prev.filter((s) => s.id !== id));
+  }, []);
+
   return (
     <SchoolContext.Provider
       value={{
         ...state,
-        classes: schoolClasses,
+        classes,
+        subjects,
+        currentTeacher,
+        loading,
         getTeacherClasses,
         getTeacherClassesByUserId,
         setTeacherClasses,
         addTeacher,
         updateTeacher,
         removeTeacher,
+        addClass,
+        removeClass,
+        addSubject,
+        removeSubject,
+        refresh,
       }}
     >
       {children}

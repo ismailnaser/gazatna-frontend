@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Alert } from "@/components/atoms/Alert";
 import { Badge } from "@/components/atoms/Badge";
 import { Button } from "@/components/atoms/Button";
@@ -10,18 +10,24 @@ import { Textarea } from "@/components/atoms/Textarea";
 import { PageHeader } from "@/components/molecules/PageHeader";
 import { useAssignments } from "@/context/AssignmentsContext";
 import { useAuth } from "@/context/AuthContext";
-import { getChildByParentUserId } from "@/data/students";
-import type { Homework } from "@/types";
+import { api } from "@/lib/api";
+import type { Homework, ParentChild } from "@/types";
 import { Calendar, CheckCircle2 } from "lucide-react";
 
 export default function ParentHomeworkPage() {
   const { user } = useAuth();
-  const child = user ? getChildByParentUserId(user.id) : undefined;
+  const [child, setChild] = useState<ParentChild | undefined>();
   const { getHomeworkByClass, getHomeworkSubmission, submitHomework } = useAssignments();
 
   const [activeId, setActiveId] = useState<string | null>(null);
   const [content, setContent] = useState("");
   const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      api.getParentChild().then((c) => setChild(c as ParentChild)).catch(() => {});
+    }
+  }, [user]);
 
   if (!child) {
     return <p className="text-neutral-500">لم يتم ربط حسابك بملف طالب.</p>;
@@ -29,9 +35,9 @@ export default function ParentHomeworkPage() {
 
   const items = getHomeworkByClass(child.classId);
 
-  function handleSubmit(hw: Homework) {
+  async function handleSubmit(hw: Homework) {
     if (!content.trim()) return;
-    submitHomework({
+    await submitHomework({
       homeworkId: hw.id,
       studentId: child!.studentId,
       content: content.trim(),

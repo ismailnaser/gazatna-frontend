@@ -7,12 +7,8 @@ import {
   useEffect,
   useState,
 } from "react";
-import {
-  initialHomework,
-  initialHomeworkSubmissions,
-  initialQuizSubmissions,
-  initialQuizzes,
-} from "@/data/assignments";
+import { api } from "@/lib/api";
+import { useAuth } from "@/context/AuthContext";
 import type {
   Homework,
   HomeworkSubmission,
@@ -29,25 +25,25 @@ type AssignmentsState = {
 };
 
 type AssignmentsContextValue = AssignmentsState & {
+  loading: boolean;
   getHomeworkByClass: (classId: string) => Homework[];
   getQuizzesByClass: (classId: string) => Quiz[];
   getHomeworkByTeacher: (teacherId: string, classIds: string[]) => Homework[];
   getQuizzesByTeacher: (teacherId: string, classIds: string[]) => Quiz[];
-  addHomework: (data: Omit<Homework, "id" | "createdAt">) => Homework;
-  updateHomework: (id: string, data: Partial<Omit<Homework, "id" | "createdAt">>) => void;
-  deleteHomework: (id: string) => void;
-  addQuiz: (data: Omit<Quiz, "id" | "createdAt">) => Quiz;
-  updateQuiz: (id: string, data: Partial<Omit<Quiz, "id" | "createdAt">>) => void;
-  deleteQuiz: (id: string) => void;
-  submitHomework: (data: Omit<HomeworkSubmission, "id" | "submittedAt">) => HomeworkSubmission;
+  addHomework: (data: Omit<Homework, "id" | "createdAt">) => Promise<Homework>;
+  updateHomework: (id: string, data: Partial<Omit<Homework, "id" | "createdAt">>) => Promise<void>;
+  deleteHomework: (id: string) => Promise<void>;
+  addQuiz: (data: Omit<Quiz, "id" | "createdAt">) => Promise<Quiz>;
+  updateQuiz: (id: string, data: Partial<Omit<Quiz, "id" | "createdAt">>) => Promise<void>;
+  deleteQuiz: (id: string) => Promise<void>;
+  submitHomework: (data: Omit<HomeworkSubmission, "id" | "submittedAt">) => Promise<HomeworkSubmission>;
   getHomeworkSubmission: (homeworkId: string, studentId: string) => HomeworkSubmission | undefined;
   getHomeworkSubmissions: (homeworkId: string) => HomeworkSubmission[];
-  submitQuiz: (data: Omit<QuizSubmission, "id" | "submittedAt">) => QuizSubmission;
+  submitQuiz: (data: Omit<QuizSubmission, "id" | "submittedAt">) => Promise<QuizSubmission>;
   getQuizSubmission: (quizId: string, studentId: string) => QuizSubmission | undefined;
   getQuizSubmissions: (quizId: string) => QuizSubmission[];
+  refresh: () => Promise<void>;
 };
-
-const STORAGE_KEY = "ghazatna_assignments";
 
 function normalizeQuiz(q: Quiz): Quiz {
   return {
@@ -57,45 +53,64 @@ function normalizeQuiz(q: Quiz): Quiz {
   };
 }
 
-function loadState(): AssignmentsState {
-  const fallback: AssignmentsState = {
-    homework: initialHomework,
-    quizzes: initialQuizzes.map(normalizeQuiz),
-    homeworkSubmissions: initialHomeworkSubmissions,
-    quizSubmissions: initialQuizSubmissions,
-  };
-  if (typeof window === "undefined") return fallback;
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return fallback;
-    const parsed = JSON.parse(raw) as Partial<AssignmentsState>;
-    return {
-      homework: parsed.homework ?? initialHomework,
-      quizzes: (parsed.quizzes ?? initialQuizzes).map(normalizeQuiz),
-      homeworkSubmissions: parsed.homeworkSubmissions ?? initialHomeworkSubmissions,
-      quizSubmissions: parsed.quizSubmissions ?? initialQuizSubmissions,
-    };
-  } catch {
-    return fallback;
-  }
-}
-
 const AssignmentsContext = createContext<AssignmentsContextValue | null>(null);
 
 export function AssignmentsProvider({ children }: { children: React.ReactNode }) {
-  const [state, setState] = useState<AssignmentsState>(loadState);
-  const [hydrated, setHydrated] = useState(false);
+  const { user } = useAuth();
+  const [state, setState] = useState<AssignmentsState>({
+    homework: [],
+    quizzes: [],
+    homeworkSubmissions: [],
+    quizSubmissions: [],
+  });
+  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    setState(loadState());
-    setHydrated(true);
-  }, []);
-
-  useEffect(() => {
-    if (hydrated) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  const refresh = useCallback(async () => {
+    if (!user) {
+      setLoading(false);
+      return;
     }
-  }, [state, hydrated]);
+    setLoading(true);
+    try {
+      if (user.role === "teacher") {
+        const [homework, quizzes] = await Promise.all([
+          api.getTeacherHomework(),
+          api.getTeacherQuizzes(),
+        ]);
+        setState((prev) => ({
+          ...prev,
+          homework: homework as Homework[],
+          quizzes: (quizzes as Quiz[]).map(normalizeQuiz),
+        }));
+      } else if (user.role === "parent") {
+        const [homework, quizzes, submissions] = await Promise.all([
+          api.getParentHomework(),
+          api.getParentQuizzes(),
+          api.getParentSubmissions(),
+        ]);
+        const subs = submissions as { homework: HomeworkSubmission[]; quizzes: QuizSubmission[] };
+        setState({
+          homework: homework as Homework[],
+          quizzes: (quizzes as Quiz[]).map(normalizeQuiz),
+          homeworkSubmissions: subs.homework,
+          quizSubmissions: subs.quizzes,
+        });
+      }
+    } catch {
+      setState({
+        homework: [],
+        quizzes: [],
+        homeworkSubmissions: [],
+        quizSubmissions: [],
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
 
   const getHomeworkByClass = useCallback(
     (classId: string) =>
@@ -129,27 +144,25 @@ export function AssignmentsProvider({ children }: { children: React.ReactNode })
     [state.quizzes]
   );
 
-  const addHomework = useCallback((data: Omit<Homework, "id" | "createdAt">) => {
-    const item: Homework = {
-      ...data,
-      id: `hw${Date.now()}`,
-      createdAt: new Date().toISOString().slice(0, 10),
-    };
+  const addHomework = useCallback(async (data: Omit<Homework, "id" | "createdAt">) => {
+    const item = (await api.createTeacherHomework(data)) as Homework;
     setState((prev) => ({ ...prev, homework: [item, ...prev.homework] }));
     return item;
   }, []);
 
   const updateHomework = useCallback(
-    (id: string, data: Partial<Omit<Homework, "id" | "createdAt">>) => {
+    async (id: string, data: Partial<Omit<Homework, "id" | "createdAt">>) => {
+      const item = (await api.updateTeacherHomework(id, data)) as Homework;
       setState((prev) => ({
         ...prev,
-        homework: prev.homework.map((h) => (h.id === id ? { ...h, ...data } : h)),
+        homework: prev.homework.map((h) => (h.id === id ? item : h)),
       }));
     },
     []
   );
 
-  const deleteHomework = useCallback((id: string) => {
+  const deleteHomework = useCallback(async (id: string) => {
+    await api.deleteTeacherHomework(id);
     setState((prev) => ({
       ...prev,
       homework: prev.homework.filter((h) => h.id !== id),
@@ -157,27 +170,25 @@ export function AssignmentsProvider({ children }: { children: React.ReactNode })
     }));
   }, []);
 
-  const addQuiz = useCallback((data: Omit<Quiz, "id" | "createdAt">) => {
-    const item: Quiz = {
-      ...normalizeQuiz(data as Quiz),
-      id: `qz${Date.now()}`,
-      createdAt: new Date().toISOString().slice(0, 10),
-    };
+  const addQuiz = useCallback(async (data: Omit<Quiz, "id" | "createdAt">) => {
+    const item = normalizeQuiz((await api.createTeacherQuiz(data)) as Quiz);
     setState((prev) => ({ ...prev, quizzes: [item, ...prev.quizzes] }));
     return item;
   }, []);
 
   const updateQuiz = useCallback(
-    (id: string, data: Partial<Omit<Quiz, "id" | "createdAt">>) => {
+    async (id: string, data: Partial<Omit<Quiz, "id" | "createdAt">>) => {
+      const item = normalizeQuiz((await api.updateTeacherQuiz(id, data)) as Quiz);
       setState((prev) => ({
         ...prev,
-        quizzes: prev.quizzes.map((q) => (q.id === id ? normalizeQuiz({ ...q, ...data }) : q)),
+        quizzes: prev.quizzes.map((q) => (q.id === id ? item : q)),
       }));
     },
     []
   );
 
-  const deleteQuiz = useCallback((id: string) => {
+  const deleteQuiz = useCallback(async (id: string) => {
+    await api.deleteTeacherQuiz(id);
     setState((prev) => ({
       ...prev,
       quizzes: prev.quizzes.filter((q) => q.id !== id),
@@ -186,12 +197,8 @@ export function AssignmentsProvider({ children }: { children: React.ReactNode })
   }, []);
 
   const submitHomework = useCallback(
-    (data: Omit<HomeworkSubmission, "id" | "submittedAt">) => {
-      const item: HomeworkSubmission = {
-        ...data,
-        id: `hws${Date.now()}`,
-        submittedAt: new Date().toISOString(),
-      };
+    async (data: Omit<HomeworkSubmission, "id" | "submittedAt">) => {
+      const item = (await api.submitParentHomework(data.homeworkId, data.content)) as HomeworkSubmission;
       setState((prev) => ({
         ...prev,
         homeworkSubmissions: [
@@ -220,23 +227,26 @@ export function AssignmentsProvider({ children }: { children: React.ReactNode })
     [state.homeworkSubmissions]
   );
 
-  const submitQuiz = useCallback((data: Omit<QuizSubmission, "id" | "submittedAt">) => {
-    const item: QuizSubmission = {
-      ...data,
-      id: `qzs${Date.now()}`,
-      submittedAt: new Date().toISOString(),
-    };
-    setState((prev) => ({
-      ...prev,
-      quizSubmissions: [
-        ...prev.quizSubmissions.filter(
-          (s) => !(s.quizId === data.quizId && s.studentId === data.studentId)
-        ),
-        item,
-      ],
-    }));
-    return item;
-  }, []);
+  const submitQuiz = useCallback(
+    async (data: Omit<QuizSubmission, "id" | "submittedAt">) => {
+      const item = (await api.submitParentQuiz({
+        quizId: data.quizId,
+        answers: data.answers,
+        timeSpentSeconds: data.timeSpentSeconds,
+      })) as QuizSubmission;
+      setState((prev) => ({
+        ...prev,
+        quizSubmissions: [
+          ...prev.quizSubmissions.filter(
+            (s) => !(s.quizId === data.quizId && s.studentId === data.studentId)
+          ),
+          item,
+        ],
+      }));
+      return item;
+    },
+    []
+  );
 
   const getQuizSubmission = useCallback(
     (quizId: string, studentId: string) =>
@@ -253,6 +263,7 @@ export function AssignmentsProvider({ children }: { children: React.ReactNode })
     <AssignmentsContext.Provider
       value={{
         ...state,
+        loading,
         getHomeworkByClass,
         getQuizzesByClass,
         getHomeworkByTeacher,
@@ -269,6 +280,7 @@ export function AssignmentsProvider({ children }: { children: React.ReactNode })
         submitQuiz,
         getQuizSubmission,
         getQuizSubmissions,
+        refresh,
       }}
     >
       {children}

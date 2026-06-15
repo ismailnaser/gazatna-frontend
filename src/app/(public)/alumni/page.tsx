@@ -1,25 +1,40 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import { Card } from "@/components/atoms/Card";
 import { PublicPage } from "@/components/molecules/PublicPage";
-import { alumni } from "@/data/public";
-import { Award } from "lucide-react";
+import { api } from "@/lib/api";
+
+type Alumni = { id: string; name: string; year: string; achievement: string };
 
 export default function AlumniPage() {
+  const [items, setItems] = useState<Alumni[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    api.getAlumni()
+      .then((data) => setItems(data as Alumni[]))
+      .catch(() => setItems([]))
+      .finally(() => setLoading(false));
+  }, []);
+
   return (
-    <PublicPage title="الخريجون" description="قصص نجاح خريجينا وإنجازاتهم.">
-      <div className="space-y-4">
-        {alumni.map((a) => (
-          <Card key={a.id} className="flex items-start gap-4">
-            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-amber-50">
-              <Award className="h-5 w-5 text-amber-500" />
-            </span>
-            <div>
-              <h3 className="font-bold text-p-black">{a.name}</h3>
-              <p className="text-sm text-p-black/50">دفعة {a.year}</p>
-              <p className="mt-1 text-sm text-p-black/60">{a.achievement}</p>
-            </div>
-          </Card>
-        ))}
-      </div>
+    <PublicPage title="الخريجون" description="قصص نجاح خريجي مدرسة غَزتنا.">
+      {loading ? (
+        <p className="text-center text-neutral-500">جاري التحميل...</p>
+      ) : items.length === 0 ? (
+        <p className="text-center text-neutral-500">لا يوجد خريجون معروضون حالياً.</p>
+      ) : (
+        <div className="grid gap-6 md:grid-cols-2">
+          {items.map((a) => (
+            <Card key={a.id}>
+              <p className="text-xs font-semibold text-p-green">{a.year}</p>
+              <h3 className="mt-1 text-lg font-bold text-p-black">{a.name}</h3>
+              <p className="mt-2 text-sm text-p-black/60">{a.achievement}</p>
+            </Card>
+          ))}
+        </div>
+      )}
     </PublicPage>
   );
 }

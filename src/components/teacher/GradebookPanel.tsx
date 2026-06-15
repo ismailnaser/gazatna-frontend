@@ -1,20 +1,25 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Alert } from "@/components/atoms/Alert";
 import { Button } from "@/components/atoms/Button";
 import { Card } from "@/components/atoms/Card";
 import { Input } from "@/components/atoms/Input";
-import { mockClassStudents } from "@/data/mock";
+import { api } from "@/lib/api";
 import type { ClassStudent } from "@/types";
 import { Save, Search } from "lucide-react";
 
 export function GradebookPanel({ classId }: { classId: string }) {
-  const initialStudents = mockClassStudents[classId] ?? [];
-  const [students, setStudents] = useState<ClassStudent[]>(initialStudents);
+  const [students, setStudents] = useState<ClassStudent[]>([]);
   const [search, setSearch] = useState("");
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    api.getTeacherClassStudents(classId)
+      .then((data) => setStudents(data as ClassStudent[]))
+      .catch(() => {});
+  }, [classId]);
 
   const filtered = useMemo(
     () => students.filter((s) => s.name.includes(search)),
@@ -32,19 +37,29 @@ export function GradebookPanel({ classId }: { classId: string }) {
     setSaved(false);
   }
 
-  function handleSave() {
+  async function handleSave() {
     setSaving(true);
-    setTimeout(() => {
-      setSaving(false);
+    try {
+      const entries = students.map((s) => ({
+        id: s.id,
+        grade: s.grade,
+        note: s.note,
+      }));
+      const updated = await api.updateTeacherGradebook(classId, entries);
+      setStudents(updated as ClassStudent[]);
       setSaved(true);
-    }, 800);
+    } catch {
+      setSaved(false);
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
     <div>
       {saved && (
         <Alert variant="success" className="mb-4">
-          تم حفظ التغييرات بنجاح (عرض تجريبي)
+          تم حفظ التغييرات بنجاح
         </Alert>
       )}
 

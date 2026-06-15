@@ -1,4 +1,5 @@
 import type { UserRole } from "@/types";
+import { getAdminNav, isAdminRole } from "@/lib/adminRoles";
 import {
   BarChart3,
   BookOpen,
@@ -7,10 +8,7 @@ import {
   FileText,
   GraduationCap,
   Home,
-  Newspaper,
   PenLine,
-  Settings,
-  Users,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -29,32 +27,41 @@ export const publicNavLinks = [
   { href: "/contact", label: "تواصل" },
 ] as const;
 
-export const dashboardNav: Record<UserRole, NavItem[]> = {
-  parent: [
-    { href: "/parent", label: "الرئيسية", icon: Home },
-    { href: "/parent/homework", label: "الواجبات", icon: PenLine },
-    { href: "/parent/quizzes", label: "الاختبارات", icon: ClipboardList },
-    { href: "/parent/grades", label: "النتائج", icon: BookOpen },
-    { href: "/parent/fees", label: "المالية", icon: CreditCard },
-  ],
-  teacher: [
-    { href: "/teacher", label: "فصولي", icon: GraduationCap },
-    { href: "/teacher/homework", label: "إضافة واجب", icon: PenLine },
-    { href: "/teacher/quizzes", label: "إضافة اختبار", icon: ClipboardList },
-    { href: "/teacher/profile", label: "سيرتي الذاتية", icon: FileText },
-  ],
-  admin: [
-    { href: "/admin", label: "الرئيسية", icon: BarChart3 },
-    { href: "/admin/students", label: "الطلاب", icon: Users },
-    { href: "/admin/finance", label: "المالية", icon: CreditCard },
-    { href: "/admin/content", label: "المحتوى", icon: Newspaper },
-    { href: "/admin/teachers", label: "الكادر", icon: GraduationCap },
-    { href: "/admin/users", label: "المستخدمون", icon: Settings },
-  ],
-};
+const parentNav: NavItem[] = [
+  { href: "/parent", label: "الرئيسية", icon: Home },
+  { href: "/parent/homework", label: "الواجبات", icon: PenLine },
+  { href: "/parent/quizzes", label: "الاختبارات", icon: ClipboardList },
+  { href: "/parent/grades", label: "النتائج", icon: BookOpen },
+  { href: "/parent/fees", label: "المالية", icon: CreditCard },
+];
+
+const teacherNav: NavItem[] = [
+  { href: "/teacher", label: "فصولي", icon: GraduationCap },
+  { href: "/teacher/homework", label: "إضافة واجب", icon: PenLine },
+  { href: "/teacher/quizzes", label: "إضافة اختبار", icon: ClipboardList },
+  { href: "/teacher/profile", label: "سيرتي الذاتية", icon: FileText },
+];
 
 export const roleLabels: Record<UserRole, string> = {
-  admin: "مدير النظام",
+  admin: "إدارة كلية",
+  admin_students: "إدارة الطلاب",
+  admin_academics: "إدارة الفصول والمواد",
+  admin_finance: "إدارة المالية",
+  admin_content: "إدارة المحتوى",
+  admin_staff: "إدارة الكادر",
   teacher: "معلم",
   parent: "ولي أمر / طالب",
+};
+
+export function getDashboardNav(role: UserRole): NavItem[] {
+  if (isAdminRole(role)) return getAdminNav(role);
+  if (role === "teacher") return teacherNav;
+  return parentNav;
+}
+
+/** @deprecated استخدم getDashboardNav */
+export const dashboardNav = {
+  parent: parentNav,
+  teacher: teacherNav,
+  admin: getAdminNav("admin"),
 };

@@ -1,18 +1,25 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/atoms/Button";
 import { Card } from "@/components/atoms/Card";
 import { PageHeader } from "@/components/molecules/PageHeader";
 import { StatusBadge } from "@/components/molecules/StatusBadge";
-import { mockFinanceNotices } from "@/data/mock";
+import { api } from "@/lib/api";
 import type { FinanceNotice, PaymentStatus } from "@/types";
 import { Check, Image, X } from "lucide-react";
 
 export default function AdminFinancePage() {
-  const [notices, setNotices] = useState(mockFinanceNotices);
+  const [notices, setNotices] = useState<FinanceNotice[]>([]);
 
-  function updateStatus(id: string, status: PaymentStatus) {
+  useEffect(() => {
+    api.getAdminFinance()
+      .then((data) => setNotices(data as FinanceNotice[]))
+      .catch(() => setNotices([]));
+  }, []);
+
+  async function updateStatus(id: string, status: PaymentStatus) {
+    await api.updateAdminPayment(id, status);
     setNotices((prev) =>
       prev.map((n) => (n.id === id ? { ...n, status } : n))
     );

@@ -32,7 +32,7 @@ export function QuizPanel({
   const [editing, setEditing] = useState<Quiz | null>(null);
   const [expanded, setExpanded] = useState<string | null>(null);
 
-  function handleCreate(data: {
+  async function handleCreate(data: {
     title: string;
     description: string;
     dueDate: string;
@@ -41,11 +41,11 @@ export function QuizPanel({
     status: Quiz["status"];
     questions: QuizQuestion[];
   }) {
-    addQuiz({ ...data, classId, teacherId });
+    await addQuiz({ ...data, classId, teacherId });
     setShowForm(false);
   }
 
-  function handleUpdate(data: {
+  async function handleUpdate(data: {
     title: string;
     description: string;
     dueDate: string;
@@ -55,7 +55,7 @@ export function QuizPanel({
     questions: QuizQuestion[];
   }) {
     if (!editing) return;
-    updateQuiz(editing.id, data);
+    await updateQuiz(editing.id, data);
     setEditing(null);
   }
 

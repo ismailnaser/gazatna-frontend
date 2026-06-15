@@ -2,13 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { dashboardNav } from "@/data/navigation";
+import { getDashboardNav } from "@/data/navigation";
 import { cn } from "@/lib/utils";
 import type { UserRole } from "@/types";
 
 export function MobileNav({ role }: { role: UserRole }) {
   const pathname = usePathname();
-  const items = dashboardNav[role].filter(
+  const items = getDashboardNav(role).filter(
     (item, index, arr) => arr.findIndex((i) => i.href === item.href) === index
   );
 

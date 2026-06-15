@@ -1,18 +1,22 @@
-﻿"use client";
+"use client";
 
 import { Calendar } from "lucide-react";
 import { Button } from "@/components/atoms/Button";
-import { cn } from "@/lib/utils";
-import type { NewsItem } from "@/data/home";
+import { NewsCover } from "@/components/molecules/NewsCover";
+import type { PublicNewsItem } from "@/types/news";
 
-export function FeaturedNewsCard({ item }: { item: NewsItem }) {
+export function FeaturedNewsCard({ item }: { item: PublicNewsItem }) {
   return (
     <article className="overflow-hidden rounded-2xl border border-neutral-100 bg-white shadow-sm transition-shadow hover:shadow-md">
-      <div className={cn("relative h-56 bg-gradient-to-br sm:h-64 lg:h-72", item.gradient)}>
+      <NewsCover
+        imageUrl={item.imageUrl}
+        gradient={item.gradient}
+        className="h-56 sm:h-64 lg:h-72"
+      >
         <span className="absolute bottom-4 end-4 rounded-full bg-[var(--brand-magenta)] px-3 py-1 text-xs font-semibold text-white">
           أخبار المدرسة
         </span>
-      </div>
+      </NewsCover>
 
       <div className="p-5 sm:p-6">
         <h3 className="text-xl font-bold leading-snug text-[#1a1a1a] sm:text-2xl">

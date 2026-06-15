@@ -1,11 +1,70 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { BarChart3 } from "lucide-react";
+import { BarChart3, GraduationCap, Star, Users, type LucideIcon } from "lucide-react";
 import { StatCard } from "@/components/molecules/StatCard";
-import { stats } from "@/data/home";
+import { api } from "@/lib/api";
+
+const iconMap: Record<string, LucideIcon> = {
+  Star,
+  GraduationCap,
+  Users,
+};
+
+type StatFromApi = {
+  id: string;
+  label: string;
+  value: string;
+  iconName?: string;
+  iconBg: string;
+  iconColor: string;
+};
+
+type StatItem = {
+  id: string;
+  label: string;
+  value: string;
+  icon: LucideIcon;
+  iconBg: string;
+  iconColor: string;
+};
 
 export function StatsSection() {
+  const [items, setItems] = useState<StatItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    api.getStats()
+      .then((data) => {
+        const mapped = (data as StatFromApi[]).map((s) => ({
+          id: s.id,
+          label: s.label,
+          value: s.value,
+          icon: iconMap[s.iconName ?? "Star"] ?? Star,
+          iconBg: s.iconBg,
+          iconColor: s.iconColor,
+        }));
+        setItems(mapped);
+      })
+      .catch(() => setItems([]))
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) {
+    return (
+      <section className="bg-white py-16 sm:py-20">
+        <div className="mx-auto max-w-7xl px-4 text-center text-neutral-500 sm:px-6 lg:px-8">
+          جاري تحميل الإحصائيات...
+        </div>
+      </section>
+    );
+  }
+
+  if (items.length === 0) {
+    return null;
+  }
+
   return (
     <section className="bg-white py-16 sm:py-20">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -27,7 +86,7 @@ export function StatsSection() {
         </motion.div>
 
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {stats.map((stat, index) => (
+          {items.map((stat, index) => (
             <StatCard key={stat.id} {...stat} index={index} />
           ))}
         </div>

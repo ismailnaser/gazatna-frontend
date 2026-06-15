@@ -1,28 +1,33 @@
-﻿"use client";
+"use client";
 
 import { Calendar } from "lucide-react";
 import { Badge } from "@/components/atoms/Badge";
 import { Button } from "@/components/atoms/Button";
-import { cn } from "@/lib/utils";
-import type { NewsItem } from "@/data/home";
+import { NewsCover } from "@/components/molecules/NewsCover";
+import type { PublicNewsItem } from "@/types/news";
 import { Pencil, Trash2 } from "lucide-react";
 
 type AdminFeaturedNewsCardProps = {
-  item: NewsItem;
+  item: PublicNewsItem;
+  onEdit: (item: PublicNewsItem) => void;
   onDelete: (id: string) => void;
 };
 
-export function AdminFeaturedNewsCard({ item, onDelete }: AdminFeaturedNewsCardProps) {
+export function AdminFeaturedNewsCard({ item, onEdit, onDelete }: AdminFeaturedNewsCardProps) {
   return (
     <article className="overflow-hidden rounded-2xl border border-neutral-100 bg-white shadow-sm">
-      <div className={cn("relative h-56 bg-gradient-to-br sm:h-64 lg:h-72", item.gradient)}>
+      <NewsCover
+        imageUrl={item.imageUrl}
+        gradient={item.gradient}
+        className="h-56 sm:h-64 lg:h-72"
+      >
         <span className="absolute bottom-4 end-4 rounded-full bg-[var(--brand-magenta)] px-3 py-1 text-xs font-semibold text-white">
           أخبار المدرسة
         </span>
         <span className="absolute top-4 start-4">
           <Badge variant="success">مميز</Badge>
         </span>
-      </div>
+      </NewsCover>
 
       <div className="p-5 sm:p-6">
         <div className="mb-2 flex flex-wrap items-center gap-2">
@@ -42,7 +47,11 @@ export function AdminFeaturedNewsCard({ item, onDelete }: AdminFeaturedNewsCardP
             {item.date}
           </span>
           <div className="flex gap-2">
-            <Button variant="outline" className="rounded-full px-4 py-2 text-sm">
+            <Button
+              variant="outline"
+              className="rounded-full px-4 py-2 text-sm"
+              onClick={() => onEdit(item)}
+            >
               <Pencil className="h-3.5 w-3.5" />
               تعديل
             </Button>

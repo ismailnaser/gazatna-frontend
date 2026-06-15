@@ -1,4 +1,5 @@
-export type UserRole = "admin" | "teacher" | "parent";
+export type { UserRole, AdminRole } from "@/lib/adminRoles";
+export { adminRoleLabels, isAdminRole } from "@/lib/adminRoles";
 
 export type AuthUser = {
   id: string;
@@ -113,8 +114,20 @@ export type AdminStudent = {
   id: string;
   name: string;
   grade: string;
+  section?: string;
+  classId?: string;
+  studentNumber?: string;
+  username?: string;
+  generatedPassword?: string;
   paymentStatus: PaymentStatus;
   documents: string[];
+};
+
+export type AccountCredentials = {
+  name: string;
+  username: string;
+  password: string;
+  role: "teacher" | "parent";
 };
 
 export type FinanceNotice = {
@@ -136,6 +149,7 @@ export type NewsItem = {
 export type SystemUser = {
   id: string;
   name: string;
+  username: string;
   email: string;
   role: UserRole;
   status: "active" | "inactive";

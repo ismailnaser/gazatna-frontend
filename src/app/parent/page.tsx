@@ -1,12 +1,12 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Card } from "@/components/atoms/Card";
 import { PageHeader } from "@/components/molecules/PageHeader";
-import { useAssignments } from "@/context/AssignmentsContext";
 import { useAuth } from "@/context/AuthContext";
-import { mockStudent, parentAlerts } from "@/data/mock";
-import { getChildByParentUserId } from "@/data/students";
+import { api } from "@/lib/api";
+import type { Homework, ParentChild, Quiz, Student } from "@/types";
 import {
   Bell,
   BookOpen,
@@ -19,22 +19,61 @@ import {
 
 export default function ParentDashboard() {
   const { user } = useAuth();
-  const student = mockStudent;
-  const child = user ? getChildByParentUserId(user.id) : undefined;
-  const { getHomeworkByClass, getQuizzesByClass, getHomeworkSubmission, getQuizSubmission } =
-    useAssignments();
+  const [student, setStudent] = useState<Student | null>(null);
+  const [child, setChild] = useState<ParentChild | undefined>();
+  const [pendingHomework, setPendingHomework] = useState(0);
+  const [openQuizzes, setOpenQuizzes] = useState(0);
+  const [loading, setLoading] = useState(true);
 
-  const pendingHomework = child
-    ? getHomeworkByClass(child.classId)
-        .filter((h) => h.status === "active")
-        .filter((h) => !getHomeworkSubmission(h.id, child.studentId)).length
-    : 0;
+  const [alerts, setAlerts] = useState<Array<{ id: string; text: string; type: string }>>([]);
 
-  const openQuizzes = child
-    ? getQuizzesByClass(child.classId)
-        .filter((q) => q.status === "active")
-        .filter((q) => !getQuizSubmission(q.id, child.studentId)).length
-    : 0;
+  useEffect(() => {
+    if (!user) return;
+
+    Promise.all([
+      api.getParentStudent().then((s) => setStudent(s as Student)).catch(() => setStudent(null)),
+      api.getParentChild()
+        .then(async (c) => {
+          const childData = c as ParentChild;
+          setChild(childData);
+          const [homework, quizzes, submissions] = await Promise.all([
+            api.getParentHomework(),
+            api.getParentQuizzes(),
+            api.getParentSubmissions(),
+          ]);
+          const hwList = homework as Homework[];
+          const qzList = quizzes as Quiz[];
+          const subs = submissions as {
+            homework: { homeworkId: string }[];
+            quizzes: { quizId: string }[];
+          };
+          const submittedHw = new Set(subs.homework.map((s) => s.homeworkId));
+          const submittedQz = new Set(subs.quizzes.map((s) => s.quizId));
+          setPendingHomework(
+            hwList.filter((h) => h.status === "active" && !submittedHw.has(h.id)).length
+          );
+          setOpenQuizzes(
+            qzList.filter((q) => q.status === "active" && !submittedQz.has(q.id)).length
+          );
+        })
+        .catch(() => {}),
+      api.getParentAlerts()
+        .then((data) => setAlerts(data as Array<{ id: string; text: string; type: string }>))
+        .catch(() => setAlerts([])),
+    ]).finally(() => setLoading(false));
+  }, [user]);
+
+  if (loading) {
+    return <p className="text-neutral-500">جاري التحميل...</p>;
+  }
+
+  if (!student) {
+    return (
+      <Card className="text-center text-neutral-500">
+        لا يوجد طالب مرتبط بحسابك. تواصل مع الإدارة.
+      </Card>
+    );
+  }
 
   return (
     <div>
@@ -88,14 +127,18 @@ export default function ParentDashboard() {
         تنبيهات سريعة
       </h2>
       <div className="space-y-3">
-        {parentAlerts.map((alert) => (
-          <Card key={alert.id} className="flex items-center gap-3 py-4">
-            {alert.type === "payment" && <CreditCard className="h-5 w-5 text-p-green" />}
-            {alert.type === "note" && <Bell className="h-5 w-5 text-p-green" />}
-            {alert.type === "grade" && <GraduationCap className="h-5 w-5 text-amber-500" />}
-            <p className="text-sm text-p-black/80">{alert.text}</p>
-          </Card>
-        ))}
+        {alerts.length === 0 ? (
+          <Card className="text-center text-neutral-500">لا توجد تنبيهات.</Card>
+        ) : (
+          alerts.map((alert) => (
+            <Card key={alert.id} className="flex items-center gap-3 py-4">
+              {alert.type === "payment" && <CreditCard className="h-5 w-5 text-p-green" />}
+              {(alert.type === "note" || alert.type === "homework") && <Bell className="h-5 w-5 text-p-green" />}
+              {alert.type === "grade" && <GraduationCap className="h-5 w-5 text-amber-500" />}
+              <p className="text-sm text-p-black/80">{alert.text}</p>
+            </Card>
+          ))
+        )}
       </div>
     </div>
   );

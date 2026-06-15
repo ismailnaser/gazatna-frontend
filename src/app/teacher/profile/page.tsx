@@ -6,9 +6,15 @@ import { useSchool } from "@/context/SchoolContext";
 
 export default function TeacherProfilePage() {
   const { user } = useAuth();
-  const { teachers, getTeacherClassesByUserId } = useSchool();
+  const { getTeacherClassesByUserId, currentTeacher, loading } = useSchool();
 
-  const teacher = teachers.find((t) => t.userId === user?.id);
+  const teacher = currentTeacher;
+
+  if (loading) {
+    return (
+      <p className="text-[#1a1a1a]/50">جاري التحميل...</p>
+    );
+  }
 
   if (!teacher) {
     return (

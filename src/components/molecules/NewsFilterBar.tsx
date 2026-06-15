@@ -1,6 +1,6 @@
-﻿"use client";
+"use client";
 
-import { newsFilters, type NewsFilter } from "@/data/home";
+import { newsFilters, type NewsFilter } from "@/types/news";
 import { cn } from "@/lib/utils";
 
 export function NewsFilterBar({

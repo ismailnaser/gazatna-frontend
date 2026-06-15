@@ -11,11 +11,19 @@ export function TeacherCard({ teacher }: { teacher: TeacherProfile }) {
       <Card className="overflow-hidden p-0 text-center transition-shadow hover:shadow-md">
         <div
           className={cn(
-            "flex aspect-square w-full items-center justify-center overflow-hidden bg-gradient-to-br text-4xl font-bold text-white",
-            teacher.imageGradient
+            "relative flex aspect-square w-full items-center justify-center overflow-hidden bg-gradient-to-br text-4xl font-bold text-white",
+            !teacher.imageUrl && teacher.imageGradient
           )}
         >
-          {initial}
+          {teacher.imageUrl ? (
+            <img
+              src={teacher.imageUrl}
+              alt={teacher.name}
+              className="absolute inset-0 h-full w-full object-cover"
+            />
+          ) : (
+            initial
+          )}
         </div>
         <div className="p-5">
           <h3 className="text-lg font-bold text-[#1a1a1a] transition-colors group-hover:text-[var(--brand-teal)]">

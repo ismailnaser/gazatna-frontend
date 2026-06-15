@@ -34,11 +34,19 @@ export function TeacherCV({
       <Card className="overflow-hidden p-0">
         <div
           className={cn(
-            "mx-auto flex aspect-square w-full max-w-xs items-center justify-center overflow-hidden bg-gradient-to-br text-6xl font-bold text-white sm:max-w-sm",
-            teacher.imageGradient
+            "relative mx-auto flex aspect-square w-full max-w-xs items-center justify-center overflow-hidden bg-gradient-to-br text-6xl font-bold text-white sm:max-w-sm",
+            !teacher.imageUrl && teacher.imageGradient
           )}
         >
-          {initial}
+          {teacher.imageUrl ? (
+            <img
+              src={teacher.imageUrl}
+              alt={teacher.name}
+              className="absolute inset-0 h-full w-full object-cover"
+            />
+          ) : (
+            initial
+          )}
         </div>
 
         <div className="p-6 sm:p-8">

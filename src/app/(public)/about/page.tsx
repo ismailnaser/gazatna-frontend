@@ -1,12 +1,25 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Heart, Sparkles, Target } from "lucide-react";
 import { PremiumPageHero, PremiumPanel } from "@/components/molecules/PremiumPageHero";
 import { PublicPage } from "@/components/molecules/PublicPage";
-import { schoolValues } from "@/data/public";
+import { api } from "@/lib/api";
+
+type SchoolValue = { id: string; title: string; desc: string; num: string };
 
 export default function AboutPage() {
+  const [values, setValues] = useState<SchoolValue[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    api.getSchoolValues()
+      .then((data) => setValues(data as SchoolValue[]))
+      .catch(() => setValues([]))
+      .finally(() => setLoading(false));
+  }, []);
+
   return (
     <PublicPage title="" description="">
       <PremiumPageHero
@@ -72,9 +85,14 @@ export default function AboutPage() {
           </div>
 
           <div className="grid gap-6 md:grid-cols-3">
-            {schoolValues.map((v, i) => (
+            {loading ? (
+              <p className="col-span-full text-center text-white/60">جاري التحميل...</p>
+            ) : values.length === 0 ? (
+              <p className="col-span-full text-center text-white/60">لا توجد قيم معروضة حالياً.</p>
+            ) : (
+            values.map((v, i) => (
               <motion.div
-                key={v.title}
+                key={v.id}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
@@ -85,7 +103,8 @@ export default function AboutPage() {
                 <h3 className="mt-4 text-lg font-bold text-white">{v.title}</h3>
                 <p className="mt-3 text-sm leading-relaxed text-white/70">{v.desc}</p>
               </motion.div>
-            ))}
+            ))
+            )}
           </div>
         </div>
       </div>

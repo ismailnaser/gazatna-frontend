@@ -16,12 +16,12 @@ import { Calendar, Clock, Pencil, Plus, Trash2, Users } from "lucide-react";
 
 export default function TeacherQuizzesPage() {
   const { user } = useAuth();
-  const { getTeacherClassesByUserId, teachers } = useSchool();
+  const { getTeacherClassesByUserId, currentTeacher, loading } = useSchool();
   const { getQuizzesByTeacher, addQuiz, updateQuiz, deleteQuiz, getQuizSubmissions } =
     useAssignments();
 
   const classes = user ? getTeacherClassesByUserId(user.id) : [];
-  const teacher = teachers.find((t) => t.userId === user?.id);
+  const teacher = currentTeacher;
   const classIds = classes.map((c) => c.id);
   const items = teacher ? getQuizzesByTeacher(teacher.id, classIds) : [];
 
@@ -33,6 +33,10 @@ export default function TeacherQuizzesPage() {
     () => Object.fromEntries(classes.map((c) => [c.id, c.name])),
     [classes]
   );
+
+  if (loading) {
+    return <p className="text-neutral-500">جاري التحميل...</p>;
+  }
 
   if (!teacher) {
     return <p className="text-neutral-500">لم يتم ربط حسابك بملف معلم.</p>;
