@@ -1,9 +1,11 @@
 import {
   BarChart3,
   BookMarked,
+  ClipboardList,
   CreditCard,
   GraduationCap,
   Layers,
+  Mail,
   Newspaper,
   Settings,
   Users,
@@ -43,20 +45,22 @@ export const adminRoleLabels: Record<AdminRole, string> = {
 const allAdminNav: NavItem[] = [
   { href: "/admin", label: "الرئيسية", icon: BarChart3 },
   { href: "/admin/students", label: "الطلاب", icon: Users },
+  { href: "/admin/admissions", label: "طلبات التسجيل", icon: ClipboardList },
   { href: "/admin/classes", label: "الفصول", icon: Layers },
   { href: "/admin/subjects", label: "المواد", icon: BookMarked },
   { href: "/admin/finance", label: "المالية", icon: CreditCard },
   { href: "/admin/content", label: "المحتوى", icon: Newspaper },
+  { href: "/admin/messages", label: "رسائل التواصل", icon: Mail },
   { href: "/admin/teachers", label: "الكادر", icon: GraduationCap },
   { href: "/admin/users", label: "المستخدمون", icon: Settings },
 ];
 
 const roleNavPaths: Record<AdminRole, string[]> = {
   admin: allAdminNav.map((item) => item.href),
-  admin_students: ["/admin", "/admin/students"],
+  admin_students: ["/admin", "/admin/students", "/admin/admissions", "/admin/notifications"],
   admin_academics: ["/admin", "/admin/classes", "/admin/subjects"],
-  admin_finance: ["/admin", "/admin/finance"],
-  admin_content: ["/admin", "/admin/content"],
+  admin_finance: ["/admin", "/admin/finance", "/admin/notifications"],
+  admin_content: ["/admin", "/admin/content", "/admin/messages"],
   admin_staff: ["/admin", "/admin/teachers"],
 };
 

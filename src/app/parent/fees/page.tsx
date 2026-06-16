@@ -8,37 +8,76 @@ import { Input } from "@/components/atoms/Input";
 import { Textarea } from "@/components/atoms/Textarea";
 import { PageHeader } from "@/components/molecules/PageHeader";
 import { StatusBadge } from "@/components/molecules/StatusBadge";
+import { InstallmentNotifications, InstallmentSchedule } from "@/components/parent/InstallmentPanel";
 import { api } from "@/lib/api";
-import type { PaymentNotice, Student } from "@/types";
+import type { PaymentNotice, PaymentStatus, Student } from "@/types";
+import { mapFeeStatus, type FeeStatus } from "@/types/finance";
 import { Upload } from "lucide-react";
 
 export default function ParentFeesPage() {
   const [student, setStudent] = useState<Student | null>(null);
   const [notices, setNotices] = useState<PaymentNotice[]>([]);
+  const [feeStatus, setFeeStatus] = useState<FeeStatus | null>(null);
+  const [amount, setAmount] = useState("");
+  const [note, setNote] = useState("");
+  const [receipt, setReceipt] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploaded, setUploaded] = useState(false);
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
 
+  function loadFees() {
+    return api.getParentFees().then((data) => {
+      setStudent(data.student as Student);
+      setNotices(
+        (data.notices as Array<Record<string, unknown>>).map((n) => ({
+          id: String(n.id),
+          date: String(n.date),
+          declaredAmount: Number(n.declaredAmount ?? n.amount),
+          amount: Number(n.amount),
+          status: n.status as PaymentStatus,
+          note: n.note ? String(n.note) : undefined,
+          receiptUrl: n.receiptUrl ? String(n.receiptUrl) : null,
+        }))
+      );
+      setFeeStatus(mapFeeStatus(data.feeStatus as Record<string, unknown>));
+    });
+  }
+
   useEffect(() => {
-    api.getParentFees()
-      .then((data) => {
-        setStudent(data.student as Student);
-        setNotices(data.notices as PaymentNotice[]);
-      })
+    loadFees()
       .catch(() => {
         setStudent(null);
         setNotices([]);
+        setFeeStatus(null);
       })
       .finally(() => setLoading(false));
   }, []);
 
-  function handleUpload(e: React.FormEvent) {
+  async function handleUpload(e: React.FormEvent) {
     e.preventDefault();
+    if (!receipt) {
+      setError("يرجى إرفاق صورة الإشعار");
+      return;
+    }
     setUploading(true);
-    setTimeout(() => {
-      setUploading(false);
+    setError("");
+    const form = new FormData();
+    form.append("amount", amount);
+    form.append("note", note);
+    form.append("receipt", receipt);
+    try {
+      await api.submitParentPayment(form);
       setUploaded(true);
-    }, 1000);
+      setAmount("");
+      setNote("");
+      setReceipt(null);
+      await loadFees();
+    } catch {
+      setError("تعذر إرسال إشعار الدفع");
+    } finally {
+      setUploading(false);
+    }
   }
 
   if (loading) {
@@ -55,7 +94,7 @@ export default function ParentFeesPage() {
 
   return (
     <div>
-      <PageHeader title="المالية" description="رصيد الحساب وإشعارات الدفع" />
+      <PageHeader title="المالية" description="رصيد الحساب، جدول الأقساط، وإشعارات الدفع" />
 
       <div className="mb-8 grid gap-4 sm:grid-cols-3">
         {[
@@ -72,6 +111,19 @@ export default function ParentFeesPage() {
         ))}
       </div>
 
+      {feeStatus && feeStatus.notifications.length > 0 && (
+        <div className="mb-8">
+          <InstallmentNotifications notifications={feeStatus.notifications} />
+        </div>
+      )}
+
+      {feeStatus && (
+        <Card className="mb-8">
+          <h3 className="mb-4 font-bold text-p-black">جدول الأقساط المُعلَن عنها</h3>
+          <InstallmentSchedule installments={feeStatus.installments} />
+        </Card>
+      )}
+
       <div className="mb-8 grid gap-6 lg:grid-cols-2">
         <Card>
           <h3 className="mb-4 flex items-center gap-2 font-bold text-p-black">
@@ -80,11 +132,24 @@ export default function ParentFeesPage() {
           </h3>
           {uploaded && (
             <Alert variant="success" className="mb-4">
-              تم إرسال الإشعار بنجاح. سيتم مراجعته من الإدارة.
+              تم إرسال الإشعار بنجاح. سيتم مراجعته من الإدارة وخصم المبلغ بعد الاعتماد.
+            </Alert>
+          )}
+          {error && (
+            <Alert variant="error" className="mb-4">
+              {error}
             </Alert>
           )}
           <form onSubmit={handleUpload} className="space-y-4">
-            <Input label="المبلغ (₪)" type="number" required />
+            <Input
+              label="المبلغ (₪)"
+              type="number"
+              min="1"
+              step="0.01"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              required
+            />
             <div>
               <label className="mb-1.5 block text-sm font-medium text-p-black/80">
                 صورة الإشعار
@@ -93,10 +158,16 @@ export default function ParentFeesPage() {
                 type="file"
                 accept="image/*"
                 className="w-full text-sm text-p-black/60"
+                onChange={(e) => setReceipt(e.target.files?.[0] ?? null)}
                 required
               />
             </div>
-            <Textarea label="ملاحظات" placeholder="اختياري" />
+            <Textarea
+              label="ملاحظات"
+              placeholder="اختياري"
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+            />
             <Button type="submit" disabled={uploading} className="w-full">
               {uploading ? "جاري الإرسال..." : "إرسال الإشعار"}
             </Button>
@@ -122,7 +193,7 @@ export default function ParentFeesPage() {
                 {notices.map((n) => (
                   <tr key={n.id} className="border-b border-neutral-50">
                     <td className="px-4 py-3">{n.date}</td>
-                    <td className="px-4 py-3">{n.amount} ₪</td>
+                    <td className="px-4 py-3">{n.declaredAmount ?? n.amount} ₪</td>
                     <td className="px-4 py-3">
                       <StatusBadge status={n.status} />
                     </td>

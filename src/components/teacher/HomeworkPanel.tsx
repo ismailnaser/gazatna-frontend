@@ -5,6 +5,7 @@ import { Badge } from "@/components/atoms/Badge";
 import { Button } from "@/components/atoms/Button";
 import { Card } from "@/components/atoms/Card";
 import { HomeworkForm } from "@/components/teacher/HomeworkForm";
+import { ConfirmDialog } from "@/components/molecules/ConfirmDialog";
 import { useAssignments } from "@/context/AssignmentsContext";
 import type { Homework } from "@/types";
 import { Calendar, Pencil, Plus, Trash2, Users } from "lucide-react";
@@ -29,6 +30,10 @@ export function HomeworkPanel({
   const items = getHomeworkByClass(classId);
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<Homework | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  const confirmDeleteItem = items.find((hw) => hw.id === confirmDeleteId) ?? null;
 
   async function handleCreate(data: {
     title: string;
@@ -49,6 +54,17 @@ export function HomeworkPanel({
     if (!editing) return;
     await updateHomework(editing.id, data);
     setEditing(null);
+  }
+
+  async function confirmDeleteHomework() {
+    if (!confirmDeleteId) return;
+    setDeleting(true);
+    try {
+      await deleteHomework(confirmDeleteId);
+      setConfirmDeleteId(null);
+    } finally {
+      setDeleting(false);
+    }
   }
 
   return (
@@ -120,9 +136,7 @@ export function HomeworkPanel({
                     <Button
                       variant="danger"
                       className="px-3 py-2"
-                      onClick={() => {
-                        if (confirm("هل تريد حذف هذا الواجب؟")) deleteHomework(hw.id);
-                      }}
+                      onClick={() => setConfirmDeleteId(hw.id)}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -133,6 +147,20 @@ export function HomeworkPanel({
           })}
         </div>
       )}
+
+      <ConfirmDialog
+        open={Boolean(confirmDeleteItem)}
+        title="تأكيد حذف الواجب"
+        description={
+          <>
+            هل أنت متأكد من حذف الواجب{" "}
+            <span className="font-semibold">{confirmDeleteItem?.title}</span>؟
+          </>
+        }
+        loading={deleting}
+        onCancel={() => setConfirmDeleteId(null)}
+        onConfirm={confirmDeleteHomework}
+      />
     </div>
   );
 }

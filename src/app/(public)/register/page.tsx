@@ -1,24 +1,61 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Alert } from "@/components/atoms/Alert";
 import { Button } from "@/components/atoms/Button";
 import { Input } from "@/components/atoms/Input";
 import { Select } from "@/components/atoms/Select";
 import { Textarea } from "@/components/atoms/Textarea";
 import { PublicPage } from "@/components/molecules/PublicPage";
+import { api } from "@/lib/api";
+
+type RegSettings = {
+  showNotes: boolean;
+  showBirthDate: boolean;
+  gradeChoices: Array<{ value: string; label: string }>;
+};
+
+const DEFAULT_REG: RegSettings = {
+  showNotes: true,
+  showBirthDate: true,
+  gradeChoices: [],
+};
 
 export default function RegisterPage() {
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [reg, setReg] = useState<RegSettings>(DEFAULT_REG);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    api
+      .getSiteSettings()
+      .then((res) => {
+        const s = res as { registration?: Partial<RegSettings> };
+        if (s.registration) setReg({ ...DEFAULT_REG, ...s.registration });
+      })
+      .catch(() => {});
+  }, []);
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    setError("");
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      setSubmitted(true);
-    }, 1200);
+    const form = new FormData(e.currentTarget);
+    const payload = {
+      studentName: String(form.get("studentName") ?? ""),
+      birthDate: String(form.get("birthDate") ?? ""),
+      grade: String(form.get("grade") ?? ""),
+      parentName: String(form.get("parentName") ?? ""),
+      phone: String(form.get("phone") ?? ""),
+      email: String(form.get("email") ?? ""),
+      notes: String(form.get("notes") ?? ""),
+    };
+    api
+      .submitAdmissionApplication(payload)
+      .then(() => setSubmitted(true))
+      .catch((e) => setError(e instanceof Error ? e.message : "تعذر إرسال الطلب"))
+      .finally(() => setLoading(false));
   }
 
   if (submitted) {
@@ -41,23 +78,26 @@ export default function RegisterPage() {
         onSubmit={handleSubmit}
         className="mx-auto max-w-xl space-y-4 rounded-2xl border border-neutral-100 bg-white p-6 shadow-sm"
       >
+        {error && <Alert variant="error">{error}</Alert>}
         <Input label="اسم الطالب" name="studentName" required />
-        <Input label="تاريخ الميلاد" name="birthDate" type="date" required />
+        {reg.showBirthDate && (
+          <Input label="تاريخ الميلاد" name="birthDate" type="date" required />
+        )}
         <Select
           label="المرحلة الدراسية"
           name="grade"
           required
           options={[
             { value: "", label: "اختر المرحلة" },
-            { value: "primary", label: "ابتدائي" },
-            { value: "middle", label: "إعدادي" },
-            { value: "high", label: "ثانوي" },
+            ...reg.gradeChoices,
           ]}
         />
         <Input label="اسم ولي الأمر" name="parentName" required />
         <Input label="رقم الهاتف" name="phone" type="tel" required />
         <Input label="البريد الإلكتروني" name="email" type="email" required />
-        <Textarea label="ملاحظات إضافية (اختياري)" name="notes" />
+        {reg.showNotes && (
+          <Textarea label="ملاحظات إضافية (اختياري)" name="notes" />
+        )}
         <Button type="submit" className="w-full" disabled={loading}>
           {loading ? "جاري الإرسال..." : "إرسال الطلب"}
         </Button>

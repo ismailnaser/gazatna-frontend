@@ -1,19 +1,27 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { LogIn, Menu, X } from "lucide-react";
+import { LayoutDashboard, LogIn, Menu, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/atoms/Button";
 import { Logo } from "@/components/atoms/Logo";
+import { useAuth } from "@/context/AuthContext";
 import { publicNavLinks } from "@/data/navigation";
+import { getDashboardPath, getStoredAuthUser } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 
 export function Navbar() {
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const pathname = usePathname();
+  const { user, loading } = useAuth();
+  const sessionUser = user ?? (loading ? getStoredAuthUser() : null);
+  const isLoggedIn = Boolean(sessionUser);
+  const authHref = isLoggedIn ? getDashboardPath(sessionUser!.role) : "/login";
+  const authLabel = isLoggedIn ? "لوحة التحكم" : "تسجيل الدخول";
+  const AuthIcon = isLoggedIn ? LayoutDashboard : LogIn;
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 0);
@@ -57,18 +65,18 @@ export function Navbar() {
 
         <div className="flex shrink-0 items-center gap-1.5 sm:gap-3">
           <Link
-            href="/login"
+            href={authHref}
             className="hidden items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold text-brand-black/80 transition-colors hover:text-brand-blue lg:flex"
           >
-            <LogIn className="h-4 w-4" />
-            تسجيل الدخول
+            <AuthIcon className="h-4 w-4" />
+            {authLabel}
           </Link>
           <Link
-            href="/login"
-            aria-label="تسجيل الدخول"
+            href={authHref}
+            aria-label={authLabel}
             className="flex h-9 w-9 items-center justify-center rounded-lg text-brand-black/80 transition-colors hover:bg-black/5 hover:text-brand-blue lg:hidden"
           >
-            <LogIn className="h-5 w-5" />
+            <AuthIcon className="h-5 w-5" />
           </Link>
 
           <Button

@@ -5,6 +5,7 @@ import { Badge } from "@/components/atoms/Badge";
 import { Button } from "@/components/atoms/Button";
 import { Card } from "@/components/atoms/Card";
 import { QuizForm } from "@/components/teacher/QuizForm";
+import { ConfirmDialog } from "@/components/molecules/ConfirmDialog";
 import { useAssignments } from "@/context/AssignmentsContext";
 import { formatDateTime } from "@/lib/quiz-timing";
 import type { Quiz, QuizQuestion } from "@/types";
@@ -31,6 +32,10 @@ export function QuizPanel({
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<Quiz | null>(null);
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  const confirmDeleteItem = items.find((quiz) => quiz.id === confirmDeleteId) ?? null;
 
   async function handleCreate(data: {
     title: string;
@@ -57,6 +62,17 @@ export function QuizPanel({
     if (!editing) return;
     await updateQuiz(editing.id, data);
     setEditing(null);
+  }
+
+  async function confirmDeleteQuiz() {
+    if (!confirmDeleteId) return;
+    setDeleting(true);
+    try {
+      await deleteQuiz(confirmDeleteId);
+      setConfirmDeleteId(null);
+    } finally {
+      setDeleting(false);
+    }
   }
 
   return (
@@ -136,9 +152,7 @@ export function QuizPanel({
                     <Button
                       variant="danger"
                       className="px-3 py-2"
-                      onClick={() => {
-                        if (confirm("هل تريد حذف هذا الاختبار؟")) deleteQuiz(quiz.id);
-                      }}
+                      onClick={() => setConfirmDeleteId(quiz.id)}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -176,6 +190,20 @@ export function QuizPanel({
           })}
         </div>
       )}
+
+      <ConfirmDialog
+        open={Boolean(confirmDeleteItem)}
+        title="تأكيد حذف الاختبار"
+        description={
+          <>
+            هل أنت متأكد من حذف الاختبار{" "}
+            <span className="font-semibold">{confirmDeleteItem?.title}</span>؟
+          </>
+        }
+        loading={deleting}
+        onCancel={() => setConfirmDeleteId(null)}
+        onConfirm={confirmDeleteQuiz}
+      />
     </div>
   );
 }

@@ -177,6 +177,7 @@ export const api = {
   me: () => apiFetch<unknown>("/auth/me/"),
 
   getNews: () => apiList<unknown>("/content/news/"),
+  getNewsItem: (id: string) => apiFetch<unknown>(`/content/news/${id}/`),
   getPrograms: () => apiList<unknown>("/content/programs/"),
   getActivities: () => apiList<unknown>("/content/activities/"),
   getAlumni: () => apiList<unknown>("/content/alumni/"),
@@ -186,17 +187,73 @@ export const api = {
   getTeachers: () => apiList<unknown>("/staff/teachers/"),
   getStats: () => apiList<unknown>("/content/stats/"),
 
+  getSiteSettings: () => apiFetch<unknown>("/site-settings/"),
+  getAdminSiteSettings: () => apiFetch<unknown>("/admin/site-settings/"),
+  updateAdminSiteSettings: (data: unknown) =>
+    apiFetch<unknown>("/admin/site-settings/", { method: "PATCH", body: JSON.stringify(data) }),
+
+  submitAdmissionApplication: (data: unknown) =>
+    apiFetch<unknown>("/admissions/", { method: "POST", body: JSON.stringify(data) }),
+  submitContactMessage: (data: unknown) =>
+    apiFetch<unknown>("/contact/messages/", { method: "POST", body: JSON.stringify(data) }),
+
+  getAdminAdmissions: (status?: string) =>
+    apiList<unknown>(status ? `/admin/admissions/?status=${encodeURIComponent(status)}` : "/admin/admissions/"),
+  approveAdminAdmission: (id: string, data: { studentNumber?: string; gradeLevel?: string; section?: string }) =>
+    apiFetch<unknown>(`/admin/admissions/${id}/approve/`, { method: "POST", body: JSON.stringify(data) }),
+
+  getAdminMessages: (status?: string) =>
+    apiList<unknown>(status ? `/admin/messages/?status=${encodeURIComponent(status)}` : "/admin/messages/"),
+  archiveAdminMessage: (id: string) =>
+    apiFetch<unknown>(`/admin/messages/${id}/archive/`, { method: "POST", body: JSON.stringify({}) }),
+
+  getAdminBlockedStudents: () => apiList<unknown>("/admin/notifications/blocked-students/"),
+  getAdminInactiveStudents: () => apiList<unknown>("/admin/notifications/inactive-students/"),
+
   getAdminAnalytics: () => apiFetch<unknown>("/admin/analytics/"),
+  getAdminAnalyticsDetails: (params: { gradeLevel?: string; from?: string; to?: string } = {}) => {
+    const qs = new URLSearchParams();
+    if (params.gradeLevel) qs.set("gradeLevel", params.gradeLevel);
+    if (params.from) qs.set("from", params.from);
+    if (params.to) qs.set("to", params.to);
+    const suffix = qs.toString() ? `?${qs.toString()}` : "";
+    return apiFetch<unknown>(`/admin/analytics/details/${suffix}`);
+  },
   getAdminStudents: () => apiList<unknown>("/admin/students/"),
-  createAdminStudent: (data: unknown) =>
-    apiFetch<unknown>("/admin/students/", { method: "POST", body: JSON.stringify(data) }),
+  getAdminStudent: (id: string) => apiFetch<unknown>(`/admin/students/${id}/`),
+  createAdminStudent: (data: FormData | Record<string, unknown>) =>
+    data instanceof FormData
+      ? apiFormFetch<unknown>("/admin/students/", data, "POST")
+      : apiFetch<unknown>("/admin/students/", { method: "POST", body: JSON.stringify(data) }),
   updateAdminStudent: (id: string, data: unknown) =>
     apiFetch<unknown>(`/admin/students/${id}/`, { method: "PATCH", body: JSON.stringify(data) }),
+  resetAdminStudentPassword: (id: string) =>
+    apiFetch<unknown>(`/admin/students/${id}/reset-password/`, { method: "POST" }),
+  getAdminStudentDocuments: (id: string) => apiList<unknown>(`/admin/students/${id}/documents/`),
+  addAdminStudentDocuments: (id: string, data: FormData) =>
+    apiFormFetch<unknown>(`/admin/students/${id}/documents/`, data, "POST"),
+  updateAdminStudentDocument: (studentId: string, docId: string, data: FormData) =>
+    apiFormFetch<unknown>(`/admin/students/${studentId}/documents/${docId}/`, data, "PATCH"),
+  deleteAdminStudentDocument: (studentId: string, docId: string) =>
+    apiFetch<void>(`/admin/students/${studentId}/documents/${docId}/`, { method: "DELETE" }),
+  getAdminGrades: () => apiList<unknown>("/admin/grades/"),
+  createAdminGrade: (data: unknown) =>
+    apiFetch<unknown>("/admin/grades/", { method: "POST", body: JSON.stringify(data) }),
+  updateAdminGrade: (id: string, data: unknown) =>
+    apiFetch<unknown>(`/admin/grades/${id}/`, { method: "PATCH", body: JSON.stringify(data) }),
+  deleteAdminGrade: (id: string) =>
+    apiFetch<void>(`/admin/grades/${id}/`, { method: "DELETE" }),
   getAdminClasses: () => apiList<unknown>("/admin/classes/"),
   createAdminClass: (data: unknown) =>
     apiFetch<unknown>("/admin/classes/", { method: "POST", body: JSON.stringify(data) }),
   deleteAdminClass: (id: string) =>
     apiFetch<void>(`/admin/classes/${id}/`, { method: "DELETE" }),
+  getAdminClassDetail: (id: string) => apiFetch<unknown>(`/admin/classes/${id}/detail/`),
+  updateAdminClassHomeroom: (id: string, homeroomTeacherId: string | null) =>
+    apiFetch<unknown>(`/admin/classes/${id}/detail/`, {
+      method: "PATCH",
+      body: JSON.stringify({ homeroomTeacherId }),
+    }),
   getAdminSubjects: () => apiList<unknown>("/admin/subjects/"),
   createAdminSubject: (data: unknown) =>
     apiFetch<unknown>("/admin/subjects/", { method: "POST", body: JSON.stringify(data) }),
@@ -214,6 +271,8 @@ export const api = {
           method: "PATCH",
           body: JSON.stringify(data),
         }),
+  resetAdminTeacherPassword: (id: string) =>
+    apiFetch<unknown>(`/admin/teachers/${id}/reset-password/`, { method: "POST" }),
   deleteAdminTeacher: (id: string) =>
     apiFetch<void>(`/admin/teachers/${id}/`, { method: "DELETE" }),
   getAdminUsers: () => apiList<unknown>("/auth/users/"),
@@ -223,11 +282,25 @@ export const api = {
     apiFetch<unknown>(`/auth/users/${id}/`, { method: "PATCH", body: JSON.stringify(data) }),
   deleteAdminUser: (id: string) =>
     apiFetch<void>(`/auth/users/${id}/`, { method: "DELETE" }),
+  resetAdminUserPassword: (id: string) =>
+    apiFetch<unknown>(`/auth/users/${id}/reset-password/`, { method: "POST" }),
   getAdminFinance: () => apiList<unknown>("/admin/finance/payments/"),
-  updateAdminPayment: (id: string, status: string) =>
+  updateAdminPayment: (id: string, data: { status?: string; amount?: number }) =>
     apiFetch<unknown>(`/admin/finance/payments/${id}/`, {
       method: "PATCH",
-      body: JSON.stringify({ status }),
+      body: JSON.stringify(data),
+    }),
+  getAdminFeePlans: () => apiList<unknown>("/admin/finance/plans/"),
+  createAdminFeePlan: (data: unknown) =>
+    apiFetch<unknown>("/admin/finance/plans/", { method: "POST", body: JSON.stringify(data) }),
+  updateAdminFeePlan: (id: string, data: unknown) =>
+    apiFetch<unknown>(`/admin/finance/plans/${id}/`, { method: "PATCH", body: JSON.stringify(data) }),
+  deleteAdminFeePlan: (id: string) =>
+    apiFetch<void>(`/admin/finance/plans/${id}/`, { method: "DELETE" }),
+  grantStudentFeeAccess: (studentId: string, days: number) =>
+    apiFetch<{ accessOverrideUntil: string }>(`/admin/students/${studentId}/fee-access/`, {
+      method: "POST",
+      body: JSON.stringify({ days }),
     }),
   getAdminNews: () => apiList<unknown>("/admin/content/news/"),
   createAdminNews: (data: FormData | Record<string, unknown>) =>
@@ -274,7 +347,10 @@ export const api = {
   getParentChild: () => apiFetch<unknown>("/parent/child/"),
   getParentStudent: () => apiFetch<unknown>("/parent/student/"),
   getParentGrades: () => apiList<unknown>("/parent/grades/"),
-  getParentFees: () => apiFetch<{ student: unknown; notices: unknown[] }>("/parent/fees/"),
+  getParentFees: () =>
+    apiFetch<{ student: unknown; notices: unknown[]; feeStatus: unknown }>("/parent/fees/"),
+  submitParentPayment: (data: FormData) =>
+    apiFormFetch<unknown>("/parent/fees/", data, "POST"),
   getParentHomework: () => apiList<unknown>("/parent/homework/"),
   getParentQuizzes: () => apiList<unknown>("/parent/quizzes/"),
   submitParentHomework: (homeworkId: string, content: string) =>

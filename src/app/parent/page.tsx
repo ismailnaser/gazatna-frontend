@@ -4,9 +4,11 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Card } from "@/components/atoms/Card";
 import { PageHeader } from "@/components/molecules/PageHeader";
+import { InstallmentNotifications } from "@/components/parent/InstallmentPanel";
 import { useAuth } from "@/context/AuthContext";
 import { api } from "@/lib/api";
 import type { Homework, ParentChild, Quiz, Student } from "@/types";
+import type { FeeInstallmentNotification } from "@/types/finance";
 import {
   Bell,
   BookOpen,
@@ -26,6 +28,7 @@ export default function ParentDashboard() {
   const [loading, setLoading] = useState(true);
 
   const [alerts, setAlerts] = useState<Array<{ id: string; text: string; type: string }>>([]);
+  const [installmentNotices, setInstallmentNotices] = useState<FeeInstallmentNotification[]>([]);
 
   useEffect(() => {
     if (!user) return;
@@ -58,8 +61,37 @@ export default function ParentDashboard() {
         })
         .catch(() => {}),
       api.getParentAlerts()
-        .then((data) => setAlerts(data as Array<{ id: string; text: string; type: string }>))
-        .catch(() => setAlerts([])),
+        .then((data) => {
+          const rows = data as Array<Record<string, unknown>>;
+          setAlerts(
+            rows
+              .filter((a) => a.type !== "installment")
+              .map((a) => ({
+                id: String(a.id),
+                text: String(a.text),
+                type: String(a.type),
+              }))
+          );
+          setInstallmentNotices(
+            rows
+              .filter((a) => a.type === "installment")
+              .map((a) => ({
+                id: String(a.id),
+                order: Number(a.order),
+                amount: Number(a.amount),
+                remaining: Number(a.remaining),
+                startDate: String(a.startDate),
+                endDate: String(a.endDate),
+                status: a.status as FeeInstallmentNotification["status"],
+                type: "installment" as const,
+                text: String(a.text),
+              }))
+          );
+        })
+        .catch(() => {
+          setAlerts([]);
+          setInstallmentNotices([]);
+        }),
     ]).finally(() => setLoading(false));
   }, [user]);
 
@@ -126,8 +158,18 @@ export default function ParentDashboard() {
         <Bell className="h-5 w-5 text-amber-500" />
         تنبيهات سريعة
       </h2>
+
+      {installmentNotices.length > 0 && (
+        <div className="mb-6">
+          <InstallmentNotifications notifications={installmentNotices} />
+          <Link href="/parent/fees" className="mt-2 inline-block text-sm font-semibold text-p-green hover:underline">
+            الذهاب إلى صفحة المالية
+          </Link>
+        </div>
+      )}
+
       <div className="space-y-3">
-        {alerts.length === 0 ? (
+        {alerts.length === 0 && installmentNotices.length === 0 ? (
           <Card className="text-center text-neutral-500">لا توجد تنبيهات.</Card>
         ) : (
           alerts.map((alert) => (

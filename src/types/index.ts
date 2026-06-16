@@ -8,7 +8,7 @@ export type AuthUser = {
   role: UserRole;
 };
 
-export type PaymentStatus = "pending" | "approved" | "rejected";
+export type PaymentStatus = "unpaid" | "pending" | "approved" | "rejected";
 
 export type Student = {
   id: string;
@@ -32,9 +32,11 @@ export type Grade = {
 export type PaymentNotice = {
   id: string;
   date: string;
+  declaredAmount?: number;
   amount: number;
   status: PaymentStatus;
   note?: string;
+  receiptUrl?: string | null;
 };
 
 export type TeacherClass = {
@@ -120,23 +122,18 @@ export type AdminStudent = {
   username?: string;
   generatedPassword?: string;
   paymentStatus: PaymentStatus;
-  documents: string[];
+  documents: Array<{ id?: string | null; name: string; url?: string | null }>;
 };
 
 export type AccountCredentials = {
   name: string;
   username: string;
   password: string;
-  role: "teacher" | "parent";
+  role: "teacher" | "parent" | "admin";
 };
 
-export type FinanceNotice = {
-  id: string;
-  studentName: string;
-  amount: number;
-  status: PaymentStatus;
-  date: string;
-};
+export type { FeePlan, FeeStatus, FeeInstallmentItem, FinanceNotice } from "@/types/finance";
+export { mapFeePlan, mapFinanceNotice, mapFeeStatus } from "@/types/finance";
 
 export type NewsItem = {
   id: string;

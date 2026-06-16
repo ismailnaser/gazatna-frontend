@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { motion } from "framer-motion";
 import { Newspaper } from "lucide-react";
 import { FeaturedNewsCard } from "@/components/molecules/FeaturedNewsCard";
@@ -56,12 +57,12 @@ export function LatestNews() {
     <section className="bg-white py-16 sm:py-20">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mb-6 flex justify-end">
-          <a
-            href="#"
+          <Link
+            href="/news"
             className="text-sm font-semibold text-[var(--brand-magenta)] hover:underline"
           >
             عرض الكل
-          </a>
+          </Link>
         </div>
 
         <div className="flex flex-col gap-8 lg:grid lg:grid-cols-5 lg:gap-10">

@@ -2,7 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 import { getDashboardNav } from "@/data/navigation";
+import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { isAdminRole } from "@/lib/adminRoles";
 import type { UserRole } from "@/types";
@@ -10,12 +12,25 @@ import type { UserRole } from "@/types";
 export function DashboardSidebar({ role }: { role: UserRole }) {
   const pathname = usePathname();
   const items = getDashboardNav(role);
+  const [pendingPayments, setPendingPayments] = useState(0);
 
   const uniqueItems = items.filter(
     (item, index, arr) => arr.findIndex((i) => i.href === item.href) === index
   );
 
   const basePath = isAdminRole(role) ? "/admin" : `/${role}`;
+
+  useEffect(() => {
+    if (!isAdminRole(role)) return;
+    api
+      .getAdminAnalytics()
+      .then((res) => {
+        const row = res as Record<string, unknown>;
+        const count = Number(row.pendingPayments ?? 0);
+        setPendingPayments(Number.isFinite(count) ? count : 0);
+      })
+      .catch(() => setPendingPayments(0));
+  }, [role, pathname]);
 
   return (
     <aside className="hidden w-56 shrink-0 border-s border-neutral-200 bg-white md:block">
@@ -25,6 +40,7 @@ export function DashboardSidebar({ role }: { role: UserRole }) {
             pathname === item.href ||
             (item.href !== basePath && pathname.startsWith(item.href));
           const Icon = item.icon;
+          const showFinanceBadge = isAdminRole(role) && item.href === "/admin/finance" && pendingPayments > 0;
           return (
             <Link
               key={item.href + item.label}
@@ -37,7 +53,14 @@ export function DashboardSidebar({ role }: { role: UserRole }) {
               )}
             >
               <Icon className="h-5 w-5" />
-              {item.label}
+              <span className="flex flex-1 items-center justify-between gap-2">
+                <span>{item.label}</span>
+                {showFinanceBadge && (
+                  <span className="inline-flex min-w-6 items-center justify-center rounded-full bg-p-red px-2 py-0.5 text-xs font-bold text-white">
+                    {pendingPayments}
+                  </span>
+                )}
+              </span>
             </Link>
           );
         })}

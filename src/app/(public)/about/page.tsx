@@ -12,12 +12,23 @@ type SchoolValue = { id: string; title: string; desc: string; num: string };
 export default function AboutPage() {
   const [values, setValues] = useState<SchoolValue[]>([]);
   const [loading, setLoading] = useState(true);
+  const [aboutSettings, setAboutSettings] = useState({
+    description: "مدرسة غَزتنا مؤسسة تعليمية رقمية تهدف إلى تمكين الطلاب من خلال بيئة تعلم آمنة، مبتكرة، ومتصلة بالمستقبل.",
+    vision: "أن نكون المدرسة الرقمية الرائدة في فلسطين، نُخرّج جيلاً قادراً على المنافسة عالمياً مع الحفاظ على الهوية والقيم الوطنية.",
+    mission: "توفير تعليم عالي الجودة يجمع بين المناهج الأكاديمية والمهارات الرقمية، مع دعم شامل لأولياء الأمور والمجتمع.",
+  });
 
   useEffect(() => {
     api.getSchoolValues()
       .then((data) => setValues(data as SchoolValue[]))
       .catch(() => setValues([]))
       .finally(() => setLoading(false));
+    api.getSiteSettings()
+      .then((res) => {
+        const s = res as { about?: typeof aboutSettings };
+        if (s.about) setAboutSettings((prev) => ({ ...prev, ...s.about }));
+      })
+      .catch(() => {});
   }, []);
 
   return (
@@ -25,7 +36,7 @@ export default function AboutPage() {
       <PremiumPageHero
         badge="هويتنا التعليمية"
         title="من نحن"
-        description="مدرسة غَزتنا مؤسسة تعليمية رقمية تهدف إلى تمكين الطلاب من خلال بيئة تعلم آمنة، مبتكرة، ومتصلة بالمستقبل."
+        description={aboutSettings.description}
       />
 
       <div className="mb-16 grid gap-8 lg:grid-cols-2">
@@ -41,10 +52,7 @@ export default function AboutPage() {
             gradient="from-brand-blue/10 via-white to-white"
             icon={<Target className="h-7 w-7 text-brand-blue" />}
           >
-            <p>
-              أن نكون المدرسة الرقمية الرائدة في فلسطين، نُخرّج جيلاً قادراً على
-              المنافسة عالمياً مع الحفاظ على الهوية والقيم الوطنية.
-            </p>
+            <p>{aboutSettings.vision}</p>
           </PremiumPanel>
         </motion.div>
 
@@ -60,10 +68,7 @@ export default function AboutPage() {
             gradient="from-brand-orange/10 via-white to-brand-yellow/10"
             icon={<Heart className="h-7 w-7 text-brand-orange" />}
           >
-            <p>
-              توفير تعليم عالي الجودة يجمع بين المناهج الأكاديمية والمهارات
-              الرقمية، مع دعم شامل لأولياء الأمور والمجتمع.
-            </p>
+            <p>{aboutSettings.mission}</p>
           </PremiumPanel>
         </motion.div>
       </div>

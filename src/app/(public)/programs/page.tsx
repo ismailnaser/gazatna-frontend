@@ -1,32 +1,31 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { BookOpen, CheckCircle2, GraduationCap } from "lucide-react";
+import { BookOpen, GraduationCap } from "lucide-react";
 import { PremiumPageHero } from "@/components/molecules/PremiumPageHero";
 import { PublicPage } from "@/components/molecules/PublicPage";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
-type Program = {
-  id: string;
-  title: string;
-  grades: string;
-  desc: string;
-  features: string[];
-  accent: string;
-};
+type ProgramRow = { grade: string; description: string };
 
 export default function ProgramsPage() {
-  const [items, setItems] = useState<Program[]>([]);
+  const [items, setItems] = useState<ProgramRow[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    api.getPrograms()
-      .then((data) => setItems(data as Program[]))
+    api
+      .getSiteSettings()
+      .then((data) => {
+        const s = data as { programs?: ProgramRow[] };
+        setItems(Array.isArray(s.programs) ? s.programs : []);
+      })
       .catch(() => setItems([]))
       .finally(() => setLoading(false));
   }, []);
+
+  const visible = useMemo(() => items, [items]);
 
   return (
     <PublicPage title="" description="">
@@ -47,12 +46,14 @@ export default function ProgramsPage() {
       <div className="space-y-8">
         {loading ? (
           <p className="text-center text-neutral-500">جاري التحميل...</p>
-        ) : items.length === 0 ? (
-          <p className="text-center text-neutral-500">لا توجد برامج معروضة حالياً.</p>
+        ) : visible.length === 0 ? (
+          <p className="text-center text-neutral-500">
+            لا توجد صفوف دراسية مُعرّفة بعد.
+          </p>
         ) : (
-          items.map((p, i) => (
+          visible.map((p, i) => (
           <motion.article
-            key={p.id}
+            key={p.grade}
             initial={{ opacity: 0, y: 28 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -62,7 +63,7 @@ export default function ProgramsPage() {
             <div
               className={cn(
                 "flex flex-col gap-6 bg-gradient-to-l p-6 sm:flex-row sm:items-center sm:justify-between sm:p-8 lg:p-10",
-                p.accent
+                "from-brand-blue/90 via-brand-blue to-brand-blue/80"
               )}
             >
               <div className="flex items-center gap-4">
@@ -70,8 +71,8 @@ export default function ProgramsPage() {
                   {String(i + 1).padStart(2, "0")}
                 </span>
                 <div>
-                  <h3 className="text-xl font-bold text-white sm:text-2xl">{p.title}</h3>
-                  <p className="mt-1 text-sm font-semibold text-white/90">{p.grades}</p>
+                  <h3 className="text-xl font-bold text-white sm:text-2xl">برنامج الصف {p.grade}</h3>
+                  <p className="mt-1 text-sm font-semibold text-white/90">{p.grade}</p>
                 </div>
               </div>
               <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-sm">
@@ -79,17 +80,11 @@ export default function ProgramsPage() {
               </div>
             </div>
 
-            <div className="grid gap-8 p-6 sm:p-8 lg:grid-cols-[1.4fr_1fr] lg:p-10">
-              <p className="text-base leading-relaxed text-neutral-700">{p.desc}</p>
-              <ul className="space-y-3">
-                {p.features.map((f) => (
-                  <li key={f} className="flex items-center gap-3 text-sm font-medium text-neutral-800">
-                    <CheckCircle2 className="h-5 w-5 shrink-0 text-brand-blue" />
-                    {f}
-                  </li>
-                ))}
-              </ul>
-            </div>
+            {(p.description || "").trim() && (
+              <div className="p-6 sm:p-8 lg:p-10">
+                <p className="text-base leading-relaxed text-neutral-700">{p.description}</p>
+              </div>
+            )}
           </motion.article>
           ))
         )}

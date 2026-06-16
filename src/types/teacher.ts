@@ -20,6 +20,14 @@ export type SchoolClass = {
   gradeLevel?: string;
   section?: string;
   studentCount: number;
+  homeroomTeacherId?: string | null;
+  homeroomTeacherName?: string | null;
+};
+
+export type Grade = {
+  id: string;
+  name: string;
+  sectionsCount: number;
 };
 
 export type Subject = {

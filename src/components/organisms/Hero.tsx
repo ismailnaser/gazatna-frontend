@@ -1,10 +1,43 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import { Button } from "@/components/atoms/Button";
+import { api } from "@/lib/api";
+
+type HeroSettings = {
+  welcome: string;
+  schoolName: string;
+  tagline: string;
+  description: string;
+  ctaPrimary: string;
+  ctaSecondary: string;
+};
+
+const DEFAULT: HeroSettings = {
+  welcome: "مرحبا بكم في",
+  schoolName: "مدرسة غَزتنا",
+  tagline: "التعليم الرقمي بمعايير عالمية",
+  description:
+    "من أصالة الانتماء إلى ريادة المستقبل — منصة تعليمية حديثة تجمع بين التميز الأكاديمي والتقنية، لبناء جيل واعٍ ومبدع في غزة",
+  ctaPrimary: "ابدأ رحلتك",
+  ctaSecondary: "تعرّف علينا",
+};
 
 export function Hero() {
+  const [hero, setHero] = useState<HeroSettings>(DEFAULT);
+
+  useEffect(() => {
+    api
+      .getSiteSettings()
+      .then((res) => {
+        const s = res as { hero?: Partial<HeroSettings> };
+        if (s.hero) setHero({ ...DEFAULT, ...s.hero });
+      })
+      .catch(() => {});
+  }, []);
+
   return (
     <section id="الرئيسية" className="relative min-h-dvh overflow-hidden">
       <Image
@@ -26,9 +59,7 @@ export function Hero() {
           transition={{ duration: 0.6 }}
           className="max-w-2xl text-start"
         >
-          <p className="text-xl font-medium text-brand-black sm:text-2xl">
-            مرحبا بكم في
-          </p>
+          <p className="text-xl font-medium text-brand-black sm:text-2xl">{hero.welcome}</p>
 
           <h1 className="mt-3 text-5xl font-extrabold leading-tight sm:text-6xl lg:text-7xl">
             <span className="text-brand-black">مدرسة </span>
@@ -37,12 +68,11 @@ export function Hero() {
           <div className="mt-4 h-1.5 w-56 rounded-full bg-brand-blue sm:w-72" />
 
           <p className="mt-8 text-2xl font-bold text-brand-black sm:text-3xl lg:text-4xl">
-            التعليم الرقمي بمعايير عالمية
+            {hero.tagline}
           </p>
 
           <p className="mt-6 max-w-xl text-lg leading-relaxed text-brand-black/80 sm:text-xl">
-            من أصالة الانتماء إلى ريادة المستقبل — منصة تعليمية حديثة تجمع بين
-            التميز الأكاديمي والتقنية، لبناء جيل واعٍ ومبدع في غزة
+            {hero.description}
           </p>
 
           <div className="mt-10 flex flex-wrap items-center gap-4">
@@ -51,14 +81,14 @@ export function Hero() {
               variant="accent"
               className="min-w-[180px] rounded-full px-10 py-3.5 text-base shadow-md"
             >
-              ابدأ رحلتك
+              {hero.ctaPrimary}
             </Button>
             <Button
               href="/about"
               variant="outline"
               className="min-w-[180px] rounded-full border-brand-blue bg-white/90 px-10 py-3.5 text-base backdrop-blur-sm"
             >
-              تعرّف علينا
+              {hero.ctaSecondary}
             </Button>
           </div>
         </motion.div>

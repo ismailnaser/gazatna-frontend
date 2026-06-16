@@ -7,12 +7,13 @@ import { Button } from "@/components/atoms/Button";
 import { Card } from "@/components/atoms/Card";
 import { Input } from "@/components/atoms/Input";
 import { Select } from "@/components/atoms/Select";
+import { MultiSelect } from "@/components/atoms/MultiSelect";
 import { PageHeader } from "@/components/molecules/PageHeader";
 import { StatusBadge } from "@/components/molecules/StatusBadge";
 import { useSchool } from "@/context/SchoolContext";
 import { api } from "@/lib/api";
 import type { AccountCredentials, AdminStudent, PaymentStatus } from "@/types";
-import { FileText, Plus, Search, X } from "lucide-react";
+import { FileText, KeyRound, Plus, Search, X } from "lucide-react";
 
 function formatClassLabel(grade: string, section?: string) {
   return section ? `${grade} - ${section}` : grade;
@@ -29,7 +30,13 @@ function mapStudent(s: Record<string, unknown>): AdminStudent {
     username: s.username ? String(s.username) : undefined,
     generatedPassword: s.generatedPassword ? String(s.generatedPassword) : undefined,
     paymentStatus: s.paymentStatus as AdminStudent["paymentStatus"],
-    documents: (s.documents as string[]) ?? [],
+    documents: Array.isArray(s.documents)
+      ? (s.documents as Array<Record<string, unknown>>).map((d) => ({
+          id: d.id ? String(d.id) : null,
+          name: String(d.name ?? ""),
+          url: d.url ? String(d.url) : null,
+        }))
+      : [],
   };
 }
 
@@ -38,12 +45,18 @@ export default function AdminStudentsPage() {
   const [students, setStudents] = useState<AdminStudent[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<AdminStudent | null>(null);
-  const [viewDocs, setViewDocs] = useState<string[] | null>(null);
+  const [viewDocs, setViewDocs] = useState<AdminStudent["documents"] | null>(null);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [credentials, setCredentials] = useState<AccountCredentials | null>(null);
+  const [resetCredentials, setResetCredentials] = useState<AccountCredentials | null>(null);
+  const [confirmReset, setConfirmReset] = useState<AdminStudent | null>(null);
+  const [resettingPassword, setResettingPassword] = useState(false);
+  const [docRows, setDocRows] = useState<Array<{ name: string; file: File | null }>>([
+    { name: "", file: null },
+  ]);
   const [search, setSearch] = useState("");
-  const [classFilter, setClassFilter] = useState("");
+  const [classFilters, setClassFilters] = useState<string[]>([]);
   const [paymentFilter, setPaymentFilter] = useState("");
   const [documentsFilter, setDocumentsFilter] = useState("");
   const formRef = useRef<HTMLDivElement>(null);
@@ -61,18 +74,17 @@ export default function AdminStudentsPage() {
   );
 
   const filterClassOptions = useMemo(
-    () => [
-      { value: "", label: "جميع الفصول" },
-      ...classes.map((cls) => ({
+    () =>
+      classes.map((cls) => ({
         value: cls.id,
         label: cls.name,
       })),
-    ],
     [classes]
   );
 
   const paymentFilterOptions = [
     { value: "", label: "جميع حالات الدفع" },
+    { value: "unpaid", label: "لم يتم الدفع" },
     { value: "pending", label: "قيد المراجعة" },
     { value: "approved", label: "تم القبول" },
     { value: "rejected", label: "مرفوض" },
@@ -85,23 +97,28 @@ export default function AdminStudentsPage() {
   ];
 
   const hasActiveFilters = Boolean(
-    search.trim() || classFilter || paymentFilter || documentsFilter
+    search.trim() || classFilters.length > 0 || paymentFilter || documentsFilter
   );
+
+  function studentMatchesClassFilter(student: AdminStudent, classFilter: string) {
+    if (student.classId) {
+      return student.classId === classFilter;
+    }
+    const selectedClass = classes.find((cls) => cls.id === classFilter);
+    if (!selectedClass) return false;
+    const gradeMatch =
+      student.grade === selectedClass.gradeLevel ||
+      selectedClass.name.startsWith(student.grade);
+    return gradeMatch && student.section === selectedClass.section;
+  }
 
   const filteredStudents = useMemo(() => {
     const query = search.trim().toLowerCase();
 
     return students.filter((student) => {
-      if (classFilter) {
-        if (student.classId) {
-          if (student.classId !== classFilter) return false;
-        } else {
-          const selectedClass = classes.find((cls) => cls.id === classFilter);
-          if (!selectedClass) return false;
-          const gradeMatch =
-            student.grade === selectedClass.gradeLevel ||
-            selectedClass.name.startsWith(student.grade);
-          if (!gradeMatch || student.section !== selectedClass.section) return false;
+      if (classFilters.length > 0) {
+        if (!classFilters.some((classFilter) => studentMatchesClassFilter(student, classFilter))) {
+          return false;
         }
       }
 
@@ -125,11 +142,11 @@ export default function AdminStudentsPage() {
 
       return true;
     });
-  }, [students, search, classFilter, paymentFilter, documentsFilter, classes]);
+  }, [students, search, classFilters, paymentFilter, documentsFilter, classes]);
 
   function clearFilters() {
     setSearch("");
-    setClassFilter("");
+    setClassFilters([]);
     setPaymentFilter("");
     setDocumentsFilter("");
   }
@@ -167,6 +184,26 @@ export default function AdminStudentsPage() {
     setShowForm(false);
     setEditing(null);
     setError("");
+    setDocRows([{ name: "", file: null }]);
+  }
+
+  async function resetStudentPassword(student: AdminStudent) {
+    setResettingPassword(true);
+    setError("");
+    try {
+      const data = (await api.resetAdminStudentPassword(student.id)) as Record<string, unknown>;
+      setResetCredentials({
+        name: String(data.name ?? student.name),
+        username: String(data.username ?? student.username ?? ""),
+        password: String(data.password ?? ""),
+        role: "parent",
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "فشل إعادة تعيين كلمة المرور");
+    } finally {
+      setResettingPassword(false);
+      setConfirmReset(null);
+    }
   }
 
   function resolveClassId(form: FormData, fallbackClassId?: string) {
@@ -201,13 +238,17 @@ export default function AdminStudentsPage() {
     }
 
     try {
-      const created = (await api.createAdminStudent({
-        name: form.get("name"),
-        classId: Number(classId),
-        grade: selectedClass.gradeLevel ?? selectedClass.name,
-        section: selectedClass.section,
-        documents: ["شهادة ميلاد"],
-      })) as Record<string, unknown>;
+      const payload = new FormData();
+      payload.append("name", String(form.get("name") ?? ""));
+      payload.append("classId", String(Number(classId)));
+      for (const row of docRows) {
+        if (!row.file) continue;
+        const nm = row.name.trim();
+        if (!nm) continue;
+        payload.append("documentNames", nm);
+        payload.append("documentFiles", row.file);
+      }
+      const created = (await api.createAdminStudent(payload)) as Record<string, unknown>;
 
       const mapped = mapStudent(created);
       setStudents((prev) => [mapped, ...prev]);
@@ -284,7 +325,7 @@ export default function AdminStudentsPage() {
           <Card className="mb-6">
             <div className="mb-4 flex items-center justify-between">
               <h3 className="font-bold text-p-black">طالب جديد</h3>
-              <button type="button" onClick={closeForm}>
+              <button type="button" onClick={closeForm} aria-label="إغلاق">
                 <X className="h-5 w-5 text-p-black/40" />
               </button>
             </div>
@@ -315,10 +356,85 @@ export default function AdminStudentsPage() {
               )}
 
               <div className="sm:col-span-2">
-                <label className="mb-1.5 block text-sm font-medium text-p-black/80">
-                  الوثائق (شهادة ميلاد، هوية)
-                </label>
-                <input type="file" multiple className="text-sm" />
+                <div className="mb-2 flex items-center justify-between gap-3">
+                  <label className="text-sm font-medium text-p-black/80">إضافة وثيقة</label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="px-3 py-1.5 text-xs"
+                    onClick={() => setDocRows((prev) => [...prev, { name: "", file: null }])}
+                  >
+                    إضافة وثيقة
+                  </Button>
+                </div>
+                <div className="space-y-3">
+                  {docRows.map((row, idx) => (
+                    <div
+                      key={idx}
+                      className="grid gap-3 rounded-xl border border-neutral-100 bg-neutral-50 p-3 sm:grid-cols-3"
+                    >
+                      <Input
+                        label="اسم الوثيقة"
+                        value={row.name}
+                        onChange={(e) =>
+                          setDocRows((prev) =>
+                            prev.map((r, i) => (i === idx ? { ...r, name: e.target.value } : r))
+                          )
+                        }
+                        placeholder="مثال: شهادة ميلاد"
+                      />
+                      <div className="sm:col-span-2 flex flex-col gap-1.5">
+                        <label className="text-sm font-medium text-p-black/80">الملف</label>
+                        <div className="flex flex-wrap items-center gap-3">
+                          <label className="flex cursor-pointer items-center gap-2 rounded-xl border border-dashed border-neutral-300 bg-white px-4 py-2.5 text-sm text-neutral-600 hover:border-p-green hover:text-p-green">
+                            <span className="font-semibold">اختيار ملف</span>
+                            <input
+                              type="file"
+                              className="sr-only"
+                              aria-label="ملف الوثيقة"
+                              onChange={(e) => {
+                                const f = e.target.files?.[0] ?? null;
+                                setDocRows((prev) =>
+                                  prev.map((r, i) => (i === idx ? { ...r, file: f } : r))
+                                );
+                              }}
+                            />
+                          </label>
+                          <span className="text-xs text-neutral-500">
+                            {row.file ? row.file.name : "لم يتم اختيار ملف بعد"}
+                          </span>
+                          {row.file && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              className="px-2 py-1 text-xs text-neutral-500 hover:text-p-red"
+                              onClick={() =>
+                                setDocRows((prev) =>
+                                  prev.map((r, i) => (i === idx ? { ...r, file: null } : r))
+                                )
+                              }
+                            >
+                              إزالة الملف
+                            </Button>
+                          )}
+                        </div>
+                        <div className="flex justify-end">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            className="px-2 py-1 text-xs text-p-red hover:text-p-red"
+                            onClick={() =>
+                              setDocRows((prev) => prev.filter((_, i) => i !== idx))
+                            }
+                            disabled={docRows.length <= 1}
+                          >
+                            حذف
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
               <Button type="submit" disabled={submitting || classes.length === 0}>
                 {submitting ? "جاري الحفظ..." : "حفظ"}
@@ -331,7 +447,7 @@ export default function AdminStudentsPage() {
           <Card className="mb-6">
             <div className="mb-4 flex items-center justify-between">
               <h3 className="font-bold text-p-black">تعديل الطالب</h3>
-              <button type="button" onClick={closeForm}>
+              <button type="button" onClick={closeForm} aria-label="إغلاق">
                 <X className="h-5 w-5 text-p-black/40" />
               </button>
             </div>
@@ -405,19 +521,44 @@ export default function AdminStudentsPage() {
         </Alert>
       )}
 
+      {resetCredentials && (
+        <Alert variant="success" className="mb-6">
+          <p className="mb-2 font-semibold">تم إعادة تعيين كلمة المرور — احفظ بيانات الدخول:</p>
+          <p>الاسم: {resetCredentials.name}</p>
+          <p>
+            اسم المستخدم: <span dir="ltr">{resetCredentials.username}</span>
+          </p>
+          <p>
+            كلمة المرور الجديدة: <span dir="ltr">{resetCredentials.password}</span>
+          </p>
+        </Alert>
+      )}
+
       {viewDocs && (
         <Card className="mb-6">
           <div className="mb-2 flex items-center justify-between">
             <h3 className="font-bold text-p-black">الوثائق المرفقة</h3>
-            <button type="button" onClick={() => setViewDocs(null)}>
+            <button type="button" onClick={() => setViewDocs(null)} aria-label="إغلاق">
               <X className="h-5 w-5 text-p-black/40" />
             </button>
           </div>
-          <ul className="space-y-1 text-sm text-p-black/60">
-            {viewDocs.map((d) => (
-              <li key={d} className="flex items-center gap-2">
-                <FileText className="h-4 w-4 text-p-green" />
-                {d}
+          <ul className="space-y-1 text-sm text-p-black/70">
+            {viewDocs.map((d, i) => (
+              <li key={d.id ?? `${d.name}-${i}`} className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <FileText className="h-4 w-4 text-p-green" />
+                  {d.name}
+                </div>
+                {d.url ? (
+                  <a
+                    href={d.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-xs text-brand-blue hover:underline"
+                  >
+                    فتح
+                  </a>
+                ) : null}
               </li>
             ))}
           </ul>
@@ -427,7 +568,7 @@ export default function AdminStudentsPage() {
       <Card className="mb-4">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div className="relative sm:col-span-2 lg:col-span-4">
-            <Search className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-p-black/40" />
+            <Search className="absolute inset-s-3 top-1/2 h-4 w-4 -translate-y-1/2 text-p-black/40" />
             <input
               type="text"
               placeholder="بحث بالاسم، رقم الطالب، أو اسم المستخدم..."
@@ -436,12 +577,12 @@ export default function AdminStudentsPage() {
               className="w-full rounded-xl border border-neutral-200 py-2.5 pe-4 ps-10 text-sm focus:border-p-green focus:outline-none focus:ring-2 focus:ring-p-green/20"
             />
           </div>
-          <Select
+          <MultiSelect
             label="الفصل والشعبة"
-            name="classFilter"
             options={filterClassOptions}
-            value={classFilter}
-            onChange={(e) => setClassFilter(e.target.value)}
+            value={classFilters}
+            onChange={setClassFilters}
+            placeholder="جميع الفصول"
           />
           <Select
             label="حالة الدفع"
@@ -475,6 +616,7 @@ export default function AdminStudentsPage() {
           <thead>
             <tr className="border-b border-neutral-100 bg-p-cream text-p-black/60">
               <th className="px-4 py-3 text-start font-semibold">الاسم</th>
+              <th className="px-4 py-3 text-start font-semibold">رقم الطالب</th>
               <th className="px-4 py-3 text-start font-semibold">الفصل والشعبة</th>
               <th className="px-4 py-3 text-start font-semibold">حالة الدفع</th>
               <th className="px-4 py-3 text-start font-semibold">إجراءات</th>
@@ -483,7 +625,7 @@ export default function AdminStudentsPage() {
           <tbody>
             {filteredStudents.length === 0 ? (
               <tr>
-                <td colSpan={4} className="px-4 py-8 text-center text-p-black/50">
+                <td colSpan={5} className="px-4 py-8 text-center text-p-black/50">
                   {hasActiveFilters ? "لا توجد نتائج مطابقة للبحث أو الفلاتر" : "لا يوجد طلاب مسجّلون"}
                 </td>
               </tr>
@@ -491,6 +633,9 @@ export default function AdminStudentsPage() {
               filteredStudents.map((s) => (
               <tr key={s.id} className="border-b border-neutral-50">
                 <td className="px-4 py-3 font-medium text-p-black">{s.name}</td>
+                <td className="px-4 py-3 text-p-black/70" dir="ltr">
+                  {s.studentNumber ?? "-"}
+                </td>
                 <td className="px-4 py-3">
                   {formatClassLabel(s.grade, s.section)}
                 </td>
@@ -507,12 +652,19 @@ export default function AdminStudentsPage() {
                       تعديل
                     </Button>
                     <Button
-                      variant="ghost"
+                      variant="outline"
                       className="px-3 py-1.5 text-xs"
-                      onClick={() => setViewDocs(s.documents)}
+                      onClick={() => setConfirmReset(s)}
+                    >
+                      <KeyRound className="h-3.5 w-3.5" />
+                      كلمة السر
+                    </Button>
+                    <Link
+                      href={`/admin/students/${s.id}/documents`}
+                      className="inline-flex items-center justify-center rounded-xl px-3 py-1.5 text-xs font-semibold text-brand-blue hover:bg-brand-blue/10"
                     >
                       الوثائق
-                    </Button>
+                    </Link>
                   </div>
                 </td>
               </tr>
@@ -521,6 +673,37 @@ export default function AdminStudentsPage() {
           </tbody>
         </table>
       </Card>
+
+      {confirmReset && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setConfirmReset(null)}
+        >
+          <div className="w-full max-w-lg" onClick={(e) => e.stopPropagation()}>
+            <Card className="p-6">
+              <p className="text-base font-bold text-p-black">تأكيد تغيير كلمة المرور</p>
+              <p className="mt-2 text-sm text-p-black/70">
+                هل أنت متأكد من إعادة تعيين كلمة مرور الطالب{" "}
+                <span className="font-semibold">{confirmReset.name}</span>؟ سيتم إنشاء كلمة مرور جديدة وعرضها مرة واحدة.
+              </p>
+              <div className="mt-6 flex flex-wrap justify-end gap-3">
+                <Button type="button" variant="outline" onClick={() => setConfirmReset(null)}>
+                  إلغاء
+                </Button>
+                <Button
+                  type="button"
+                  onClick={() => resetStudentPassword(confirmReset)}
+                  disabled={resettingPassword}
+                >
+                  {resettingPassword ? "جاري التغيير..." : "تأكيد"}
+                </Button>
+              </div>
+            </Card>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

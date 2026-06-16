@@ -1,13 +1,21 @@
 export type NewsCategory = "أخبار" | "فعاليات" | "إنجازات";
 
+export type NewsImageItem = {
+  id: string | null;
+  url: string;
+  isCover: boolean;
+};
+
 export type PublicNewsItem = {
   id: string;
   title: string;
   description: string;
+  body?: string;
   date: string;
   category: NewsCategory;
   gradient: string;
   imageUrl?: string | null;
+  images?: NewsImageItem[];
   featured?: boolean;
 };
 
@@ -17,19 +25,38 @@ export const categoryGradients: Record<NewsCategory, string> = {
   إنجازات: "from-[var(--brand-magenta)] to-[var(--brand-magenta-light)]",
 };
 
+function mapNewsImages(raw: unknown): NewsImageItem[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((img) => {
+      const row = img as Record<string, unknown>;
+      const url = row.url ? String(row.url) : "";
+      if (!url) return null;
+      return {
+        id: row.id ? String(row.id) : null,
+        url,
+        isCover: Boolean(row.isCover),
+      };
+    })
+    .filter((img): img is NewsImageItem => img !== null);
+}
+
 export function mapNewsItem(
   n: Record<string, unknown>,
   gradients: Record<NewsCategory, string> = categoryGradients
 ): PublicNewsItem {
   const category = n.category as NewsCategory;
+  const images = mapNewsImages(n.images);
   return {
     id: String(n.id),
     title: String(n.title),
     description: String(n.description),
+    body: n.body ? String(n.body) : String(n.description),
     date: String(n.date),
     category,
     gradient: String(n.gradient || gradients[category]),
-    imageUrl: n.imageUrl ? String(n.imageUrl) : null,
+    imageUrl: n.imageUrl ? String(n.imageUrl) : images.find((img) => img.isCover)?.url ?? images[0]?.url ?? null,
+    images,
     featured: Boolean(n.featured),
   };
 }
@@ -40,6 +67,12 @@ export type NewsFilter = (typeof newsFilters)[number];
 export type AdminAnalytics = {
   avgGrade: number;
   feesCollected: number;
+  pendingPayments?: number;
+  inactiveStudents?: number;
+  blockedStudents?: number;
+  overdueInstallments?: number;
+  pendingAdmissions?: number;
+  newMessages?: number;
   urgentTasks: Array<{ id: string; text: string; type: string }>;
   gradeChart: Array<{ label: string; value: number }>;
   feesChart: Array<{ label: string; value: number }>;
@@ -48,6 +81,12 @@ export type AdminAnalytics = {
 export const emptyAdminAnalytics: AdminAnalytics = {
   avgGrade: 0,
   feesCollected: 0,
+  pendingPayments: 0,
+  inactiveStudents: 0,
+  blockedStudents: 0,
+  overdueInstallments: 0,
+  pendingAdmissions: 0,
+  newMessages: 0,
   urgentTasks: [],
   gradeChart: [],
   feesChart: [],

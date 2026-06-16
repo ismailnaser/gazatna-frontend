@@ -7,6 +7,7 @@ import { Card } from "@/components/atoms/Card";
 import { PageHeader } from "@/components/molecules/PageHeader";
 import { api } from "@/lib/api";
 import type { Grade, Student } from "@/types";
+import { mapFeeStatus } from "@/types/finance";
 import { Download, Lock } from "lucide-react";
 
 export default function ParentGradesPage() {
@@ -14,10 +15,21 @@ export default function ParentGradesPage() {
   const [grades, setGrades] = useState<Grade[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const [blocked, setBlocked] = useState(false);
+  const [blockMessage, setBlockMessage] = useState("");
+
   useEffect(() => {
     Promise.all([
       api.getParentStudent().then((s) => setStudent(s as Student)).catch(() => setStudent(null)),
       api.getParentGrades().then((g) => setGrades(g as Grade[])).catch(() => setGrades([])),
+      api.getParentFees().then((data) => {
+        const status = mapFeeStatus(data.feeStatus as Record<string, unknown>);
+        setBlocked(Boolean(status?.blocked));
+        setBlockMessage(status?.message ?? "");
+      }).catch(() => {
+        setBlocked(false);
+        setBlockMessage("");
+      }),
     ]).finally(() => setLoading(false));
   }, []);
 
@@ -33,14 +45,14 @@ export default function ParentGradesPage() {
     );
   }
 
-  if (!student.feesPaid) {
+  if (blocked) {
     return (
       <div>
         <PageHeader title="النتائج" description="سجل درجات الطالب" />
         <Alert variant="warning">
           <div className="flex items-center gap-2">
             <Lock className="h-5 w-5" />
-            <p>عذراً، يرجى تسديد الرسوم لعرض العلامات.</p>
+            <p>{blockMessage || "عذراً، يرجى تسديد القسط المستحق لعرض العلامات."}</p>
           </div>
         </Alert>
       </div>
