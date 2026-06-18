@@ -8,6 +8,7 @@ import { Button } from "@/components/atoms/Button";
 import { Card } from "@/components/atoms/Card";
 import { Input } from "@/components/atoms/Input";
 import { PageHeader } from "@/components/molecules/PageHeader";
+import { FileUploadField } from "@/components/molecules/FileUploadField";
 import { api } from "@/lib/api";
 import { FileText, Pencil, Plus, Trash2, X } from "lucide-react";
 
@@ -197,45 +198,38 @@ export default function AdminStudentDocumentsPage() {
                 placeholder="مثال: شهادة ميلاد"
               />
               <div className="sm:col-span-2 flex flex-col gap-1.5">
-                <label className="text-sm font-medium text-p-black/80">الملف</label>
-                <div className="flex flex-wrap items-center gap-3">
-                  <label className="flex cursor-pointer items-center gap-2 rounded-xl border border-dashed border-neutral-300 bg-white px-4 py-2.5 text-sm text-neutral-600 hover:border-p-green hover:text-p-green">
-                    <span className="font-semibold">اختيار ملف</span>
-                    <input
-                      type="file"
-                      className="sr-only"
-                      aria-label="ملف الوثيقة"
-                      onChange={(e) => {
-                        const f = e.target.files?.[0] ?? null;
-                        setRows((prev) => prev.map((r, i) => (i === idx ? { ...r, file: f } : r)));
-                      }}
-                    />
-                  </label>
-                  <span className="text-xs text-neutral-500">
-                    {row.file ? row.file.name : "لم يتم اختيار ملف بعد"}
-                  </span>
-                  {row.file && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      className="px-2 py-1 text-xs text-neutral-500 hover:text-p-red"
-                      onClick={() => setRows((prev) => prev.map((r, i) => (i === idx ? { ...r, file: null } : r)))}
-                    >
-                      إزالة الملف
-                    </Button>
-                  )}
-                  {rows.length > 1 && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      className="px-2 py-1 text-xs text-p-red hover:text-p-red"
-                      onClick={() => setRows((prev) => prev.filter((_, i) => i !== idx))}
-                    >
-                      <X className="h-4 w-4" />
-                      حذف
-                    </Button>
-                  )}
-                </div>
+                <FileUploadField
+                  compact
+                  label="الملف"
+                  preset="any"
+                  buttonText="اضغط لاختيار ملف"
+                  selectedFileName={row.file?.name ?? null}
+                  onChange={(files) => {
+                    const f = files?.[0] ?? null;
+                    setRows((prev) => prev.map((r, i) => (i === idx ? { ...r, file: f } : r)));
+                  }}
+                />
+                {row.file && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className="w-fit px-2 py-1 text-xs text-neutral-500 hover:text-p-red"
+                    onClick={() => setRows((prev) => prev.map((r, i) => (i === idx ? { ...r, file: null } : r)))}
+                  >
+                    إزالة الملف
+                  </Button>
+                )}
+                {rows.length > 1 && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className="w-fit px-2 py-1 text-xs text-p-red hover:text-p-red"
+                    onClick={() => setRows((prev) => prev.filter((_, i) => i !== idx))}
+                  >
+                    <X className="h-4 w-4" />
+                    حذف
+                  </Button>
+                )}
               </div>
             </div>
           ))}
@@ -326,25 +320,14 @@ export default function AdminStudentDocumentsPage() {
                   onChange={(e) => setEditName(e.target.value)}
                   required
                 />
-                <div>
-                  <label className="mb-1.5 block text-sm font-medium text-p-black/80">
-                    استبدال الملف (اختياري)
-                  </label>
-                  <div className="flex flex-wrap items-center gap-3">
-                    <label className="flex cursor-pointer items-center gap-2 rounded-xl border border-dashed border-neutral-300 bg-white px-4 py-2.5 text-sm text-neutral-600 hover:border-p-green hover:text-p-green">
-                      <span className="font-semibold">اختيار ملف جديد</span>
-                      <input
-                        type="file"
-                        className="sr-only"
-                        aria-label="ملف الوثيقة الجديد"
-                        onChange={(e) => setEditFile(e.target.files?.[0] ?? null)}
-                      />
-                    </label>
-                    <span className="text-xs text-neutral-500">
-                      {editFile ? editFile.name : "اتركه فارغاً للإبقاء على الملف الحالي"}
-                    </span>
-                  </div>
-                </div>
+                <FileUploadField
+                  label="استبدال الملف (اختياري)"
+                  preset="any"
+                  buttonText="اضغط لاختيار ملف جديد"
+                  hint="اتركه فارغاً للإبقاء على الملف الحالي"
+                  selectedFileName={editFile?.name ?? null}
+                  onChange={(files) => setEditFile(files?.[0] ?? null)}
+                />
               </div>
               <div className="mt-6 flex flex-wrap justify-end gap-3">
                 <Button type="button" variant="outline" onClick={closeEdit}>

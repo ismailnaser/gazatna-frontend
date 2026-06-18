@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { BookOpen, GraduationCap } from "lucide-react";
 import { PremiumPageHero } from "@/components/molecules/PremiumPageHero";
+import { ExpandableText } from "@/components/molecules/ExpandableText";
 import { PublicPage } from "@/components/molecules/PublicPage";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
@@ -13,6 +14,18 @@ type ProgramRow = { grade: string; description: string };
 export default function ProgramsPage() {
   const [items, setItems] = useState<ProgramRow[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const headerGradients = useMemo(
+    () => [
+      "from-brand-blue/90 via-brand-blue to-brand-blue/80", // Royal
+      "from-amber-400 via-yellow-500 to-orange-500", // Golden
+      "from-orange-500 via-rose-500 to-fuchsia-600", // Vibrant
+      "from-sky-400 via-cyan-500 to-blue-500", // Sky
+      "from-emerald-500 via-green-600 to-teal-600", // Green
+      "from-fuchsia-500 via-[var(--brand-magenta)] to-rose-500", // Magenta
+    ],
+    []
+  );
 
   useEffect(() => {
     api
@@ -62,8 +75,8 @@ export default function ProgramsPage() {
           >
             <div
               className={cn(
-                "flex flex-col gap-6 bg-gradient-to-l p-6 sm:flex-row sm:items-center sm:justify-between sm:p-8 lg:p-10",
-                "from-brand-blue/90 via-brand-blue to-brand-blue/80"
+                "flex flex-col gap-6 bg-linear-to-l p-6 sm:flex-row sm:items-center sm:justify-between sm:p-8 lg:p-10",
+                headerGradients[i % headerGradients.length]
               )}
             >
               <div className="flex items-center gap-4">
@@ -82,7 +95,9 @@ export default function ProgramsPage() {
 
             {(p.description || "").trim() && (
               <div className="p-6 sm:p-8 lg:p-10">
-                <p className="text-base leading-relaxed text-neutral-700">{p.description}</p>
+                <ExpandableText maxLines={4} className="text-base text-neutral-700">
+                  {p.description}
+                </ExpandableText>
               </div>
             )}
           </motion.article>

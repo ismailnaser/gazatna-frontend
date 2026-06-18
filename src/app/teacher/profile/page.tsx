@@ -30,6 +30,7 @@ export default function TeacherProfilePage() {
       classes={getTeacherClassesByUserId(user!.id)}
       backHref="/teacher"
       backLabel="العودة لفصولي"
+      getClassHref={(cls) => `/teacher/classes/${cls.id}`}
     />
   );
 }

@@ -1,24 +1,127 @@
 "use client";
 
-import { useState } from "react";
+import Link from "next/link";
+import { useMemo, useState } from "react";
 import { Alert } from "@/components/atoms/Alert";
-import { Badge } from "@/components/atoms/Badge";
 import { Button } from "@/components/atoms/Button";
 import { Card } from "@/components/atoms/Card";
 import { Input } from "@/components/atoms/Input";
+import { Select } from "@/components/atoms/Select";
+import { AdminSubjectsGrid } from "@/components/admin/AdminSubjectsGrid";
 import { ConfirmDialog } from "@/components/molecules/ConfirmDialog";
 import { PageHeader } from "@/components/molecules/PageHeader";
 import { useSchool } from "@/context/SchoolContext";
-import { Plus, Trash2 } from "lucide-react";
+import { teacherCountLabel, teachersAvailableForSubject, teachersForSubject } from "@/lib/adminSubjects";
+import { cn } from "@/lib/utils";
+import type { Subject } from "@/types/teacher";
+import { BookMarked, BookOpen, ChevronLeft, Plus, Save, Search, UserPlus, Users, X } from "lucide-react";
+
+function StatChip({
+  icon: Icon,
+  label,
+  value,
+  tone = "default",
+}: {
+  icon: typeof BookOpen;
+  label: string;
+  value: string | number;
+  tone?: "default" | "success";
+}) {
+  const tones = {
+    default: "bg-brand-blue/10 text-brand-blue",
+    success: "bg-p-green/10 text-p-green",
+  };
+
+  return (
+    <div className="flex min-w-0 flex-1 items-center gap-2.5 rounded-xl border border-neutral-100 bg-white px-3 py-2.5 shadow-sm">
+      <span
+        className={cn(
+          "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg",
+          tones[tone]
+        )}
+      >
+        <Icon className="h-4 w-4" />
+      </span>
+      <div className="min-w-0">
+        <p className="text-[11px] text-p-black/45">{label}</p>
+        <p className="text-sm font-bold text-p-black">{value}</p>
+      </div>
+    </div>
+  );
+}
 
 export default function AdminSubjectsPage() {
-  const { subjects, addSubject, removeSubject } = useSchool();
+  const { subjects, teachers, addSubject, updateSubject, removeSubject, updateTeacher } =
+    useSchool();
   const [error, setError] = useState("");
   const [adding, setAdding] = useState(false);
-  const [confirmDeleteSubjectId, setConfirmDeleteSubjectId] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [confirmDeleteSubject, setConfirmDeleteSubject] = useState<Subject | null>(null);
   const [deletingSubject, setDeletingSubject] = useState(false);
+  const [editingSubject, setEditingSubject] = useState<Subject | null>(null);
+  const [viewSubject, setViewSubject] = useState<Subject | null>(null);
+  const [assignTeacherId, setAssignTeacherId] = useState("");
+  const [assigningTeacher, setAssigningTeacher] = useState(false);
+  const [editName, setEditName] = useState("");
+  const [savingEdit, setSavingEdit] = useState(false);
 
-  const confirmDeleteSubject = subjects.find((s) => s.id === confirmDeleteSubjectId) ?? null;
+  const subjectsWithCounts = useMemo(
+    () =>
+      subjects.map((subject) => ({
+        ...subject,
+        teacherCount: teachers.filter((teacher) => teacher.subjectIds?.includes(subject.id))
+          .length,
+      })),
+    [subjects, teachers]
+  );
+
+  const viewSubjectTeachers = useMemo(
+    () => (viewSubject ? teachersForSubject(teachers, viewSubject.id) : []),
+    [teachers, viewSubject]
+  );
+
+  const availableTeachersForView = useMemo(
+    () => (viewSubject ? teachersAvailableForSubject(teachers, viewSubject.id) : []),
+    [teachers, viewSubject]
+  );
+
+  const totalTeachers = useMemo(
+    () => subjectsWithCounts.reduce((sum, subject) => sum + subject.teacherCount, 0),
+    [subjectsWithCounts]
+  );
+
+  const filteredSubjects = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return subjectsWithCounts;
+    return subjectsWithCounts.filter((subject) => subject.name.toLowerCase().includes(q));
+  }, [subjectsWithCounts, search]);
+
+  function openSubjectView(subject: Subject) {
+    setViewSubject(subject);
+    setAssignTeacherId("");
+    setError("");
+  }
+
+  async function assignTeacherToSubject() {
+    if (!viewSubject || !assignTeacherId) return;
+
+    const teacher = teachers.find((item) => item.id === assignTeacherId);
+    if (!teacher) return;
+
+    const nextSubjectIds = [...(teacher.subjectIds ?? []), viewSubject.id];
+    if (nextSubjectIds.length === (teacher.subjectIds ?? []).length) return;
+
+    setAssigningTeacher(true);
+    setError("");
+    try {
+      await updateTeacher(assignTeacherId, { subjectIds: nextSubjectIds });
+      setAssignTeacherId("");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "فشل إسناد المعلم للمادة");
+    } finally {
+      setAssigningTeacher(false);
+    }
+  }
 
   async function handleAdd(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -44,13 +147,44 @@ export default function AdminSubjectsPage() {
     }
   }
 
+  function openEdit(subject: Subject) {
+    setEditingSubject(subject);
+    setEditName(subject.name);
+    setError("");
+  }
+
+  async function saveEdit() {
+    if (!editingSubject) return;
+    const name = editName.trim();
+    if (!name) {
+      setError("اسم المادة مطلوب");
+      return;
+    }
+    if (name === editingSubject.name) {
+      setEditingSubject(null);
+      return;
+    }
+
+    setSavingEdit(true);
+    setError("");
+    try {
+      await updateSubject(editingSubject.id, name);
+      setEditingSubject(null);
+      setEditName("");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "فشل تعديل المادة");
+    } finally {
+      setSavingEdit(false);
+    }
+  }
+
   async function confirmDeleteSubjectAction() {
-    if (!confirmDeleteSubjectId) return;
+    if (!confirmDeleteSubject) return;
     setDeletingSubject(true);
     setError("");
     try {
-      await removeSubject(confirmDeleteSubjectId);
-      setConfirmDeleteSubjectId(null);
+      await removeSubject(confirmDeleteSubject.id);
+      setConfirmDeleteSubject(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "فشل حذف المادة");
     } finally {
@@ -62,14 +196,27 @@ export default function AdminSubjectsPage() {
     <div>
       <PageHeader
         title="إدارة المواد الدراسية"
-        description="أضف المواد الدراسية ثم اسندها للمعلمين عند إضافتهم"
+        description="أضف المواد وعدّل أسماءها، ثم اسندها للمعلمين عند إضافتهم"
         className="mb-6"
       />
 
-      <Card className="mb-6">
-        <h3 className="mb-4 font-bold text-[#1a1a1a]">إضافة مادة جديدة</h3>
+      <div className="mb-4 grid gap-2 sm:grid-cols-2">
+        <StatChip icon={BookMarked} label="عدد المواد" value={subjectsWithCounts.length} />
+        <StatChip
+          icon={Users}
+          label="إسنادات المعلمين"
+          value={totalTeachers}
+          tone="success"
+        />
+      </div>
 
-        {error && !confirmDeleteSubjectId && (
+      <Card className="mb-6 p-4 sm:p-5">
+        <h3 className="mb-1 font-bold text-p-black">إضافة مادة جديدة</h3>
+        <p className="mb-4 text-sm text-p-black/55">
+          مثال: الرياضيات، الفيزياء، اللغة العربية
+        </p>
+
+        {error && !confirmDeleteSubject && !editingSubject && (
           <Alert variant="error" className="mb-4">
             {error}
           </Alert>
@@ -77,61 +224,259 @@ export default function AdminSubjectsPage() {
 
         <form onSubmit={handleAdd} className="flex flex-col gap-4 sm:flex-row sm:items-end">
           <Input label="اسم المادة" name="name" required className="flex-1" />
-          <Button type="submit" disabled={adding}>
+          <Button type="submit" disabled={adding} className="sm:min-w-[150px]">
             <Plus className="h-4 w-4" />
             {adding ? "جاري الإضافة..." : "إضافة مادة"}
           </Button>
         </form>
       </Card>
 
-      <Card>
-        <h3 className="mb-4 font-bold text-[#1a1a1a]">المواد المسجّلة</h3>
-
-        {subjects.length === 0 ? (
-          <p className="rounded-xl bg-neutral-50 px-4 py-8 text-center text-sm text-neutral-500">
-            لا توجد مواد بعد. أضف مادة من النموذج أعلاه.
-          </p>
-        ) : (
-          <div className="flex flex-wrap gap-2">
-            {subjects.map((subject) => (
-              <div
-                key={subject.id}
-                className="inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-white px-3 py-1.5 text-sm"
-              >
-                <span>{subject.name}</span>
-                <Badge variant="default">{subject.teacherCount} معلم</Badge>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setError("");
-                    setConfirmDeleteSubjectId(subject.id);
-                  }}
-                  className="text-neutral-400 hover:text-p-red"
-                  aria-label={`حذف ${subject.name}`}
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                </button>
-              </div>
-            ))}
+      <Card className="p-4 sm:p-5">
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h3 className="font-bold text-p-black">المواد المسجّلة</h3>
+            <p className="mt-1 text-sm text-p-black/55">
+              {subjectsWithCounts.length === 0
+                ? "لا توجد مواد بعد"
+                : `${subjectsWithCounts.length} مادة — ${teacherCountLabel(totalTeachers)} مرتبطون`}
+            </p>
           </div>
-        )}
+          <div className="relative w-full sm:max-w-xs">
+            <Search className="pointer-events-none absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-p-black/35" />
+            <input
+              type="search"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="بحث باسم المادة..."
+              className="w-full rounded-xl border border-neutral-200 py-2.5 pe-3 ps-9 text-sm outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20"
+            />
+          </div>
+        </div>
+
+        <AdminSubjectsGrid
+          subjects={filteredSubjects}
+          hasActiveFilters={Boolean(search.trim())}
+          onView={openSubjectView}
+          onAssign={openSubjectView}
+          onEdit={openEdit}
+          onDelete={(subject) => {
+            setError("");
+            setConfirmDeleteSubject(subject);
+          }}
+        />
       </Card>
+
+      {viewSubject && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          role="dialog"
+          aria-modal="true"
+          onClick={() => {
+            setViewSubject(null);
+            setAssignTeacherId("");
+          }}
+        >
+          <div
+            className="w-full max-w-lg rounded-2xl bg-white p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-4 flex items-start justify-between gap-3">
+              <div>
+                <h3 className="text-lg font-bold text-p-black">معلمو المادة</h3>
+                <p className="mt-1 text-sm font-semibold text-brand-blue">{viewSubject.name}</p>
+                <p className="mt-1 text-xs text-p-black/50">
+                  {teacherCountLabel(viewSubjectTeachers.length)}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setViewSubject(null);
+                  setAssignTeacherId("");
+                }}
+                aria-label="إغلاق"
+                className="rounded-full p-1 text-p-black/40 hover:bg-neutral-100 hover:text-p-black"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {error && (
+              <Alert variant="error" className="mb-4">
+                {error}
+              </Alert>
+            )}
+
+            {viewSubjectTeachers.length === 0 ? (
+              <div className="rounded-xl border border-dashed border-neutral-200 bg-neutral-50 px-4 py-6 text-center">
+                <p className="text-sm font-medium text-p-black/70">
+                  لا يوجد معلمون مسندون لهذه المادة بعد.
+                </p>
+              </div>
+            ) : (
+              <ul className="max-h-[min(18rem,50vh)] space-y-2 overflow-y-auto">
+                {viewSubjectTeachers.map((teacher) => (
+                  <li key={teacher.id}>
+                    <Link
+                      href={`/admin/teachers/${teacher.id}`}
+                      className="flex items-center justify-between gap-3 rounded-xl border border-neutral-100 px-3 py-3 transition-colors hover:border-brand-blue/20 hover:bg-brand-blue/5"
+                      onClick={() => setViewSubject(null)}
+                    >
+                      <div className="min-w-0">
+                        <p className="font-semibold text-p-black">{teacher.name}</p>
+                        {teacher.experience ? (
+                          <p className="mt-0.5 truncate text-xs text-p-black/50">
+                            {teacher.experience}
+                          </p>
+                        ) : null}
+                      </div>
+                      <ChevronLeft className="h-4 w-4 shrink-0 text-p-black/35" />
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            <div className="mt-5 rounded-xl border border-neutral-100 bg-neutral-50/80 p-4">
+              <h4 className="mb-3 flex items-center gap-2 text-sm font-bold text-p-black">
+                <UserPlus className="h-4 w-4 text-brand-blue" />
+                إسناد معلم جديد للمادة
+              </h4>
+
+              {teachers.length === 0 ? (
+                <p className="text-sm text-p-black/60">
+                  لا يوجد معلمون في النظام.{" "}
+                  <Link href="/admin/teachers" className="font-semibold text-brand-blue hover:underline">
+                    أضف معلماً أولاً
+                  </Link>
+                </p>
+              ) : availableTeachersForView.length === 0 ? (
+                <p className="text-sm text-p-black/60">
+                  جميع المعلمين مسندون لهذه المادة بالفعل.
+                </p>
+              ) : (
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+                  <Select
+                    label="اختر المعلم"
+                    value={assignTeacherId}
+                    onChange={(e) => setAssignTeacherId(e.target.value)}
+                    className="flex-1"
+                    options={[
+                      { value: "", label: "اختر معلماً..." },
+                      ...availableTeachersForView.map((teacher) => ({
+                        value: teacher.id,
+                        label: teacher.name,
+                      })),
+                    ]}
+                  />
+                  <Button
+                    type="button"
+                    onClick={assignTeacherToSubject}
+                    disabled={!assignTeacherId || assigningTeacher}
+                    className="sm:min-w-[140px]"
+                  >
+                    <UserPlus className="h-4 w-4" />
+                    {assigningTeacher ? "جاري الإسناد..." : "إسناد"}
+                  </Button>
+                </div>
+              )}
+            </div>
+
+            <div className="mt-5 flex justify-end">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setViewSubject(null);
+                  setAssignTeacherId("");
+                }}
+              >
+                إغلاق
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {editingSubject && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setEditingSubject(null)}
+        >
+          <div
+            className="w-full max-w-md rounded-2xl bg-white p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-4 flex items-start justify-between gap-3">
+              <div>
+                <h3 className="text-lg font-bold text-p-black">تعديل اسم المادة</h3>
+                <p className="mt-1 text-sm text-p-black/55">
+                  {editingSubject.teacherCount > 0
+                    ? `مرتبطة بـ ${teacherCountLabel(editingSubject.teacherCount)} — سيُحدَّث الاسم لديهم تلقائياً`
+                    : "لم تُسند لمعلمين بعد"}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditingSubject(null)}
+                aria-label="إغلاق"
+                className="rounded-full p-1 text-p-black/40 hover:bg-neutral-100 hover:text-p-black"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {error && (
+              <Alert variant="error" className="mb-4">
+                {error}
+              </Alert>
+            )}
+
+            <Input
+              label="اسم المادة"
+              value={editName}
+              onChange={(e) => setEditName(e.target.value)}
+              required
+              autoFocus
+            />
+
+            <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setEditingSubject(null)}
+                disabled={savingEdit}
+              >
+                إلغاء
+              </Button>
+              <Button type="button" onClick={saveEdit} disabled={savingEdit || !editName.trim()}>
+                <Save className="h-4 w-4" />
+                {savingEdit ? "جاري الحفظ..." : "حفظ التعديل"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <ConfirmDialog
         open={Boolean(confirmDeleteSubject)}
         title="تأكيد حذف المادة"
         description={
-          <>
-            هل أنت متأكد من حذف مادة{" "}
-            <span className="font-semibold">{confirmDeleteSubject?.name}</span>؟ لا يمكن التراجع عن
-            هذا الإجراء.
-          </>
+          confirmDeleteSubject ? (
+            <>
+              هل أنت متأكد من حذف مادة{" "}
+              <span className="font-semibold">{confirmDeleteSubject.name}</span>؟ لا يمكن التراجع عن
+              هذا الإجراء.
+            </>
+          ) : null
         }
         loading={deletingSubject}
         error={confirmDeleteSubject ? error : undefined}
         onCancel={() => {
           setError("");
-          setConfirmDeleteSubjectId(null);
+          setConfirmDeleteSubject(null);
         }}
         onConfirm={confirmDeleteSubjectAction}
       />

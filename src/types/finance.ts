@@ -63,6 +63,19 @@ export type FinanceNotice = {
   date: string;
   note?: string;
   receiptUrl?: string | null;
+  source?: "parent" | "manual";
+  reviewedByName?: string | null;
+};
+
+export type ManualPaymentLog = {
+  id: string;
+  studentId: string;
+  studentName: string;
+  studentNumber: string;
+  amount: number;
+  date: string;
+  note: string;
+  reviewedByName: string;
 };
 
 export function mapFeePlan(raw: Record<string, unknown>): FeePlan {
@@ -100,6 +113,21 @@ export function mapFinanceNotice(raw: Record<string, unknown>): FinanceNotice {
     date: String(raw.date),
     note: raw.note ? String(raw.note) : undefined,
     receiptUrl: raw.receiptUrl ? String(raw.receiptUrl) : null,
+    source: raw.source === "manual" ? "manual" : "parent",
+    reviewedByName: raw.reviewedByName ? String(raw.reviewedByName) : null,
+  };
+}
+
+export function mapManualPaymentLog(raw: Record<string, unknown>): ManualPaymentLog {
+  return {
+    id: String(raw.id),
+    studentId: String(raw.studentId),
+    studentName: String(raw.studentName),
+    studentNumber: String(raw.studentNumber ?? ""),
+    amount: Number(raw.amount),
+    date: String(raw.date),
+    note: String(raw.note ?? ""),
+    reviewedByName: String(raw.reviewedByName ?? "—"),
   };
 }
 

@@ -3,9 +3,17 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Card } from "@/components/atoms/Card";
+import { Input } from "@/components/atoms/Input";
 import { PageHeader } from "@/components/molecules/PageHeader";
 import { SimpleBarChart } from "@/components/molecules/SimpleBarChart";
+import { useAuth } from "@/context/AuthContext";
 import { api } from "@/lib/api";
+import {
+  canAccessAdminAnalyticsTab,
+  getAdminAnalyticsTabs,
+  isAdminRole,
+  type AdminAnalyticsTab,
+} from "@/lib/adminRoles";
 import type { Grade } from "@/types/teacher";
 import { cn } from "@/lib/utils";
 
@@ -16,14 +24,34 @@ type AnalyticsDetails = {
   feesChart: Array<{ label: string; value: number }>;
 };
 
-type Tab = "grades" | "fees";
-
 export default function AdminAnalyticsDetailsPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { user } = useAuth();
 
-  const initialTab = (searchParams.get("tab") as Tab | null) ?? "grades";
-  const [activeTab, setActiveTab] = useState<Tab>(initialTab);
+  const allowedTabs = useMemo(() => {
+    if (!user || !isAdminRole(user.role)) return [] as AdminAnalyticsTab[];
+    return getAdminAnalyticsTabs(user.role);
+  }, [user]);
+
+  const requestedTab = (searchParams.get("tab") as AdminAnalyticsTab | null) ?? allowedTabs[0] ?? "grades";
+  const activeTab = allowedTabs.includes(requestedTab) ? requestedTab : allowedTabs[0] ?? "grades";
+  const [activeTabState, setActiveTabState] = useState<AdminAnalyticsTab>(activeTab);
+
+  useEffect(() => {
+    setActiveTabState(activeTab);
+  }, [activeTab]);
+
+  useEffect(() => {
+    if (!user || !isAdminRole(user.role)) return;
+    if (allowedTabs.length === 0) {
+      router.replace("/admin");
+      return;
+    }
+    if (!allowedTabs.includes(requestedTab)) {
+      router.replace(`/admin/analytics?tab=${allowedTabs[0]}`);
+    }
+  }, [user, allowedTabs, requestedTab, router]);
 
   const [grades, setGrades] = useState<Grade[]>([]);
   const [loading, setLoading] = useState(true);
@@ -73,15 +101,16 @@ export default function AdminAnalyticsDetailsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  function switchTab(tab: Tab) {
-    setActiveTab(tab);
+  function switchTab(tab: AdminAnalyticsTab) {
+    if (!user || !isAdminRole(user.role) || !canAccessAdminAnalyticsTab(user.role, tab)) return;
+    setActiveTabState(tab);
     router.replace(`/admin/analytics?tab=${tab}`);
   }
 
-  const tabs: { id: Tab; label: string }[] = [
+  const tabs: { id: AdminAnalyticsTab; label: string }[] = [
     { id: "grades", label: "نسب النجاح" },
     { id: "fees", label: "تحصيل الرسوم" },
-  ];
+  ].filter((t) => user && isAdminRole(user.role) && canAccessAdminAnalyticsTab(user.role, t.id));
 
   return (
     <div>
@@ -99,7 +128,7 @@ export default function AdminAnalyticsDetailsPage() {
             onClick={() => switchTab(t.id)}
             className={cn(
               "px-4 py-2.5 text-sm font-semibold transition-colors",
-              activeTab === t.id
+              activeTabState === t.id
                 ? "border-b-2 border-p-green text-p-green"
                 : "text-p-black/50 hover:text-p-black"
             )}
@@ -131,33 +160,22 @@ export default function AdminAnalyticsDetailsPage() {
             </select>
           </div>
 
-          {activeTab === "fees" && (
+          {activeTabState === "fees" && (
             <>
-              <div className="flex flex-col gap-1.5">
-                <label htmlFor={fromId} className="text-sm font-medium text-p-black/80">
-                  من تاريخ
-                </label>
-                <input
-                  id={fromId}
-                  type="date"
-                  className="rounded-xl border border-neutral-200 bg-white px-4 py-2.5 text-sm text-p-black focus:border-p-green focus:outline-none focus:ring-2 focus:ring-p-green/20"
-                  value={from}
-                  onChange={(e) => setFrom(e.target.value)}
-                />
-              </div>
-
-              <div className="flex flex-col gap-1.5">
-                <label htmlFor={toId} className="text-sm font-medium text-p-black/80">
-                  إلى تاريخ
-                </label>
-                <input
-                  id={toId}
-                  type="date"
-                  className="rounded-xl border border-neutral-200 bg-white px-4 py-2.5 text-sm text-p-black focus:border-p-green focus:outline-none focus:ring-2 focus:ring-p-green/20"
-                  value={to}
-                  onChange={(e) => setTo(e.target.value)}
-                />
-              </div>
+              <Input
+                id={fromId}
+                label="من تاريخ"
+                type="date"
+                value={from}
+                onChange={(e) => setFrom(e.target.value)}
+              />
+              <Input
+                id={toId}
+                label="إلى تاريخ"
+                type="date"
+                value={to}
+                onChange={(e) => setTo(e.target.value)}
+              />
             </>
           )}
         </div>
@@ -189,7 +207,7 @@ export default function AdminAnalyticsDetailsPage() {
 
       {/* Summary tile */}
       <div className="mb-6">
-        {activeTab === "grades" ? (
+        {activeTabState === "grades" ? (
           <Card className="flex items-center gap-4">
             <div>
               <p className="text-sm text-p-black/50">متوسط الدرجات</p>

@@ -1,10 +1,12 @@
 ﻿import Link from "next/link";
 import { Card } from "@/components/atoms/Card";
+import { resolveMediaUrl } from "@/lib/media";
 import { cn } from "@/lib/utils";
 import type { TeacherProfile } from "@/types/teacher";
 
 export function TeacherCard({ teacher }: { teacher: TeacherProfile }) {
   const initial = teacher.name.replace(/^(د\.|أ\.|م\.)\s*/, "").charAt(0);
+  const imageSrc = resolveMediaUrl(teacher.imageUrl);
 
   return (
     <Link href={`/faculty/${teacher.id}`} className="block">
@@ -12,12 +14,12 @@ export function TeacherCard({ teacher }: { teacher: TeacherProfile }) {
         <div
           className={cn(
             "relative flex aspect-square w-full items-center justify-center overflow-hidden bg-gradient-to-br text-4xl font-bold text-white",
-            !teacher.imageUrl && teacher.imageGradient
+            !imageSrc && teacher.imageGradient
           )}
         >
-          {teacher.imageUrl ? (
+          {imageSrc ? (
             <img
-              src={teacher.imageUrl}
+              src={imageSrc}
               alt={teacher.name}
               className="absolute inset-0 h-full w-full object-cover"
             />

@@ -31,6 +31,7 @@ type SchoolContextValue = SchoolState & {
   addClass: (gradeLevel: string, section: string) => Promise<SchoolClass>;
   removeClass: (id: string) => Promise<void>;
   addSubject: (name: string) => Promise<Subject>;
+  updateSubject: (id: string, name: string) => Promise<Subject>;
   removeSubject: (id: string) => Promise<void>;
   refresh: () => Promise<void>;
 };
@@ -57,9 +58,24 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(async () => {
+    if (!user) {
+      try {
+        const teachersData = await api.getTeachers();
+        const teachers = teachersData as TeacherProfile[];
+        setCurrentTeacher(null);
+        setState({ teachers, assignments: buildAssignments(teachers) });
+      } catch {
+        setCurrentTeacher(null);
+        setState({ teachers: [], assignments: {} });
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+
     setLoading(true);
     try {
-      if (user?.role && isAdminRole(user.role)) {
+      if (isAdminRole(user.role)) {
         const [teachersData, classesData, subjectsData] = await Promise.all([
           api.getAdminTeachers(),
           api.getAdminClasses(),
@@ -70,18 +86,27 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
         setState({ teachers, assignments: buildAssignments(teachers) });
         setClasses(classesData as SchoolClass[]);
         setSubjects(subjectsData as Subject[]);
-      } else if (user?.role === "teacher") {
-        const [classesData, profile] = await Promise.all([
+      } else if (user.role === "teacher") {
+        const [classesResult, profileResult] = await Promise.allSettled([
           api.getTeacherClasses(),
           api.getTeacherProfile(),
         ]);
-        const teacher = profile as TeacherProfile;
-        setClasses(classesData as SchoolClass[]);
+        const classesData =
+          classesResult.status === "fulfilled" ? (classesResult.value as SchoolClass[]) : [];
+        const teacher =
+          profileResult.status === "fulfilled" ? (profileResult.value as TeacherProfile) : null;
+        setClasses(classesData);
         setCurrentTeacher(teacher);
-        setState({
-          teachers: [teacher],
-          assignments: buildAssignments([teacher]),
-        });
+        setState(
+          teacher
+            ? { teachers: [teacher], assignments: buildAssignments([teacher]) }
+            : { teachers: [], assignments: {} }
+        );
+      } else if (user.role === "parent") {
+        setCurrentTeacher(null);
+        setState({ teachers: [], assignments: {} });
+        setClasses([]);
+        setSubjects([]);
       } else {
         const teachersData = await api.getTeachers();
         const teachers = teachersData as TeacherProfile[];
@@ -112,10 +137,10 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
 
   const getTeacherClassesByUserId = useCallback(
     (userId: string) => {
-      if (user?.role === "teacher" && user.id === userId) {
+      if (user?.role === "teacher") {
         return classes;
       }
-      const teacher = state.teachers.find((t) => t.userId === userId);
+      const teacher = state.teachers.find((t) => String(t.userId) === String(userId));
       if (!teacher) return [];
       return getTeacherClasses(teacher.id);
     },
@@ -136,12 +161,13 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
   }, [state.teachers]);
 
   const addTeacher = useCallback(async (teacher: Omit<TeacherProfile, "id">, image?: File) => {
+    const classIds = (teacher.classIds ?? []).map(Number);
     const base = {
       name: teacher.name,
       experience: teacher.experience,
       bio: teacher.bio,
       imageGradient: teacher.imageGradient,
-      classIds: [] as number[],
+      classIds,
     };
 
     let created: TeacherProfile;
@@ -152,6 +178,7 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
       formData.append("bio", teacher.bio);
       formData.append("imageGradient", teacher.imageGradient);
       teacher.subjectIds?.forEach((id) => formData.append("subjectIds", id));
+      teacher.classIds?.forEach((id) => formData.append("classIds", id));
       formData.append("image", image);
       created = (await api.createAdminTeacher(formData)) as TeacherProfile;
     } else {
@@ -227,6 +254,35 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
     return created;
   }, []);
 
+  const updateSubject = useCallback(async (id: string, name: string) => {
+    const previous = subjects.find((s) => s.id === id);
+    const updated = (await api.updateAdminSubject(id, { name })) as Subject;
+    setSubjects((prev) =>
+      prev
+        .map((s) => (s.id === id ? updated : s))
+        .sort((a, b) => a.name.localeCompare(b.name, "ar"))
+    );
+    if (previous && previous.name !== name) {
+      setState((prev) => ({
+        ...prev,
+        teachers: prev.teachers.map((teacher) => {
+          const subjectIds = teacher.subjectIds ?? [];
+          if (!subjectIds.includes(id)) return teacher;
+          const nextSubjects =
+            teacher.subjects?.map((subjectName) =>
+              subjectName === previous.name ? name : subjectName
+            ) ?? [];
+          return {
+            ...teacher,
+            subjects: nextSubjects,
+            subject: nextSubjects.join("، "),
+          };
+        }),
+      }));
+    }
+    return updated;
+  }, [subjects]);
+
   const removeSubject = useCallback(async (id: string) => {
     await api.deleteAdminSubject(id);
     setSubjects((prev) => prev.filter((s) => s.id !== id));
@@ -249,6 +305,7 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
         addClass,
         removeClass,
         addSubject,
+        updateSubject,
         removeSubject,
         refresh,
       }}

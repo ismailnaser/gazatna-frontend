@@ -5,8 +5,12 @@ import { Alert } from "@/components/atoms/Alert";
 import { Button } from "@/components/atoms/Button";
 import { Card } from "@/components/atoms/Card";
 import { Input } from "@/components/atoms/Input";
-import { MultiSelect } from "@/components/atoms/MultiSelect";
+import { NumberFieldWithKeypad } from "@/components/teacher/NumberFieldWithKeypad";
+import { NumberKeypadGroup } from "@/components/teacher/NumberKeypadGroup";
+import { ConfirmDialog } from "@/components/molecules/ConfirmDialog";
 import { PageHeader } from "@/components/molecules/PageHeader";
+import { AdminFeePlanFormPanel } from "@/components/admin/AdminFeePlanFormPanel";
+import { AdminFeePlansTable } from "@/components/admin/AdminFeePlansTable";
 import { StatusBadge } from "@/components/molecules/StatusBadge";
 import { StudentSearchSelect } from "@/components/molecules/StudentSearchSelect";
 import { api } from "@/lib/api";
@@ -14,47 +18,21 @@ import type { PaymentStatus } from "@/types";
 import {
   mapFeePlan,
   mapFinanceNotice,
-  type FeeInstallmentItem,
+  mapManualPaymentLog,
   type FeePlan,
   type FinanceNotice,
+  type ManualPaymentLog,
 } from "@/types/finance";
 import type { Grade } from "@/types/teacher";
-import { Check, Image, Pencil, Plus, Save, Trash2, Unlock, X } from "lucide-react";
+import {
+  DEFAULT_FEE_PLAN_FORM,
+  feePlanToForm,
+  formatPlanPayload,
+  type FeePlanFormState,
+} from "@/lib/feePlanForm";
+import { Check, ClipboardList, Image, Plus, RotateCcw, Unlock, Wallet, X } from "lucide-react";
 
-type Tab = "payments" | "plans" | "access";
-
-
-function buildInstallments(count: number, total: number, existing: FeeInstallmentItem[] = []) {
-  const per = Math.ceil(total / count);
-  const today = new Date();
-  const rows: FeeInstallmentItem[] = [];
-
-  for (let i = 0; i < count; i++) {
-    const prev = existing[i];
-    // Only pre-fill dates for the first installment; the rest default to empty (to be set later)
-    let startDate = prev?.startDate ?? "";
-    let endDate = prev?.endDate ?? "";
-
-    if (!startDate && !endDate && i === 0) {
-      // First installment gets a sensible default
-      const start = new Date(today.getFullYear(), today.getMonth(), 1);
-      const end = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-      startDate = start.toISOString().slice(0, 10);
-      endDate = end.toISOString().slice(0, 10);
-    }
-
-    // Last installment absorbs the remainder (total minus sum of previous)
-    const amount = prev?.amount ?? (i === count - 1 ? total - per * (count - 1) : per);
-
-    rows.push({
-      order: i + 1,
-      amount,
-      startDate,
-      endDate,
-    });
-  }
-  return rows;
-}
+type Tab = "payments" | "manual" | "plans" | "access";
 
 export default function AdminFinancePage() {
   const [tab, setTab] = useState<Tab>("payments");
@@ -70,22 +48,42 @@ export default function AdminFinancePage() {
   const [approveTarget, setApproveTarget] = useState<FinanceNotice | null>(null);
   const [approveAmount, setApproveAmount] = useState("");
   const [approving, setApproving] = useState(false);
+  const [undoTarget, setUndoTarget] = useState<{
+    id: string;
+    studentName: string;
+    amount: number;
+    kind: "notice" | "manual";
+  } | null>(null);
+  const [undoing, setUndoing] = useState(false);
 
-  const [planForm, setPlanForm] = useState({
-    id: "",
-    name: "",
-    totalAmount: "2500",
-    installmentsCount: "3",
-    gradeIds: [] as string[],
-    installments: buildInstallments(3, 2500),
-  });
+  const [planForm, setPlanForm] = useState<FeePlanFormState>(DEFAULT_FEE_PLAN_FORM);
+  const [showPlanForm, setShowPlanForm] = useState(false);
   const [savingPlan, setSavingPlan] = useState(false);
-  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [deletePlanTarget, setDeletePlanTarget] = useState<FeePlan | null>(null);
+  const [deletingPlan, setDeletingPlan] = useState(false);
 
   const [accessStudentId, setAccessStudentId] = useState("");
   const [accessDays, setAccessDays] = useState("1");
   const [grantingAccess, setGrantingAccess] = useState(false);
+  const [manualStudentId, setManualStudentId] = useState("");
+  const [manualAmount, setManualAmount] = useState("");
+  const [manualNote, setManualNote] = useState("");
+  const [recordingManual, setRecordingManual] = useState(false);
+  const [manualLogs, setManualLogs] = useState<ManualPaymentLog[]>([]);
+  const [loadingManualLogs, setLoadingManualLogs] = useState(false);
   const planFormRef = useRef<HTMLDivElement>(null);
+
+  async function loadManualLogs() {
+    setLoadingManualLogs(true);
+    try {
+      const data = await api.getAdminManualPayments();
+      setManualLogs((data as Array<Record<string, unknown>>).map(mapManualPaymentLog));
+    } catch {
+      setManualLogs([]);
+    } finally {
+      setLoadingManualLogs(false);
+    }
+  }
 
   useEffect(() => {
     Promise.all([
@@ -107,7 +105,14 @@ export default function AdminFinancePage() {
         )
       ),
     ]).catch(() => setError("تعذر تحميل بيانات المالية"));
+    loadManualLogs();
   }, []);
+
+  useEffect(() => {
+    if (tab === "manual") {
+      loadManualLogs();
+    }
+  }, [tab]);
 
   const gradeOptions = useMemo(
     () => grades.map((g) => ({ value: g.id, label: g.name })),
@@ -128,13 +133,8 @@ export default function AdminFinancePage() {
         status: "approved",
         amount: Number(approveAmount),
       });
-      setNotices((prev) =>
-        prev.map((n) =>
-          n.id === approveTarget.id
-            ? { ...n, status: "approved" as PaymentStatus, amount: Number(approveAmount) }
-            : n
-        )
-      );
+      const refreshed = await api.getAdminFinance();
+      setNotices((refreshed as Array<Record<string, unknown>>).map(mapFinanceNotice));
       setApproveTarget(null);
       setSuccess("تم اعتماد الدفعة وخصم المبلغ من رصيد الطالب.");
     } catch {
@@ -144,72 +144,62 @@ export default function AdminFinancePage() {
     }
   }
 
-  function startEditPlan(plan?: FeePlan) {
-    if (plan) {
-      setPlanForm({
-        id: plan.id,
-        name: plan.name,
-        totalAmount: String(plan.totalAmount),
-        installmentsCount: String(plan.installmentsCount),
-        gradeIds: plan.gradeIds,
-        installments: plan.installments.map((row) => ({ ...row })),
-      });
-    } else {
-      setPlanForm({
-        id: "",
-        name: "",
-        totalAmount: "2500",
-        installmentsCount: "3",
-        gradeIds: [],
-        installments: buildInstallments(3, 2500),
-      });
+  async function confirmUndoApproval() {
+    if (!undoTarget) return;
+    setUndoing(true);
+    setError("");
+    const { id, studentName, amount, kind } = undoTarget;
+    try {
+      if (kind === "manual") {
+        await api.deleteAdminManualPayment(id);
+        setManualLogs((prev) => prev.filter((row) => row.id !== id));
+        const refreshed = await api.getAdminFinance();
+        setNotices((refreshed as Array<Record<string, unknown>>).map(mapFinanceNotice));
+      } else {
+        await api.updateAdminPayment(id, { status: "pending" });
+        const refreshed = await api.getAdminFinance();
+        setNotices((refreshed as Array<Record<string, unknown>>).map(mapFinanceNotice));
+      }
+      setUndoTarget(null);
+      setSuccess(
+        kind === "manual"
+          ? `تم إلغاء الدفعة اليدوية لـ ${studentName} وإرجاع ${amount} ₪ إلى الرصيد.`
+          : `تم التراجع عن اعتماد دفعة ${studentName} وإرجاع ${amount} ₪ إلى الرصيد.`
+      );
+    } catch {
+      setError(kind === "manual" ? "تعذر إلغاء الدفعة اليدوية" : "تعذر التراجع عن اعتماد الدفعة");
+      if (kind === "manual") {
+        await loadManualLogs();
+      }
+    } finally {
+      setUndoing(false);
     }
-    setTab("plans");
-    setTimeout(() => planFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
   }
 
+  function openCreatePlan() {
+    setPlanForm(DEFAULT_FEE_PLAN_FORM);
+    setShowPlanForm(true);
+    setError("");
+    setTimeout(() => planFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+  }
 
-  function updateInstallmentCount(count: number) {
-    const total = Number(planForm.totalAmount) || 0;
-    if (count < 1) return;
-    const per = Math.ceil(total / count);
-    const today = new Date();
-    setPlanForm((prev) => {
-      const newInstallments: FeeInstallmentItem[] = [];
-      for (let i = 0; i < count; i++) {
-        const existing = prev.installments[i];
-        let startDate = existing?.startDate ?? "";
-        let endDate = existing?.endDate ?? "";
-        if (!startDate && !endDate && i === 0) {
-          const start = new Date(today.getFullYear(), today.getMonth(), 1);
-          const end = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-          startDate = start.toISOString().slice(0, 10);
-          endDate = end.toISOString().slice(0, 10);
-        }
-        const amount = i === count - 1 ? total - per * (count - 1) : per;
-        newInstallments.push({ order: i + 1, amount, startDate, endDate });
-      }
-      return { ...prev, installmentsCount: String(count), installments: newInstallments };
-    });
+  function openEditPlan(plan: FeePlan) {
+    setPlanForm(feePlanToForm(plan));
+    setShowPlanForm(true);
+    setError("");
+    setTimeout(() => planFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+  }
+
+  function closePlanForm() {
+    setShowPlanForm(false);
+    setPlanForm(DEFAULT_FEE_PLAN_FORM);
   }
 
   async function savePlan(e: React.FormEvent) {
     e.preventDefault();
     setSavingPlan(true);
     setError("");
-    const payload = {
-      name: planForm.name.trim(),
-      totalAmount: Number(planForm.totalAmount),
-      installmentsCount: Number(planForm.installmentsCount),
-      isActive: true,
-      gradeIds: planForm.gradeIds.map(Number),
-      installments: planForm.installments.map((row) => ({
-        order: row.order,
-        amount: Number(row.amount),
-        startDate: row.startDate || null,
-        endDate: row.endDate || null,
-      })),
-    };
+    const payload = formatPlanPayload(planForm);
     try {
       if (planForm.id) {
         const updated = await api.updateAdminFeePlan(planForm.id, payload);
@@ -221,7 +211,7 @@ export default function AdminFinancePage() {
         setPlans((prev) => [mapped, ...prev]);
       }
       setSuccess("تم حفظ خطة الرسوم وتطبيقها على الطلاب في المراحل المحددة.");
-      startEditPlan();
+      closePlanForm();
     } catch {
       setError("تعذر حفظ خطة الرسوم");
     } finally {
@@ -229,11 +219,32 @@ export default function AdminFinancePage() {
     }
   }
 
-  async function deletePlan(id: string) {
-    await api.deleteAdminFeePlan(id);
-    setPlans((prev) => prev.filter((p) => p.id !== id));
-    setConfirmDeleteId(null);
+  async function confirmDeletePlan() {
+    if (!deletePlanTarget) return;
+    setDeletingPlan(true);
+    setError("");
+    try {
+      await api.deleteAdminFeePlan(deletePlanTarget.id);
+      setPlans((prev) => prev.filter((p) => p.id !== deletePlanTarget.id));
+      if (planForm.id === deletePlanTarget.id) {
+        closePlanForm();
+      }
+      setDeletePlanTarget(null);
+      setSuccess(`تم حذف خطة ${deletePlanTarget.name}.`);
+    } catch {
+      setError("تعذر حذف خطة الرسوم");
+    } finally {
+      setDeletingPlan(false);
+    }
   }
+
+  const coveredGradesCount = useMemo(() => {
+    const unique = new Set<string>();
+    for (const plan of plans) {
+      for (const grade of plan.gradeNames) unique.add(grade);
+    }
+    return unique.size;
+  }, [plans]);
 
   async function grantAccess(e: React.FormEvent) {
     e.preventDefault();
@@ -253,7 +264,52 @@ export default function AdminFinancePage() {
     }
   }
 
+  async function recordManualPayment(e: React.FormEvent) {
+    e.preventDefault();
+    if (!manualStudentId) {
+      setError("يرجى اختيار طالب من نتائج البحث");
+      return;
+    }
+    const amount = Number(manualAmount);
+    if (!amount || amount <= 0) {
+      setError("أدخل مبلغاً صحيحاً أكبر من صفر");
+      return;
+    }
+
+    setRecordingManual(true);
+    setError("");
+    setSuccess("");
+    try {
+      const result = (await api.recordAdminManualPayment({
+        studentId: manualStudentId,
+        amount,
+        note: manualNote.trim() || undefined,
+      })) as Record<string, unknown>;
+      const notice = mapFinanceNotice({
+        ...result,
+        status: "approved",
+        reviewedByName: result.reviewedByName ?? null,
+      });
+      setNotices((prev) => [notice, ...prev]);
+      const balance = result.balance as { paid?: number; remaining?: number } | undefined;
+      setSuccess(
+        balance
+          ? `تم تسجيل الدفع وخصم ${amount} ₪ من رصيد الطالب. المتبقي: ${balance.remaining ?? 0} ₪`
+          : `تم تسجيل الدفع وخصم ${amount} ₪ من رصيد الطالب.`
+      );
+      setManualStudentId("");
+      setManualAmount("");
+      setManualNote("");
+      await loadManualLogs();
+    } catch {
+      setError("تعذر تسجيل الدفع اليدوي");
+    } finally {
+      setRecordingManual(false);
+    }
+  }
+
   return (
+    <NumberKeypadGroup>
     <div>
       <PageHeader
         title="إدارة المالية"
@@ -274,6 +330,7 @@ export default function AdminFinancePage() {
       <div className="mb-6 flex flex-wrap gap-2">
         {[
           { id: "payments" as Tab, label: "إشعارات الدفع" },
+          { id: "manual" as Tab, label: "تسجيل دفع يدوي" },
           { id: "plans" as Tab, label: "خطط الرسوم" },
           { id: "access" as Tab, label: "فتح الوصول" },
         ].map((item) => (
@@ -301,6 +358,7 @@ export default function AdminFinancePage() {
                 <th className="px-4 py-3 text-start font-semibold">التاريخ</th>
                 <th className="px-4 py-3 text-start font-semibold">الإشعار</th>
                 <th className="px-4 py-3 text-start font-semibold">الحالة</th>
+                <th className="px-4 py-3 text-start font-semibold">اعتمدها</th>
                 <th className="px-4 py-3 text-start font-semibold">إجراء</th>
               </tr>
             </thead>
@@ -322,12 +380,17 @@ export default function AdminFinancePage() {
                         <Image className="h-4 w-4" />
                         عرض
                       </a>
+                    ) : n.source === "manual" ? (
+                      <span className="text-p-black/60">يدوي</span>
                     ) : (
                       <span className="text-p-black/40">—</span>
                     )}
                   </td>
                   <td className="px-4 py-3">
                     <StatusBadge status={n.status} />
+                  </td>
+                  <td className="px-4 py-3 text-p-black/70">
+                    {n.status === "approved" ? n.reviewedByName || "—" : "—"}
                   </td>
                   <td className="px-4 py-3">
                     {n.status === "pending" && (
@@ -353,6 +416,20 @@ export default function AdminFinancePage() {
                         </Button>
                       </div>
                     )}
+                    {n.status === "approved" && (
+                      <Button
+                        variant="outline"
+                        className="px-2 py-1 text-xs text-amber-700 hover:text-amber-800"
+                        onClick={() => {
+                          setUndoTarget({ id: n.id, studentName: n.studentName, amount: n.amount, kind: "notice" });
+                          setError("");
+                          setSuccess("");
+                        }}
+                      >
+                        <RotateCcw className="h-3 w-3" />
+                        تراجع
+                      </Button>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -361,215 +438,199 @@ export default function AdminFinancePage() {
         </Card>
       )}
 
-      {tab === "plans" && (
-        <div className="grid gap-6 lg:grid-cols-2">
-          <Card>
-            <div className="mb-4 flex items-center justify-between">
-              <h3 className="font-bold text-p-black">خطط الرسوم الحالية</h3>
-              <Button variant="outline" className="text-xs" onClick={() => startEditPlan()}>
-                <Plus className="h-4 w-4" />
-                خطة جديدة
-              </Button>
-            </div>
-            <div className="space-y-3">
-              {plans.length === 0 ? (
-                <p className="text-sm text-neutral-500">لا توجد خطط رسوم بعد.</p>
-              ) : (
-                plans.map((plan) => (
-                  <div
-                    key={plan.id}
-                    className={`rounded-xl border p-4 transition-colors ${
-                      planForm.id === plan.id
-                        ? "border-p-green bg-p-green/5"
-                        : "border-neutral-100"
-                    }`}
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0 flex-1">
-                        <p className="font-semibold text-p-black">{plan.name}</p>
-                        <p className="mt-1 text-sm text-p-black/60">
-                          {plan.totalAmount} ₪ — {plan.installmentsCount} دفعات
-                        </p>
-                        <p className="mt-1 text-xs text-p-black/50">
-                          المراحل: {plan.gradeNames.join("، ") || "—"}
-                        </p>
-                        {plan.installments.length > 0 && (
-                          <ul className="mt-3 space-y-1 border-t border-neutral-100 pt-3">
-                            {plan.installments.map((inst) => (
-                              <li key={inst.order} className="text-xs text-p-black/60">
-                                دفعة {inst.order}: {inst.amount} ₪ — {inst.startDate} → {inst.endDate}
-                              </li>
-                            ))}
-                          </ul>
-                        )}
-                      </div>
-                      <div className="flex shrink-0 flex-col gap-1">
-                        <Button
-                          variant="outline"
-                          className="px-3 py-1.5 text-xs"
-                          onClick={() => startEditPlan(plan)}
-                        >
-                          <Pencil className="h-3 w-3" />
-                          تعديل الخطة
-                        </Button>
-                        {confirmDeleteId === plan.id ? (
-                          <div className="flex gap-1">
-                            <Button
-                              variant="danger"
-                              className="px-3 py-1.5 text-xs"
-                              onClick={() => deletePlan(plan.id)}
-                            >
-                              <Check className="h-3 w-3" />
-                              تأكيد
-                            </Button>
-                            <Button
-                              variant="outline"
-                              className="px-3 py-1.5 text-xs"
-                              onClick={() => setConfirmDeleteId(null)}
-                            >
-                              <X className="h-3 w-3" />
-                            </Button>
-                          </div>
-                        ) : (
-                          <Button
-                            variant="danger"
-                            className="px-3 py-1.5 text-xs"
-                            onClick={() => setConfirmDeleteId(plan.id)}
-                          >
-                            <Trash2 className="h-3 w-3" />
-                            حذف
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </Card>
-
-          <div ref={planFormRef}>
-          <Card>
-            <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-              <h3 className="font-bold text-p-black">
-                {planForm.id ? "تعديل خطة الرسوم" : "إنشاء خطة رسوم"}
-              </h3>
-              {planForm.id && (
-                <Button type="button" variant="outline" className="text-xs" onClick={() => startEditPlan()}>
-                  إلغاء التعديل
-                </Button>
-              )}
-            </div>
-            <form onSubmit={savePlan} className="space-y-4">
-              <Input
-                label="اسم الخطة"
-                value={planForm.name}
-                onChange={(e) => setPlanForm((p) => ({ ...p, name: e.target.value }))}
+      {tab === "manual" && (
+        <div className="space-y-6">
+          <Card className="max-w-lg">
+            <h3 className="mb-2 flex items-center gap-2 font-bold text-p-black">
+              <Wallet className="h-5 w-5 text-p-green" />
+              تسجيل دفع يدوي
+            </h3>
+            <p className="mb-4 text-sm text-p-black/60">
+              للطلاب الذين دفعوا خارج المنصة (نقداً أو تحويل مباشر). ابحث برقم الطالب، حدد المبلغ،
+              وسيُخصم تلقائياً من رصيده.
+            </p>
+            <form onSubmit={recordManualPayment} className="space-y-4">
+              <StudentSearchSelect
+                students={students}
+                value={manualStudentId}
+                onChange={setManualStudentId}
+                placeholder="ابحث برقم الطالب أو الاسم..."
+              />
+              <NumberFieldWithKeypad
+                fieldId="manualAmount"
+                label="المبلغ المدفوع (₪)"
+                value={manualAmount}
+                onChange={setManualAmount}
+                min={0.01}
+                max={999999}
+                allowDecimal
+                maxDecimalPlaces={2}
                 required
               />
               <Input
-                label="إجمالي القسط (₪)"
-                type="number"
-                min="1"
-                value={planForm.totalAmount}
-                onChange={(e) => {
-                  const total = Number(e.target.value) || 0;
-                  const count = Number(planForm.installmentsCount) || 1;
-                  const per = Math.ceil(total / count);
-                  setPlanForm((p) => ({
-                    ...p,
-                    totalAmount: e.target.value,
-                    installments: p.installments.map((row, i) => ({
-                      ...row,
-                      amount: i === count - 1 ? total - per * (count - 1) : per,
-                    })),
-                  }));
-                }}
-                required
+                label="ملاحظة (اختياري)"
+                value={manualNote}
+                onChange={(e) => setManualNote(e.target.value)}
+                placeholder="مثال: دفع نقدي في المدرسة"
               />
-              <MultiSelect
-                label="المراحل الدراسية"
-                options={gradeOptions}
-                value={planForm.gradeIds}
-                onChange={(gradeIds) => setPlanForm((p) => ({ ...p, gradeIds }))}
-                countLabel="مراحل"
-                placeholder="اختر مرحلة أو أكثر"
-              />
-              <Input
-                label="عدد الدفعات"
-                type="number"
-                min="1"
-                max="12"
-                value={planForm.installmentsCount}
-                onChange={(e) => updateInstallmentCount(Number(e.target.value) || 1)}
-                required
-              />
-              <div className="space-y-3">
-                <div>
-                  <p className="text-sm font-semibold text-p-black">جدول الدفعات</p>
-                  <p className="mt-1 text-xs text-p-black/50">
-                    حدد مبلغ كل دفعة. يمكن تحديد تواريخها الآن أو تركها فارغة وتحديدها لاحقاً حسب سير الفصل الدراسي.
-                  </p>
-                </div>
-                {planForm.installments.map((row, index) => {
-                  const isScheduled = Boolean(row.startDate && row.endDate);
-                  return (
-                    <div
-                      key={row.order}
-                      className={`rounded-lg border p-3 ${isScheduled ? "border-neutral-100" : "border-dashed border-neutral-300 bg-neutral-50/50"}`}
-                    >
-                      <div className="mb-3 flex flex-wrap items-center gap-2">
-                        <p className="text-sm font-medium text-p-black">دفعة {row.order}</p>
-                        {!isScheduled && (
-                          <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">
-                            سيُحدَّد موعدها لاحقاً
-                          </span>
-                        )}
-                      </div>
-                      <div className="grid gap-2 sm:grid-cols-3">
-                        <Input
-                          label="المبلغ (₪)"
-                          type="number"
-                          min="0"
-                          value={String(row.amount)}
-                          onChange={(e) => {
-                            const installments = [...planForm.installments];
-                            installments[index] = { ...row, amount: Number(e.target.value) };
-                            setPlanForm((p) => ({ ...p, installments }));
-                          }}
-                        />
-                        <Input
-                          label={`بداية الدفع ${!isScheduled && index > 0 ? "(اختياري)" : ""}`}
-                          type="date"
-                          value={row.startDate ?? ""}
-                          onChange={(e) => {
-                            const installments = [...planForm.installments];
-                            installments[index] = { ...row, startDate: e.target.value };
-                            setPlanForm((p) => ({ ...p, installments }));
-                          }}
-                        />
-                        <Input
-                          label={`آخر موعد للدفع ${!isScheduled && index > 0 ? "(اختياري)" : ""}`}
-                          type="date"
-                          value={row.endDate ?? ""}
-                          onChange={(e) => {
-                            const installments = [...planForm.installments];
-                            installments[index] = { ...row, endDate: e.target.value };
-                            setPlanForm((p) => ({ ...p, installments }));
-                          }}
-                        />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-              <Button type="submit" disabled={savingPlan} className="w-full">
-                <Save className="h-4 w-4" />
-                {savingPlan ? "جاري الحفظ..." : planForm.id ? "حفظ التعديلات" : "حفظ الخطة"}
+              <Button type="submit" disabled={recordingManual} className="w-full">
+                {recordingManual ? "جاري التسجيل..." : "تسجيل الدفع وخصم من الرصيد"}
               </Button>
             </form>
           </Card>
+
+          <Card className="overflow-x-auto p-0">
+            <div className="border-b border-neutral-100 px-5 py-4">
+              <h3 className="font-bold text-p-black">سجل الدفعات اليدوية</h3>
+              <p className="mt-1 text-sm text-p-black/50">
+                جميع الدفعات المسجّلة يدوياً من الإدارة مع اسم المستخدم الذي اعتمدها
+              </p>
+            </div>
+            {loadingManualLogs ? (
+              <p className="px-5 py-8 text-sm text-neutral-500">جاري تحميل السجل...</p>
+            ) : manualLogs.length === 0 ? (
+              <p className="px-5 py-8 text-sm text-neutral-500">لا توجد دفعات يدوية مسجّلة بعد.</p>
+            ) : (
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-neutral-100 bg-p-cream text-p-black/60">
+                    <th className="px-4 py-3 text-start font-semibold">الطالب</th>
+                    <th className="px-4 py-3 text-start font-semibold">رقم الطالب</th>
+                    <th className="px-4 py-3 text-start font-semibold">المبلغ</th>
+                    <th className="px-4 py-3 text-start font-semibold">التاريخ</th>
+                    <th className="px-4 py-3 text-start font-semibold">اعتمدها</th>
+                    <th className="px-4 py-3 text-start font-semibold">ملاحظة</th>
+                    <th className="px-4 py-3 text-start font-semibold">إجراء</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {manualLogs.map((row) => (
+                    <tr key={row.id} className="border-b border-neutral-50">
+                      <td className="px-4 py-3 font-medium text-p-black">{row.studentName}</td>
+                      <td className="px-4 py-3 text-p-black/70" dir="ltr">
+                        {row.studentNumber || "—"}
+                      </td>
+                      <td className="px-4 py-3">{row.amount} ₪</td>
+                      <td className="px-4 py-3">{row.date}</td>
+                      <td className="px-4 py-3 font-medium text-p-black">{row.reviewedByName}</td>
+                      <td className="px-4 py-3 text-p-black/60">{row.note || "—"}</td>
+                      <td className="px-4 py-3">
+                        <Button
+                          variant="outline"
+                          className="px-2 py-1 text-xs text-amber-700 hover:text-amber-800"
+                          onClick={() => {
+                            setUndoTarget({
+                              id: row.id,
+                              studentName: row.studentName,
+                              amount: row.amount,
+                              kind: "manual",
+                            });
+                            setError("");
+                            setSuccess("");
+                          }}
+                        >
+                          <RotateCcw className="h-3 w-3" />
+                          تراجع
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </Card>
+        </div>
+      )}
+
+      {tab === "plans" && (
+        <div className="space-y-4">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="flex items-center gap-3 rounded-2xl border border-brand-blue/15 bg-brand-blue/5 px-4 py-3">
+              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-white text-brand-blue shadow-sm">
+                <ClipboardList className="h-5 w-5" />
+              </span>
+              <div>
+                <p className="text-xs text-p-black/50">خطط مسجّلة</p>
+                <p className="text-lg font-bold text-p-black">{plans.length}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 rounded-2xl border border-p-green/15 bg-p-green/5 px-4 py-3">
+              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-white text-p-green shadow-sm">
+                <Wallet className="h-5 w-5" />
+              </span>
+              <div>
+                <p className="text-xs text-p-black/50">مراحل مغطاة</p>
+                <p className="text-lg font-bold text-p-black">{coveredGradesCount}</p>
+              </div>
+            </div>
           </div>
+
+          <Card className="p-4 sm:p-5">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h3 className="font-bold text-p-black">خطط الرسوم</h3>
+                <p className="mt-1 text-sm text-p-black/55">
+                  أنشئ خطة جديدة أو عدّل خطة موجودة من الجدول أدناه.
+                </p>
+              </div>
+              {!showPlanForm ? (
+                <Button type="button" onClick={openCreatePlan}>
+                  <Plus className="h-4 w-4" />
+                  خطة جديدة
+                </Button>
+              ) : null}
+            </div>
+          </Card>
+
+          {showPlanForm ? (
+            <div ref={planFormRef}>
+              <Card className="p-4 sm:p-5">
+                <AdminFeePlanFormPanel
+                  form={planForm}
+                  onChange={setPlanForm}
+                  gradeOptions={gradeOptions}
+                  saving={savingPlan}
+                  onSubmit={savePlan}
+                  onCancel={closePlanForm}
+                />
+              </Card>
+            </div>
+          ) : null}
+
+          <Card className="p-4 sm:p-5">
+            <h3 className="mb-4 font-bold text-p-black">الخطط المسجّلة</h3>
+            <AdminFeePlansTable
+              plans={plans}
+              activePlanId={showPlanForm ? planForm.id : undefined}
+              onCreate={openCreatePlan}
+              onEdit={openEditPlan}
+              onDelete={(plan) => {
+                setError("");
+                setDeletePlanTarget(plan);
+              }}
+            />
+          </Card>
+
+          <ConfirmDialog
+            open={Boolean(deletePlanTarget)}
+            title="تأكيد حذف خطة الرسوم"
+            description={
+              deletePlanTarget ? (
+                <>
+                  هل أنت متأكد من حذف خطة{" "}
+                  <span className="font-semibold">{deletePlanTarget.name}</span>؟ لا يمكن التراجع عن
+                  هذا الإجراء.
+                </>
+              ) : null
+            }
+            loading={deletingPlan}
+            error={deletePlanTarget ? error : undefined}
+            onCancel={() => {
+              setError("");
+              setDeletePlanTarget(null);
+            }}
+            onConfirm={confirmDeletePlan}
+          />
         </div>
       )}
 
@@ -588,13 +649,13 @@ export default function AdminFinancePage() {
               value={accessStudentId}
               onChange={setAccessStudentId}
             />
-            <Input
+            <NumberFieldWithKeypad
+              fieldId="financeAccessDays"
               label="مدة الفتح (بالأيام)"
-              type="number"
-              min="1"
-              max="30"
               value={accessDays}
-              onChange={(e) => setAccessDays(e.target.value)}
+              onChange={setAccessDays}
+              min={1}
+              max={30}
               required
             />
             <Button type="submit" disabled={grantingAccess} className="w-full">
@@ -620,13 +681,15 @@ export default function AdminFinancePage() {
               المبلغ المُعلن من ولي الأمر: <strong>{approveTarget.declaredAmount} ₪</strong>
             </p>
             <div className="mt-4">
-              <Input
+              <NumberFieldWithKeypad
+                fieldId="approveAmount"
                 label="المبلغ الذي سيُخصم من الرصيد (₪)"
-                type="number"
-                min="0"
-                step="0.01"
                 value={approveAmount}
-                onChange={(e) => setApproveAmount(e.target.value)}
+                onChange={setApproveAmount}
+                min={0}
+                max={999999}
+                allowDecimal
+                maxDecimalPlaces={2}
               />
               <p className="mt-2 text-xs text-p-black/50">
                 عدّل المبلغ إذا كان المبلغ المحوّل يختلف عما أدخله ولي الأمر.
@@ -643,6 +706,41 @@ export default function AdminFinancePage() {
           </Card>
         </div>
       )}
+
+      {undoTarget && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          role="dialog"
+          aria-modal="true"
+          onClick={() => !undoing && setUndoTarget(null)}
+        >
+          <Card className="w-full max-w-md p-6" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-lg font-bold text-p-black">
+              {undoTarget.kind === "manual" ? "التراجع عن الدفعة اليدوية" : "التراجع عن اعتماد الدفعة"}
+            </h3>
+            <p className="mt-2 text-sm text-p-black/70">
+              الطالب: <strong>{undoTarget.studentName}</strong>
+            </p>
+            <p className="mt-1 text-sm text-p-black/70">
+              المبلغ: <strong>{undoTarget.amount} ₪</strong>
+            </p>
+            <p className="mt-3 text-sm text-amber-800">
+              {undoTarget.kind === "manual"
+                ? "سيُعاد المبلغ إلى رصيد الطالب وتُحذف الدفعة من السجل."
+                : "سيُعاد المبلغ إلى رصيد الطالب وتعود حالة الإشعار إلى «قيد المراجعة»."}
+            </p>
+            <div className="mt-6 flex justify-end gap-3">
+              <Button variant="outline" onClick={() => setUndoTarget(null)} disabled={undoing}>
+                إلغاء
+              </Button>
+              <Button variant="danger" onClick={confirmUndoApproval} disabled={undoing}>
+                {undoing ? "جاري التراجع..." : "تأكيد التراجع"}
+              </Button>
+            </div>
+          </Card>
+        </div>
+      )}
     </div>
+    </NumberKeypadGroup>
   );
 }

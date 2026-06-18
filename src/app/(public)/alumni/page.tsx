@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Card } from "@/components/atoms/Card";
+import { ExpandableText } from "@/components/molecules/ExpandableText";
 import { PublicPage } from "@/components/molecules/PublicPage";
 import { api } from "@/lib/api";
 
@@ -30,7 +31,9 @@ export default function AlumniPage() {
             <Card key={a.id}>
               <p className="text-xs font-semibold text-p-green">{a.year}</p>
               <h3 className="mt-1 text-lg font-bold text-p-black">{a.name}</h3>
-              <p className="mt-2 text-sm text-p-black/60">{a.achievement}</p>
+              <ExpandableText maxLines={3} className="mt-2 text-sm text-p-black/60">
+                {a.achievement}
+              </ExpandableText>
             </Card>
           ))}
         </div>

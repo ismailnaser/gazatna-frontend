@@ -16,6 +16,12 @@ import type {
   QuizQuestion,
   QuizSubmission,
 } from "@/types";
+import { buildHomeworkFormData, type HomeworkFormData } from "@/components/teacher/HomeworkForm";
+import { buildQuizPayload, type QuizFormData } from "@/components/teacher/QuizForm";
+import {
+  pickBestQuizSubmission,
+  quizAttemptsForStudent,
+} from "@/lib/quizAttempts";
 
 type AssignmentsState = {
   homework: Homework[];
@@ -30,17 +36,29 @@ type AssignmentsContextValue = AssignmentsState & {
   getQuizzesByClass: (classId: string) => Quiz[];
   getHomeworkByTeacher: (teacherId: string, classIds: string[]) => Homework[];
   getQuizzesByTeacher: (teacherId: string, classIds: string[]) => Quiz[];
-  addHomework: (data: Omit<Homework, "id" | "createdAt">) => Promise<Homework>;
-  updateHomework: (id: string, data: Partial<Omit<Homework, "id" | "createdAt">>) => Promise<void>;
-  deleteHomework: (id: string) => Promise<void>;
-  addQuiz: (data: Omit<Quiz, "id" | "createdAt">) => Promise<Quiz>;
-  updateQuiz: (id: string, data: Partial<Omit<Quiz, "id" | "createdAt">>) => Promise<void>;
-  deleteQuiz: (id: string) => Promise<void>;
-  submitHomework: (data: Omit<HomeworkSubmission, "id" | "submittedAt">) => Promise<HomeworkSubmission>;
+  addHomework: (data: HomeworkFormData) => Promise<Homework[]>;
+  updateHomework: (id: string, data: HomeworkFormData, options?: { applyToGroup?: boolean }) => Promise<void>;
+  deleteHomework: (id: string, options?: { group?: boolean }) => Promise<void>;
+  addQuiz: (data: QuizFormData) => Promise<Quiz>;
+  updateQuiz: (
+    id: string,
+    data: QuizFormData | Partial<Pick<Quiz, "gradesVisible" | "reviewAllowed" | "status">>,
+    options?: { applyToGroup?: boolean }
+  ) => Promise<void>;
+  deleteQuiz: (id: string, options?: { group?: boolean }) => Promise<void>;
+  submitHomework: (data: {
+    homeworkId: string;
+    studentId: string;
+    content: string;
+    attachment?: File | null;
+  }) => Promise<HomeworkSubmission>;
   getHomeworkSubmission: (homeworkId: string, studentId: string) => HomeworkSubmission | undefined;
   getHomeworkSubmissions: (homeworkId: string) => HomeworkSubmission[];
-  submitQuiz: (data: Omit<QuizSubmission, "id" | "submittedAt">) => Promise<QuizSubmission>;
+  submitQuiz: (
+    data: Omit<QuizSubmission, "id" | "submittedAt"> & { essayFiles?: Record<string, File | null> }
+  ) => Promise<QuizSubmission>;
   getQuizSubmission: (quizId: string, studentId: string) => QuizSubmission | undefined;
+  getQuizAttemptCount: (quizId: string, studentId: string) => number;
   getQuizSubmissions: (quizId: string) => QuizSubmission[];
   refresh: () => Promise<void>;
 };
@@ -49,7 +67,17 @@ function normalizeQuiz(q: Quiz): Quiz {
   return {
     ...q,
     startAt: q.startAt ?? `${q.dueDate}T08:00:00`,
+    endAt: q.endAt ?? null,
     durationMinutes: q.durationMinutes ?? 30,
+    maxAttempts: q.maxAttempts ?? 1,
+    questions: (q.questions ?? []).map((question) => ({
+      ...question,
+      questionType: question.questionType ?? "choice",
+      points: question.points ?? 1,
+      options: question.options ?? [],
+      pairs: question.pairs ?? [],
+      correctText: question.correctText ?? "",
+    })),
   };
 }
 
@@ -73,14 +101,19 @@ export function AssignmentsProvider({ children }: { children: React.ReactNode })
     setLoading(true);
     try {
       if (user.role === "teacher") {
-        const [homework, quizzes] = await Promise.all([
+        const [homework, quizzes, assessments] = await Promise.all([
           api.getTeacherHomework(),
           api.getTeacherQuizzes(),
+          api.getTeacherAssessments(),
         ]);
+        const submissionRows = (assessments as Array<{ submissions: HomeworkSubmission[] }>).flatMap(
+          (row) => row.submissions ?? []
+        );
         setState((prev) => ({
           ...prev,
           homework: homework as Homework[],
           quizzes: (quizzes as Quiz[]).map(normalizeQuiz),
+          homeworkSubmissions: submissionRows,
         }));
       } else if (user.role === "parent") {
         const [homework, quizzes, submissions] = await Promise.all([
@@ -144,61 +177,105 @@ export function AssignmentsProvider({ children }: { children: React.ReactNode })
     [state.quizzes]
   );
 
-  const addHomework = useCallback(async (data: Omit<Homework, "id" | "createdAt">) => {
-    const item = (await api.createTeacherHomework(data)) as Homework;
-    setState((prev) => ({ ...prev, homework: [item, ...prev.homework] }));
-    return item;
+  const addHomework = useCallback(async (data: HomeworkFormData) => {
+    const fd = buildHomeworkFormData(data);
+    const result = await api.createTeacherHomework(fd);
+    const items = (Array.isArray(result) ? result : [result]) as Homework[];
+    setState((prev) => ({ ...prev, homework: [...items, ...prev.homework] }));
+    return items;
   }, []);
 
-  const updateHomework = useCallback(
-    async (id: string, data: Partial<Omit<Homework, "id" | "createdAt">>) => {
-      const item = (await api.updateTeacherHomework(id, data)) as Homework;
-      setState((prev) => ({
-        ...prev,
-        homework: prev.homework.map((h) => (h.id === id ? item : h)),
-      }));
-    },
-    []
-  );
+  const updateHomework = useCallback(async (id: string, data: HomeworkFormData, options?: { applyToGroup?: boolean }) => {
+    const initial = state.homework.find((h) => h.id === id);
+    const fd = buildHomeworkFormData(data, initial, {
+      applyToGroup: options?.applyToGroup,
+      syncClasses: Boolean(data.classIds?.length),
+    });
+    await api.updateTeacherHomework(id, fd);
+    await refresh();
+  }, [state.homework, refresh]);
 
-  const deleteHomework = useCallback(async (id: string) => {
-    await api.deleteTeacherHomework(id);
+  const deleteHomework = useCallback(async (id: string, options?: { group?: boolean }) => {
+    const target = state.homework.find((h) => h.id === id);
+    await api.deleteTeacherHomework(id, options?.group);
+    setState((prev) => {
+      const removeIds = new Set<string>([id]);
+      if (options?.group && target?.groupId) {
+        for (const hw of prev.homework) {
+          if (hw.groupId === target.groupId) removeIds.add(hw.id);
+        }
+      }
+      return {
+        ...prev,
+        homework: prev.homework.filter((h) => !removeIds.has(h.id)),
+        homeworkSubmissions: prev.homeworkSubmissions.filter((s) => !removeIds.has(s.homeworkId)),
+      };
+    });
+  }, [state.homework]);
+
+  const addQuiz = useCallback(async (data: QuizFormData) => {
+    const payload = buildQuizPayload(data);
+    const result = await api.createTeacherQuiz(payload);
+    const items = (Array.isArray(result) ? result : [result]) as Quiz[];
     setState((prev) => ({
       ...prev,
-      homework: prev.homework.filter((h) => h.id !== id),
-      homeworkSubmissions: prev.homeworkSubmissions.filter((s) => s.homeworkId !== id),
+      quizzes: [...items.map(normalizeQuiz), ...prev.quizzes],
     }));
-  }, []);
-
-  const addQuiz = useCallback(async (data: Omit<Quiz, "id" | "createdAt">) => {
-    const item = normalizeQuiz((await api.createTeacherQuiz(data)) as Quiz);
-    setState((prev) => ({ ...prev, quizzes: [item, ...prev.quizzes] }));
-    return item;
+    return items[0];
   }, []);
 
   const updateQuiz = useCallback(
-    async (id: string, data: Partial<Omit<Quiz, "id" | "createdAt">>) => {
-      const item = normalizeQuiz((await api.updateTeacherQuiz(id, data)) as Quiz);
-      setState((prev) => ({
-        ...prev,
-        quizzes: prev.quizzes.map((q) => (q.id === id ? item : q)),
-      }));
+    async (
+      id: string,
+      data: QuizFormData | Partial<Pick<Quiz, "gradesVisible" | "reviewAllowed" | "status">> & { applyToGroup?: boolean },
+      options?: { applyToGroup?: boolean }
+    ) => {
+      let payload: Record<string, unknown>;
+      if ("questions" in data && Array.isArray(data.questions)) {
+        payload = buildQuizPayload(data as QuizFormData, {
+          applyToGroup: options?.applyToGroup ?? data.applyToGroup,
+          syncClasses: Boolean((data as QuizFormData).classIds?.length),
+        });
+      } else {
+        payload = { ...data };
+        if (options?.applyToGroup || data.applyToGroup) payload.applyToGroup = true;
+      }
+      await api.updateTeacherQuiz(id, payload);
+      await refresh();
     },
-    []
+    [refresh]
   );
 
-  const deleteQuiz = useCallback(async (id: string) => {
-    await api.deleteTeacherQuiz(id);
-    setState((prev) => ({
-      ...prev,
-      quizzes: prev.quizzes.filter((q) => q.id !== id),
-      quizSubmissions: prev.quizSubmissions.filter((s) => s.quizId !== id),
-    }));
-  }, []);
+  const deleteQuiz = useCallback(async (id: string, options?: { group?: boolean }) => {
+    const target = state.quizzes.find((q) => q.id === id);
+    await api.deleteTeacherQuiz(id, options?.group);
+    setState((prev) => {
+      const removeIds = new Set<string>([id]);
+      if (options?.group && target?.groupId) {
+        for (const quiz of prev.quizzes) {
+          if (quiz.groupId === target.groupId) removeIds.add(quiz.id);
+        }
+      }
+      return {
+        ...prev,
+        quizzes: prev.quizzes.filter((q) => !removeIds.has(q.id)),
+        quizSubmissions: prev.quizSubmissions.filter((s) => !removeIds.has(s.quizId)),
+      };
+    });
+  }, [state.quizzes]);
 
   const submitHomework = useCallback(
-    async (data: Omit<HomeworkSubmission, "id" | "submittedAt">) => {
-      const item = (await api.submitParentHomework(data.homeworkId, data.content)) as HomeworkSubmission;
+    async (data: {
+      homeworkId: string;
+      studentId: string;
+      content: string;
+      attachment?: File | null;
+    }) => {
+      const fd = new FormData();
+      fd.append("homeworkId", data.homeworkId);
+      fd.append("content", data.content);
+      if (data.attachment) fd.append("attachment", data.attachment);
+      const item = (await api.submitParentHomework(fd)) as HomeworkSubmission;
       setState((prev) => ({
         ...prev,
         homeworkSubmissions: [
@@ -228,20 +305,43 @@ export function AssignmentsProvider({ children }: { children: React.ReactNode })
   );
 
   const submitQuiz = useCallback(
-    async (data: Omit<QuizSubmission, "id" | "submittedAt">) => {
-      const item = (await api.submitParentQuiz({
-        quizId: data.quizId,
-        answers: data.answers,
-        timeSpentSeconds: data.timeSpentSeconds,
-      })) as QuizSubmission;
+    async (
+      data: Omit<QuizSubmission, "id" | "submittedAt"> & { essayFiles?: Record<string, File | null> }
+    ) => {
+      const fd = new FormData();
+      fd.append("quizId", data.quizId);
+      fd.append("answers", JSON.stringify(data.answers));
+      fd.append("timeSpentSeconds", String(data.timeSpentSeconds));
+      if (data.essayFiles) {
+        for (const [questionId, file] of Object.entries(data.essayFiles)) {
+          if (file) fd.append(`essayFile_${questionId}`, file);
+        }
+      }
+      const item = (await api.submitParentQuiz(fd)) as QuizSubmission;
       setState((prev) => ({
         ...prev,
-        quizSubmissions: [
-          ...prev.quizSubmissions.filter(
-            (s) => !(s.quizId === data.quizId && s.studentId === data.studentId)
-          ),
-          item,
-        ],
+        quizSubmissions: [...prev.quizSubmissions, item],
+        quizzes: prev.quizzes.map((q) =>
+          q.id === data.quizId
+            ? {
+                ...q,
+                attemptCount:
+                  item.attemptsUsed ??
+                  quizAttemptsForStudent(prev.quizSubmissions, data.quizId, data.studentId)
+                    .length + 1,
+                attemptsRemaining:
+                  item.attemptsRemaining ??
+                  Math.max(
+                    0,
+                    (q.maxAttempts ?? 1) -
+                      quizAttemptsForStudent(prev.quizSubmissions, data.quizId, data.studentId)
+                        .length -
+                      1
+                  ),
+                canRetake: (item.attemptsRemaining ?? 0) > 0,
+              }
+            : q
+        ),
       }));
       return item;
     },
@@ -250,7 +350,15 @@ export function AssignmentsProvider({ children }: { children: React.ReactNode })
 
   const getQuizSubmission = useCallback(
     (quizId: string, studentId: string) =>
-      state.quizSubmissions.find((s) => s.quizId === quizId && s.studentId === studentId),
+      pickBestQuizSubmission(
+        quizAttemptsForStudent(state.quizSubmissions, quizId, studentId)
+      ),
+    [state.quizSubmissions]
+  );
+
+  const getQuizAttemptCount = useCallback(
+    (quizId: string, studentId: string) =>
+      quizAttemptsForStudent(state.quizSubmissions, quizId, studentId).length,
     [state.quizSubmissions]
   );
 
@@ -279,6 +387,7 @@ export function AssignmentsProvider({ children }: { children: React.ReactNode })
         getHomeworkSubmissions,
         submitQuiz,
         getQuizSubmission,
+        getQuizAttemptCount,
         getQuizSubmissions,
         refresh,
       }}

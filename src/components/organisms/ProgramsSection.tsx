@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { BookOpen, GraduationCap } from "lucide-react";
+import { ExpandableText } from "@/components/molecules/ExpandableText";
 import { api } from "@/lib/api";
 
 type ProgramRow = { grade: string; description: string };
@@ -11,6 +12,18 @@ type ProgramRow = { grade: string; description: string };
 export function ProgramsSection() {
   const [items, setItems] = useState<ProgramRow[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const headerGradients = useMemo(
+    () => [
+      "from-brand-blue/90 to-brand-blue", // Royal
+      "from-amber-400 to-yellow-500", // Golden
+      "from-orange-500 to-rose-500", // Vibrant
+      "from-sky-400 to-cyan-500", // Sky
+      "from-emerald-500 to-green-600", // Green
+      "from-fuchsia-500 to-[var(--brand-magenta)]", // Magenta
+    ],
+    []
+  );
 
   useEffect(() => {
     api
@@ -77,7 +90,12 @@ export function ProgramsSection() {
               transition={{ duration: 0.4, delay: i * 0.06 }}
               className="flex flex-col overflow-hidden rounded-2xl border border-neutral-100 bg-white shadow-sm transition-shadow hover:shadow-md"
             >
-              <div className="flex items-center gap-3 bg-gradient-to-l from-brand-blue/90 to-brand-blue px-5 py-4">
+              <div
+                className={[
+                  "flex items-center gap-3 bg-gradient-to-l px-5 py-4",
+                  headerGradients[i % headerGradients.length],
+                ].join(" ")}
+              >
                 <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/20">
                   <BookOpen className="h-5 w-5 text-white" />
                 </span>
@@ -88,9 +106,9 @@ export function ProgramsSection() {
               </div>
               {(p.description || "").trim() && (
                 <div className="flex flex-1 flex-col p-5">
-                  <p className="line-clamp-4 flex-1 text-sm leading-relaxed text-p-black/70">
+                  <ExpandableText maxLines={4} className="flex-1 text-sm text-p-black/70">
                     {p.description}
-                  </p>
+                  </ExpandableText>
                 </div>
               )}
             </motion.article>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Alert } from "@/components/atoms/Alert";
 import { Badge } from "@/components/atoms/Badge";
 import { Button } from "@/components/atoms/Button";
@@ -8,8 +9,14 @@ import { Card } from "@/components/atoms/Card";
 import { Input } from "@/components/atoms/Input";
 import { Select } from "@/components/atoms/Select";
 import { PageHeader } from "@/components/molecules/PageHeader";
-import { roleLabels } from "@/data/navigation";
-import { adminRoleOptions } from "@/lib/adminRoles";
+import { useAuth } from "@/context/AuthContext";
+import {
+  adminRoleDescriptions,
+  adminRoleLabels,
+  adminRoleOptions,
+  isAdminRole,
+  isSuperAdmin,
+} from "@/lib/adminRoles";
 import { api } from "@/lib/api";
 import type { AccountCredentials, SystemUser } from "@/types";
 import { KeyRound, Plus, Search, Trash2, X } from "lucide-react";
@@ -30,6 +37,8 @@ const statusFilterOptions = [
 ];
 
 export default function AdminUsersPage() {
+  const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
   const [users, setUsers] = useState<SystemUser[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<SystemUser | null>(null);
@@ -38,6 +47,8 @@ export default function AdminUsersPage() {
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [createRole, setCreateRole] = useState<string>("admin_students");
+  const [editRole, setEditRole] = useState<string>("admin_students");
   const [confirmDeleteUser, setConfirmDeleteUser] = useState<SystemUser | null>(null);
   const [deletingUser, setDeletingUser] = useState(false);
   const [confirmResetUser, setConfirmResetUser] = useState<SystemUser | null>(null);
@@ -47,10 +58,21 @@ export default function AdminUsersPage() {
   const scrollToFormRef = useRef(false);
 
   useEffect(() => {
+    if (authLoading) return;
+    if (!user || !isSuperAdmin(user.role)) {
+      router.replace("/admin");
+      return;
+    }
     api.getAdminUsers()
       .then((data) => setUsers(data as SystemUser[]))
       .catch(() => setUsers([]));
-  }, []);
+  }, [authLoading, user, router]);
+
+  useEffect(() => {
+    if (editing && isAdminRole(editing.role)) {
+      setEditRole(editing.role);
+    }
+  }, [editing]);
 
   useEffect(() => {
     if (!scrollToFormRef.current || !formRef.current) return;
@@ -178,7 +200,7 @@ export default function AdminUsersPage() {
       if (statusFilter && user.status !== statusFilter) return false;
 
       if (query) {
-        const haystack = [user.name, user.username, roleLabels[user.role]]
+        const haystack = [user.name, user.username, adminRoleLabels[user.role as keyof typeof adminRoleLabels] ?? user.role]
           .filter(Boolean)
           .join(" ")
           .toLowerCase();
@@ -194,6 +216,15 @@ export default function AdminUsersPage() {
     setRoleFilter("");
     setStatusFilter("");
   }
+
+  if (authLoading || !user || !isSuperAdmin(user.role)) {
+    return <p className="text-neutral-500">جاري التحميل...</p>;
+  }
+
+  const createRoleDescription = isAdminRole(createRole)
+    ? adminRoleDescriptions[createRole]
+    : "";
+  const editRoleDescription = isAdminRole(editRole) ? adminRoleDescriptions[editRole] : "";
 
   return (
     <div>
@@ -242,8 +273,14 @@ export default function AdminUsersPage() {
                 label="دور الإدارة"
                 name="role"
                 options={adminRoleOptions}
-                defaultValue="admin_students"
+                value={createRole}
+                onChange={(e) => setCreateRole(e.target.value)}
               />
+              {createRoleDescription && (
+                <p className="sm:col-span-2 rounded-xl border border-brand-blue/20 bg-brand-blue/5 px-4 py-3 text-sm leading-relaxed text-p-black/75">
+                  {createRoleDescription}
+                </p>
+              )}
               <Input
                 label="كلمة المرور"
                 name="password"
@@ -290,8 +327,14 @@ export default function AdminUsersPage() {
                 label="دور الإدارة"
                 name="role"
                 options={adminRoleOptions}
-                defaultValue={editing.role}
+                value={editRole}
+                onChange={(e) => setEditRole(e.target.value)}
               />
+              {editRoleDescription && (
+                <p className="sm:col-span-2 rounded-xl border border-brand-blue/20 bg-brand-blue/5 px-4 py-3 text-sm leading-relaxed text-p-black/75">
+                  {editRoleDescription}
+                </p>
+              )}
               <Select
                 label="الحالة"
                 name="status"
@@ -381,7 +424,7 @@ export default function AdminUsersPage() {
                 <td className="px-4 py-3" dir="ltr">
                   {u.username}
                 </td>
-                <td className="px-4 py-3">{roleLabels[u.role] ?? u.role}</td>
+                <td className="px-4 py-3">{adminRoleLabels[u.role as keyof typeof adminRoleLabels] ?? u.role}</td>
                 <td className="px-4 py-3">
                   <Badge variant={u.status === "active" ? "success" : "default"}>
                     {u.status === "active" ? "نشط" : "معطّل"}

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Card } from "@/components/atoms/Card";
+import { ExpandableText } from "@/components/molecules/ExpandableText";
 import { PublicPage } from "@/components/molecules/PublicPage";
 import { api } from "@/lib/api";
 
@@ -29,7 +30,9 @@ export default function PoliciesPage() {
           {items.map((p) => (
             <Card key={p.id}>
               <h3 className="text-lg font-bold text-p-black">{p.title}</h3>
-              <p className="mt-2 text-sm leading-relaxed text-p-black/60">{p.text}</p>
+              <ExpandableText maxLines={4} className="mt-2 text-sm text-p-black/60">
+                {p.text}
+              </ExpandableText>
             </Card>
           ))}
         </div>

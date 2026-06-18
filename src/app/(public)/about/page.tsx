@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Heart, Sparkles, Target } from "lucide-react";
 import { PremiumPageHero, PremiumPanel } from "@/components/molecules/PremiumPageHero";
+import { ExpandableText } from "@/components/molecules/ExpandableText";
 import { PublicPage } from "@/components/molecules/PublicPage";
 import { api } from "@/lib/api";
 
@@ -52,7 +53,7 @@ export default function AboutPage() {
             gradient="from-brand-blue/10 via-white to-white"
             icon={<Target className="h-7 w-7 text-brand-blue" />}
           >
-            <p>{aboutSettings.vision}</p>
+            <ExpandableText maxLines={4}>{aboutSettings.vision}</ExpandableText>
           </PremiumPanel>
         </motion.div>
 
@@ -68,7 +69,7 @@ export default function AboutPage() {
             gradient="from-brand-orange/10 via-white to-brand-yellow/10"
             icon={<Heart className="h-7 w-7 text-brand-orange" />}
           >
-            <p>{aboutSettings.mission}</p>
+            <ExpandableText maxLines={4}>{aboutSettings.mission}</ExpandableText>
           </PremiumPanel>
         </motion.div>
       </div>
@@ -106,7 +107,9 @@ export default function AboutPage() {
               >
                 <span className="text-3xl font-extrabold text-brand-yellow/80">{v.num}</span>
                 <h3 className="mt-4 text-lg font-bold text-white">{v.title}</h3>
-                <p className="mt-3 text-sm leading-relaxed text-white/70">{v.desc}</p>
+                <ExpandableText maxLines={3} className="mt-3 text-sm text-white/70">
+                  {v.desc}
+                </ExpandableText>
               </motion.div>
             ))
             )}

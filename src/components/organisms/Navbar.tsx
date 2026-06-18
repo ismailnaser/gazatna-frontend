@@ -38,7 +38,9 @@ export function Navbar() {
       )}
     >
       <nav className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-2 px-4 sm:gap-4 sm:px-6 lg:h-[4.5rem] lg:px-8">
-        <Logo variant="full" />
+        <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+          <Logo variant="full" />
+        </div>
 
         <ul className="hidden items-center lg:flex">
           {publicNavLinks.map((link, i) => (

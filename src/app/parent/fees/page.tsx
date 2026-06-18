@@ -5,8 +5,11 @@ import { Alert } from "@/components/atoms/Alert";
 import { Button } from "@/components/atoms/Button";
 import { Card } from "@/components/atoms/Card";
 import { Input } from "@/components/atoms/Input";
+import { NumberFieldWithKeypad } from "@/components/teacher/NumberFieldWithKeypad";
+import { NumberKeypadGroup } from "@/components/teacher/NumberKeypadGroup";
 import { Textarea } from "@/components/atoms/Textarea";
 import { PageHeader } from "@/components/molecules/PageHeader";
+import { FileUploadField } from "@/components/molecules/FileUploadField";
 import { StatusBadge } from "@/components/molecules/StatusBadge";
 import { InstallmentNotifications, InstallmentSchedule } from "@/components/parent/InstallmentPanel";
 import { api } from "@/lib/api";
@@ -140,28 +143,28 @@ export default function ParentFeesPage() {
               {error}
             </Alert>
           )}
+          <NumberKeypadGroup>
           <form onSubmit={handleUpload} className="space-y-4">
-            <Input
+            <NumberFieldWithKeypad
+              fieldId="feeAmount"
               label="المبلغ (₪)"
-              type="number"
-              min="1"
-              step="0.01"
               value={amount}
-              onChange={(e) => setAmount(e.target.value)}
+              onChange={setAmount}
+              min={1}
+              max={999999}
+              allowDecimal
+              maxDecimalPlaces={2}
               required
             />
-            <div>
-              <label className="mb-1.5 block text-sm font-medium text-p-black/80">
-                صورة الإشعار
-              </label>
-              <input
-                type="file"
-                accept="image/*"
-                className="w-full text-sm text-p-black/60"
-                onChange={(e) => setReceipt(e.target.files?.[0] ?? null)}
-                required
-              />
-            </div>
+            <FileUploadField
+              label="صورة إشعار الدفع"
+              preset="image"
+              buttonText="اضغط لرفع صورة الإشعار"
+              hint="صورة واضحة لإيصال أو إشعار الدفع"
+              required
+              selectedFileName={receipt?.name ?? null}
+              onChange={(files) => setReceipt(files?.[0] ?? null)}
+            />
             <Textarea
               label="ملاحظات"
               placeholder="اختياري"
@@ -172,6 +175,7 @@ export default function ParentFeesPage() {
               {uploading ? "جاري الإرسال..." : "إرسال الإشعار"}
             </Button>
           </form>
+          </NumberKeypadGroup>
         </Card>
 
         <Card className="overflow-x-auto p-0">

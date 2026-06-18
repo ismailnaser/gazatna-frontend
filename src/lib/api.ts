@@ -4,6 +4,39 @@ const TOKEN_KEY = "ghazatna_access";
 const REFRESH_KEY = "ghazatna_refresh";
 const USER_KEY = "ghazatna_auth";
 
+const DEFAULT_TIMEOUT_MS = 15000;
+
+function mergeAbortSignals(signals: Array<AbortSignal | undefined>): AbortSignal | undefined {
+  const active = signals.filter(Boolean) as AbortSignal[];
+  if (active.length === 0) return undefined;
+  if (active.length === 1) return active[0];
+  const controller = new AbortController();
+  const onAbort = () => controller.abort();
+  for (const s of active) {
+    if (s.aborted) {
+      controller.abort();
+      break;
+    }
+    s.addEventListener("abort", onAbort, { once: true });
+  }
+  return controller.signal;
+}
+
+async function fetchWithTimeout(
+  url: string,
+  options: RequestInit = {},
+  timeoutMs: number = DEFAULT_TIMEOUT_MS
+) {
+  const controller = new AbortController();
+  const signal = mergeAbortSignals([options.signal, controller.signal]);
+  const id = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...options, signal });
+  } finally {
+    clearTimeout(id);
+  }
+}
+
 export function getAccessToken(): string | null {
   if (typeof window === "undefined") return null;
   return sessionStorage.getItem(TOKEN_KEY);
@@ -38,7 +71,7 @@ export function setStoredUser<T>(user: T) {
 async function refreshAccessToken(): Promise<string | null> {
   const refresh = sessionStorage.getItem(REFRESH_KEY);
   if (!refresh) return null;
-  const res = await fetch(`${API_BASE}/auth/token/refresh/`, {
+  const res = await fetchWithTimeout(`${API_BASE}/auth/token/refresh/`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ refresh }),
@@ -98,13 +131,13 @@ export async function apiFetch<T>(
   let token = getAccessToken();
   if (token) headers.Authorization = `Bearer ${token}`;
 
-  let res = await fetch(`${API_BASE}${path}`, { ...options, headers });
+  let res = await fetchWithTimeout(`${API_BASE}${path}`, { ...options, headers });
 
   if (res.status === 401 && token) {
     const newToken = await refreshAccessToken();
     if (newToken) {
       headers.Authorization = `Bearer ${newToken}`;
-      res = await fetch(`${API_BASE}${path}`, { ...options, headers });
+      res = await fetchWithTimeout(`${API_BASE}${path}`, { ...options, headers });
     }
   }
 
@@ -126,7 +159,7 @@ async function apiFormFetch<T>(
   async function send(token: string | null) {
     const headers: Record<string, string> = {};
     if (token) headers.Authorization = `Bearer ${token}`;
-    return fetch(`${API_BASE}${path}`, {
+    return fetchWithTimeout(`${API_BASE}${path}`, {
       method,
       headers,
       body: rebuildFormData(entries),
@@ -199,8 +232,12 @@ export const api = {
 
   getAdminAdmissions: (status?: string) =>
     apiList<unknown>(status ? `/admin/admissions/?status=${encodeURIComponent(status)}` : "/admin/admissions/"),
-  approveAdminAdmission: (id: string, data: { studentNumber?: string; gradeLevel?: string; section?: string }) =>
+  approveAdminAdmission: (id: string, data: { classId: string }) =>
     apiFetch<unknown>(`/admin/admissions/${id}/approve/`, { method: "POST", body: JSON.stringify(data) }),
+  unapproveAdminAdmission: (id: string) =>
+    apiFetch<unknown>(`/admin/admissions/${id}/unapprove/`, { method: "POST" }),
+  deleteAdminAdmission: (id: string) =>
+    apiFetch<void>(`/admin/admissions/${id}/`, { method: "DELETE" }),
 
   getAdminMessages: (status?: string) =>
     apiList<unknown>(status ? `/admin/messages/?status=${encodeURIComponent(status)}` : "/admin/messages/"),
@@ -243,6 +280,11 @@ export const api = {
     apiFetch<unknown>(`/admin/grades/${id}/`, { method: "PATCH", body: JSON.stringify(data) }),
   deleteAdminGrade: (id: string) =>
     apiFetch<void>(`/admin/grades/${id}/`, { method: "DELETE" }),
+  reorderAdminGrades: (order: string[]) =>
+    apiFetch<unknown>("/admin/grades/reorder/", {
+      method: "POST",
+      body: JSON.stringify({ order }),
+    }),
   getAdminClasses: () => apiList<unknown>("/admin/classes/"),
   createAdminClass: (data: unknown) =>
     apiFetch<unknown>("/admin/classes/", { method: "POST", body: JSON.stringify(data) }),
@@ -257,6 +299,8 @@ export const api = {
   getAdminSubjects: () => apiList<unknown>("/admin/subjects/"),
   createAdminSubject: (data: unknown) =>
     apiFetch<unknown>("/admin/subjects/", { method: "POST", body: JSON.stringify(data) }),
+  updateAdminSubject: (id: string, data: { name: string }) =>
+    apiFetch<unknown>(`/admin/subjects/${id}/`, { method: "PATCH", body: JSON.stringify(data) }),
   deleteAdminSubject: (id: string) =>
     apiFetch<void>(`/admin/subjects/${id}/`, { method: "DELETE" }),
   getAdminTeachers: () => apiList<unknown>("/admin/teachers/"),
@@ -290,6 +334,14 @@ export const api = {
       method: "PATCH",
       body: JSON.stringify(data),
     }),
+  deleteAdminManualPayment: (id: string) =>
+    apiFetch<void>(`/admin/finance/payments/${id}/`, { method: "DELETE" }),
+  recordAdminManualPayment: (data: { studentId: string; amount: number; note?: string }) =>
+    apiFetch<unknown>("/admin/finance/payments/manual/", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+  getAdminManualPayments: () => apiList<unknown>("/admin/finance/payments/manual/"),
   getAdminFeePlans: () => apiList<unknown>("/admin/finance/plans/"),
   createAdminFeePlan: (data: unknown) =>
     apiFetch<unknown>("/admin/finance/plans/", { method: "POST", body: JSON.stringify(data) }),
@@ -303,6 +355,7 @@ export const api = {
       body: JSON.stringify({ days }),
     }),
   getAdminNews: () => apiList<unknown>("/admin/content/news/"),
+  getAdminNewsItem: (id: string) => apiFetch<unknown>(`/admin/content/news/${id}/`),
   createAdminNews: (data: FormData | Record<string, unknown>) =>
     data instanceof FormData
       ? apiFormFetch<unknown>("/admin/content/news/", data, "POST")
@@ -328,38 +381,99 @@ export const api = {
     }),
   getTeacherHomework: (classId?: string) =>
     apiList<unknown>(classId ? `/teacher/homework/?classId=${classId}` : "/teacher/homework/"),
-  createTeacherHomework: (data: unknown) =>
-    apiFetch<unknown>("/teacher/homework/", { method: "POST", body: JSON.stringify(data) }),
-  updateTeacherHomework: (id: string, data: unknown) =>
-    apiFetch<unknown>(`/teacher/homework/${id}/`, { method: "PATCH", body: JSON.stringify(data) }),
-  deleteTeacherHomework: (id: string) =>
-    apiFetch<void>(`/teacher/homework/${id}/`, { method: "DELETE" }),
+  createTeacherHomework: (formData: FormData) =>
+    apiFormFetch<unknown>("/teacher/homework/", formData, "POST"),
+  updateTeacherHomework: (id: string, formData: FormData) =>
+    apiFormFetch<unknown>(`/teacher/homework/${id}/`, formData, "PATCH"),
+  deleteTeacherHomework: (id: string, group = false) =>
+    apiFetch<void>(group ? `/teacher/homework/${id}/?group=true` : `/teacher/homework/${id}/`, {
+      method: "DELETE",
+    }),
+  getTeacherAssessments: () => apiFetch<unknown[]>("/teacher/assessments/"),
+  getTeacherAlerts: () => apiList<unknown>("/teacher/alerts/"),
+  markTeacherAlertRead: (alertKey: string) =>
+    apiFetch<{ ok: boolean }>("/teacher/alerts/read/", {
+      method: "POST",
+      body: JSON.stringify({ alertKey }),
+    }),
+  gradeTeacherHomeworkSubmission: (
+    homeworkId: string,
+    submissionId: string,
+    data: { score?: number | null; teacherNote?: string; maxScore?: number }
+  ) =>
+    apiFetch<unknown>(`/teacher/homework/${homeworkId}/submissions/${submissionId}/grade/`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    }),
   getTeacherQuizzes: (classId?: string) =>
     apiList<unknown>(classId ? `/teacher/quizzes/?classId=${classId}` : "/teacher/quizzes/"),
   createTeacherQuiz: (data: unknown) =>
     apiFetch<unknown>("/teacher/quizzes/", { method: "POST", body: JSON.stringify(data) }),
   updateTeacherQuiz: (id: string, data: unknown) =>
     apiFetch<unknown>(`/teacher/quizzes/${id}/`, { method: "PATCH", body: JSON.stringify(data) }),
-  deleteTeacherQuiz: (id: string) =>
-    apiFetch<void>(`/teacher/quizzes/${id}/`, { method: "DELETE" }),
+  deleteTeacherQuiz: (id: string, group = false) =>
+    apiFetch<void>(group ? `/teacher/quizzes/${id}/?group=true` : `/teacher/quizzes/${id}/`, {
+      method: "DELETE",
+    }),
+  getTeacherQuizGradingBundle: (quizId: string) =>
+    apiFetch<unknown>(`/teacher/quizzes/${quizId}/grading-bundle/`),
+  gradeTeacherQuizSubmission: (
+    quizId: string,
+    submissionId: string,
+    data: { manualScores?: Record<string, number | null>; teacherNote?: string }
+  ) =>
+    apiFetch<unknown>(`/teacher/quizzes/${quizId}/submissions/${submissionId}/grade/`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    }),
+  getTeacherAnnouncements: (classId?: string) =>
+    apiList<unknown>(classId ? `/teacher/announcements/?classId=${classId}` : "/teacher/announcements/"),
+  createTeacherAnnouncement: (data: unknown) =>
+    apiFetch<unknown>("/teacher/announcements/", { method: "POST", body: JSON.stringify(data) }),
+  updateTeacherAnnouncement: (id: string, data: unknown) =>
+    apiFetch<unknown>(`/teacher/announcements/${id}/`, { method: "PATCH", body: JSON.stringify(data) }),
+  deleteTeacherAnnouncement: (id: string, group = false) =>
+    apiFetch<void>(group ? `/teacher/announcements/${id}/?group=true` : `/teacher/announcements/${id}/`, {
+      method: "DELETE",
+    }),
+  getTeacherMaterials: (classId?: string) =>
+    apiList<unknown>(classId ? `/teacher/materials/?classId=${classId}` : "/teacher/materials/"),
+  createTeacherMaterial: (formData: FormData) =>
+    apiFormFetch<unknown>("/teacher/materials/", formData, "POST"),
+  updateTeacherMaterial: (id: string, formData: FormData) =>
+    apiFormFetch<unknown>(`/teacher/materials/${id}/`, formData, "PATCH"),
+  deleteTeacherMaterial: (id: string, group = false) =>
+    apiFetch<void>(group ? `/teacher/materials/${id}/?group=true` : `/teacher/materials/${id}/`, {
+      method: "DELETE",
+    }),
 
   getParentAlerts: () => apiList<unknown>("/parent/alerts/"),
+  dismissParentAlert: (alertId: string) =>
+    apiFetch<{ ok: boolean }>("/parent/alerts/dismiss/", {
+      method: "POST",
+      body: JSON.stringify({ alertId }),
+    }),
   getParentChild: () => apiFetch<unknown>("/parent/child/"),
   getParentStudent: () => apiFetch<unknown>("/parent/student/"),
   getParentGrades: () => apiList<unknown>("/parent/grades/"),
+  getParentAssessments: () => apiList<unknown>("/parent/assessments/"),
   getParentFees: () =>
     apiFetch<{ student: unknown; notices: unknown[]; feeStatus: unknown }>("/parent/fees/"),
   submitParentPayment: (data: FormData) =>
     apiFormFetch<unknown>("/parent/fees/", data, "POST"),
   getParentHomework: () => apiList<unknown>("/parent/homework/"),
+  getParentHomeworkDetail: (id: string) => apiFetch<unknown>(`/parent/homework/${id}/`),
+  getParentHomeworkBySubject: () => apiFetch<unknown[]>("/parent/homework/by-subject/"),
+  getParentSubjects: () => apiList<unknown>("/parent/subjects/"),
+  getParentSubjectDetail: (subject: string) =>
+    apiFetch<unknown>(`/parent/subjects/${encodeURIComponent(subject)}/`),
   getParentQuizzes: () => apiList<unknown>("/parent/quizzes/"),
-  submitParentHomework: (homeworkId: string, content: string) =>
-    apiFetch<unknown>("/parent/homework/", {
-      method: "POST",
-      body: JSON.stringify({ homeworkId, content }),
-    }),
-  submitParentQuiz: (data: unknown) =>
-    apiFetch<unknown>("/parent/quizzes/", { method: "POST", body: JSON.stringify(data) }),
+  getParentQuizReview: (quizId: string) =>
+    apiFetch<{ quiz: unknown; submission: unknown }>(`/parent/quizzes/${quizId}/review/`),
+  submitParentHomework: (formData: FormData) =>
+    apiFormFetch<unknown>("/parent/homework/", formData, "POST"),
+  submitParentQuiz: (formData: FormData) =>
+    apiFormFetch<unknown>("/parent/quizzes/", formData, "POST"),
   getParentSubmissions: () =>
     apiFetch<{ homework: unknown[]; quizzes: unknown[] }>("/parent/submissions/"),
 };

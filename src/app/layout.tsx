@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Cairo } from "next/font/google";
 import { ClearStaleServiceWorkers } from "@/components/dev/ClearStaleServiceWorkers";
+import { AppBootstrap } from "@/components/AppBootstrap";
 import { AssignmentsProvider } from "@/context/AssignmentsContext";
 import { AuthProvider } from "@/context/AuthContext";
 import { SchoolProvider } from "@/context/SchoolContext";
@@ -39,7 +40,9 @@ export default function RootLayout({
         <ClearStaleServiceWorkers />
         <AuthProvider>
           <SchoolProvider>
-            <AssignmentsProvider>{children}</AssignmentsProvider>
+            <AssignmentsProvider>
+              <AppBootstrap>{children}</AppBootstrap>
+            </AssignmentsProvider>
           </SchoolProvider>
         </AuthProvider>
       </body>

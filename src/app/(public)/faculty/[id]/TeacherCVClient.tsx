@@ -21,7 +21,7 @@ export function TeacherCVClient({ id }: { id: string }) {
   }
 
   return (
-    <div className="bg-white px-4 py-12 sm:px-6 sm:py-16">
+    <div className="bg-white px-4 pb-12 pt-[var(--nav-height)] sm:px-6 sm:pb-16">
       <TeacherCV teacher={teacher} classes={getTeacherClasses(teacher.id)} />
     </div>
   );

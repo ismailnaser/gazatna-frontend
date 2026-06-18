@@ -107,3 +107,76 @@ a[class*="bg-["] {
     height: calc(var(--nav-height) + 7rem);
   }
 }
+
+@keyframes loading-bar-slide {
+  0% {
+    transform: translateX(-120%);
+  }
+  100% {
+    transform: translateX(320%);
+  }
+}
+
+@keyframes loading-logo-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    box-shadow: 0 1px 3px rgb(0 0 0 / 0.06);
+  }
+  50% {
+    transform: scale(1.03);
+    box-shadow: 0 8px 24px rgb(66 76 243 / 0.12);
+  }
+}
+
+@keyframes loading-dot-bounce {
+  0%,
+  80%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.45;
+  }
+  40% {
+    transform: translateY(-6px);
+    opacity: 1;
+  }
+}
+
+.loading-bar {
+  animation: loading-bar-slide 1.35s ease-in-out infinite;
+}
+
+.loading-logo-pulse {
+  animation: loading-logo-pulse 2s ease-in-out infinite;
+}
+
+.loading-dot {
+  animation: loading-dot-bounce 1.2s ease-in-out infinite;
+}
+
+.loading-dot-delay-1 {
+  animation-delay: 0.15s;
+}
+
+.loading-dot-delay-2 {
+  animation-delay: 0.3s;
+}
+
+.date-time-input {
+  color-scheme: light;
+  text-align: start;
+}
+
+.date-time-input::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  margin-inline-start: 0.25rem;
+  opacity: 0.55;
+}
+
+.date-time-input::-webkit-datetime-edit {
+  padding: 0;
+}
+
+.date-time-input::-webkit-datetime-edit-fields-wrapper {
+  padding: 0;
+}

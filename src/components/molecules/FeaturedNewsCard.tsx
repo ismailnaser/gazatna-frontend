@@ -1,23 +1,26 @@
 import Link from "next/link";
 import { Calendar } from "lucide-react";
 import { Button } from "@/components/atoms/Button";
-import { NewsCover } from "@/components/molecules/NewsCover";
-import type { PublicNewsItem } from "@/types/news";
+import { NewsImageCarousel } from "@/components/molecules/NewsImageCarousel";
+import { ExpandableText } from "@/components/molecules/ExpandableText";
+import { newsSlideUrls, type PublicNewsItem } from "@/types/news";
 
 export function FeaturedNewsCard({ item }: { item: PublicNewsItem }) {
+  const slideUrls = newsSlideUrls(item);
+
   return (
     <article className="overflow-hidden rounded-2xl border border-neutral-100 bg-white shadow-sm transition-shadow hover:shadow-md">
-      <Link href={`/news/${item.id}`}>
-        <NewsCover
-          imageUrl={item.imageUrl}
-          gradient={item.gradient}
-          className="h-56 sm:h-64 lg:h-72"
-        >
-          <span className="absolute bottom-4 end-4 rounded-full bg-[var(--brand-magenta)] px-3 py-1 text-xs font-semibold text-white">
-            {item.category}
-          </span>
-        </NewsCover>
-      </Link>
+      <NewsImageCarousel
+        images={slideUrls}
+        gradient={item.gradient}
+        className="h-56 sm:h-64 lg:h-72"
+        alt={item.title}
+        href={`/news/${item.id}`}
+      >
+        <span className="pointer-events-none absolute start-4 top-4 z-10 rounded-full bg-[var(--brand-magenta)] px-3 py-1 text-xs font-semibold text-white">
+          {item.category}
+        </span>
+      </NewsImageCarousel>
 
       <div className="p-5 sm:p-6">
         <Link href={`/news/${item.id}`}>
@@ -25,9 +28,9 @@ export function FeaturedNewsCard({ item }: { item: PublicNewsItem }) {
             {item.title}
           </h3>
         </Link>
-        <p className="mt-3 text-sm leading-relaxed text-[#1a1a1a]/60 sm:text-base">
+        <ExpandableText maxLines={3} className="mt-3 text-sm text-[#1a1a1a]/60 sm:text-base">
           {item.description}
-        </p>
+        </ExpandableText>
 
         <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
           <span className="flex items-center gap-2 text-sm text-[#1a1a1a]/50">

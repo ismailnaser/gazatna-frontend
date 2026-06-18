@@ -60,36 +60,35 @@ export function ClassSelect({
   return (
     <div className="flex flex-col gap-2">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <label className="text-sm font-medium text-p-black/80">
+        <label className="text-sm font-bold text-p-black/80">
           الفصول {required && <span className="text-brand-orange">*</span>}
         </label>
-        <div className="flex gap-2 text-xs">
+        <div className="flex rounded-lg border border-neutral-200 bg-white p-0.5 text-xs">
           <button
             type="button"
             onClick={selectAll}
-            className="font-semibold text-brand-blue hover:underline"
+            className="rounded-md px-2.5 py-1 font-semibold text-brand-blue hover:bg-brand-blue/5"
           >
-            تحديد الكل
+            الكل
           </button>
-          <span className="text-neutral-300">|</span>
           <button
             type="button"
             onClick={clearAll}
-            className="font-semibold text-neutral-500 hover:underline"
+            className="rounded-md px-2.5 py-1 font-semibold text-p-black/50 hover:bg-neutral-50"
           >
-            إلغاء الكل
+            إلغاء
           </button>
         </div>
       </div>
 
-      <div className="grid gap-2 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         {classes.map((c) => {
           const checked = selected.includes(c.id);
           return (
             <label
               key={c.id}
               className={cn(
-                "flex cursor-pointer items-center gap-3 rounded-xl border px-4 py-3 text-sm transition-colors",
+                "flex cursor-pointer items-center gap-2.5 rounded-xl border px-3 py-2.5 text-sm transition-colors",
                 checked
                   ? "border-brand-blue bg-brand-blue/5 font-medium text-brand-blue"
                   : "border-neutral-200 hover:border-brand-blue/30"
@@ -113,8 +112,8 @@ export function ClassSelect({
         <p className="text-xs text-brand-orange">اختر فصلاً واحداً على الأقل</p>
       )}
       {selected.length > 0 && (
-        <p className="text-xs text-neutral-500">
-          {selected.length} {selected.length === 1 ? "فصل محدّد" : "فصول محدّدة"} — يُنشأ نسخة لكل فصل
+        <p className="rounded-lg bg-brand-blue/5 px-3 py-2 text-xs text-brand-blue">
+          {selected.length} {selected.length === 1 ? "فصل محدّد" : "فصول محدّدة"}
         </p>
       )}
     </div>

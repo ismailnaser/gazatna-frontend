@@ -1,7 +1,9 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
+import { ExpandableText } from "@/components/molecules/ExpandableText";
 import { Card } from "@/components/atoms/Card";
+import { resolveMediaUrl } from "@/lib/media";
 import { cn } from "@/lib/utils";
 import type { SchoolClass, TeacherProfile } from "@/types/teacher";
 import { ArrowRight, BookOpen, Briefcase, GraduationCap } from "lucide-react";
@@ -11,6 +13,7 @@ type TeacherCVProps = {
   classes: SchoolClass[];
   backHref?: string;
   backLabel?: string;
+  getClassHref?: (cls: SchoolClass) => string;
 };
 
 export function TeacherCV({
@@ -18,8 +21,10 @@ export function TeacherCV({
   classes,
   backHref = "/faculty",
   backLabel = "العودة للكادر التعليمي",
+  getClassHref,
 }: TeacherCVProps) {
   const initial = teacher.name.replace(/^(د\.|أ\.|م\.)\s*/, "").charAt(0);
+  const imageSrc = resolveMediaUrl(teacher.imageUrl);
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -35,12 +40,12 @@ export function TeacherCV({
         <div
           className={cn(
             "relative mx-auto flex aspect-square w-full max-w-xs items-center justify-center overflow-hidden bg-gradient-to-br text-6xl font-bold text-white sm:max-w-sm",
-            !teacher.imageUrl && teacher.imageGradient
+            !imageSrc && teacher.imageGradient
           )}
         >
-          {teacher.imageUrl ? (
+          {imageSrc ? (
             <img
-              src={teacher.imageUrl}
+              src={imageSrc}
               alt={teacher.name}
               className="absolute inset-0 h-full w-full object-cover"
             />
@@ -77,7 +82,9 @@ export function TeacherCV({
             </div>
           </div>
 
-          <p className="mt-6 leading-relaxed text-[#1a1a1a]/70">{teacher.bio}</p>
+          <ExpandableText maxLines={5} className="mt-6 text-[#1a1a1a]/70">
+            {teacher.bio}
+          </ExpandableText>
 
           <div className="mt-8 border-t border-neutral-100 pt-6">
             <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-[var(--brand-teal)]">
@@ -91,17 +98,34 @@ export function TeacherCV({
               </p>
             ) : (
               <ul className="grid gap-3 sm:grid-cols-2">
-                {classes.map((cls) => (
-                  <li
-                    key={cls.id}
-                    className="rounded-xl border border-neutral-100 bg-[var(--brand-teal)]/5 px-4 py-3"
-                  >
-                    <p className="font-semibold text-[#1a1a1a]">{cls.name}</p>
-                    <p className="mt-1 text-xs text-[#1a1a1a]/50">
-                      {cls.studentCount} طالب
-                    </p>
-                  </li>
-                ))}
+                {classes.map((cls) => {
+                  const href = getClassHref?.(cls);
+                  const content = (
+                    <>
+                      <p className="font-semibold text-[#1a1a1a]">{cls.name}</p>
+                      <p className="mt-1 text-xs text-[#1a1a1a]/50">
+                        {cls.studentCount} طالب
+                      </p>
+                    </>
+                  );
+
+                  return (
+                    <li key={cls.id}>
+                      {href ? (
+                        <Link
+                          href={href}
+                          className="block rounded-xl border border-neutral-100 bg-[var(--brand-teal)]/5 px-4 py-3 transition hover:border-[var(--brand-teal)]/30 hover:bg-[var(--brand-teal)]/10"
+                        >
+                          {content}
+                        </Link>
+                      ) : (
+                        <div className="rounded-xl border border-neutral-100 bg-[var(--brand-teal)]/5 px-4 py-3">
+                          {content}
+                        </div>
+                      )}
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </div>

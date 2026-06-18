@@ -4,6 +4,7 @@ import { Calendar } from "lucide-react";
 import { Badge } from "@/components/atoms/Badge";
 import { Button } from "@/components/atoms/Button";
 import { NewsCover } from "@/components/molecules/NewsCover";
+import { ExpandableText } from "@/components/molecules/ExpandableText";
 import type { PublicNewsItem } from "@/types/news";
 import { Pencil, Trash2 } from "lucide-react";
 
@@ -37,9 +38,9 @@ export function AdminFeaturedNewsCard({ item, onEdit, onDelete }: AdminFeaturedN
         <h3 className="text-xl font-bold leading-snug text-[#1a1a1a] sm:text-2xl">
           {item.title}
         </h3>
-        <p className="mt-3 text-sm leading-relaxed text-[#1a1a1a]/60 sm:text-base">
+        <ExpandableText maxLines={3} className="mt-3 text-sm text-[#1a1a1a]/60 sm:text-base">
           {item.description}
-        </p>
+        </ExpandableText>
 
         <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
           <span className="flex items-center gap-2 text-sm text-[#1a1a1a]/50">

@@ -1,19 +1,36 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { Alert } from "@/components/atoms/Alert";
 import { Button } from "@/components/atoms/Button";
 import { Input } from "@/components/atoms/Input";
 import { Logo } from "@/components/atoms/Logo";
 import { useAuth } from "@/context/AuthContext";
+import { getDashboardPath } from "@/lib/auth";
 
 export default function LoginPage() {
-  const { login } = useAuth();
+  const router = useRouter();
+  const { login, user, loading } = useAuth();
+
+  useEffect(() => {
+    if (!loading && user) {
+      router.replace(getDashboardPath(user.role));
+    }
+  }, [user, loading, router]);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+
+  if (loading || user) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-white">
+        <p className="text-p-black/50">جاري التحميل...</p>
+      </div>
+    );
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

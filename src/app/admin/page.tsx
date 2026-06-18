@@ -1,20 +1,33 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Card } from "@/components/atoms/Card";
 import { PageHeader } from "@/components/molecules/PageHeader";
 import { SimpleBarChart } from "@/components/molecules/SimpleBarChart";
+import { useAuth } from "@/context/AuthContext";
 import { api } from "@/lib/api";
+import {
+  canAccessAdminAnalyticsTab,
+  canAccessAdminPath,
+  isAdminRole,
+} from "@/lib/adminRoles";
 import type { AdminAnalytics } from "@/types/news";
 import { emptyAdminAnalytics } from "@/types/news";
-import Link from "next/link";
 import { BarChart3, Bell, CreditCard, Settings2 } from "lucide-react";
 
 export default function AdminDashboard() {
   const router = useRouter();
+  const { user } = useAuth();
   const [data, setData] = useState<AdminAnalytics>(emptyAdminAnalytics);
   const [loading, setLoading] = useState(true);
+
+  const canOpenSite = user && isAdminRole(user.role) && canAccessAdminPath(user.role, "/admin/site");
+  const canOpenGradesAnalytics =
+    user && isAdminRole(user.role) && canAccessAdminAnalyticsTab(user.role, "grades");
+  const canOpenFeesAnalytics =
+    user && isAdminRole(user.role) && canAccessAdminAnalyticsTab(user.role, "fees");
 
   useEffect(() => {
     api.getAdminAnalytics()
@@ -31,16 +44,19 @@ export default function AdminDashboard() {
     <div>
       <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
         <PageHeader title="لوحة التحليلات" description="نظرة عامة على الأداء والمالية" />
-        <Link
-          href="/admin/site"
-          className="flex items-center gap-2 rounded-xl border border-neutral-200 bg-white px-4 py-2 text-sm font-semibold text-p-black transition-colors hover:bg-neutral-50"
-        >
-          <Settings2 className="h-4 w-4 text-p-black/60" />
-          إعدادات الموقع
-        </Link>
+        {canOpenSite && (
+          <Link
+            href="/admin/site"
+            className="flex items-center gap-2 rounded-xl border border-neutral-200 bg-white px-4 py-2 text-sm font-semibold text-p-black transition-colors hover:bg-neutral-50"
+          >
+            <Settings2 className="h-4 w-4 text-p-black/60" />
+            إعدادات الموقع
+          </Link>
+        )}
       </div>
 
       <div className="mb-8 grid gap-4 sm:grid-cols-2">
+        {canOpenGradesAnalytics && (
         <Card
           className="flex cursor-pointer items-center gap-4 transition-colors hover:bg-neutral-50"
           onClick={() => router.push("/admin/analytics?tab=grades")}
@@ -58,6 +74,8 @@ export default function AdminDashboard() {
             <p className="text-3xl font-bold text-p-black">{data.avgGrade}%</p>
           </div>
         </Card>
+        )}
+        {canOpenFeesAnalytics && (
         <Card
           className="flex cursor-pointer items-center gap-4 transition-colors hover:bg-neutral-50"
           onClick={() => router.push("/admin/analytics?tab=fees")}
@@ -75,6 +93,7 @@ export default function AdminDashboard() {
             <p className="text-3xl font-bold text-p-black">{data.feesCollected}%</p>
           </div>
         </Card>
+        )}
       </div>
 
       <div className="mb-8">

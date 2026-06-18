@@ -1,18 +1,30 @@
 import type { Quiz } from "@/types";
+import { quizTotalPoints } from "@/lib/quiz-scoring";
 
 export type QuizPhase = "upcoming" | "open" | "closed";
 
+function quizEffectiveEnd(quiz: Quiz): Date {
+  const start = new Date(quiz.startAt);
+  const candidates: number[] = [];
+  if (quiz.endAt) candidates.push(new Date(quiz.endAt).getTime());
+  if (quiz.durationMinutes) {
+    candidates.push(start.getTime() + quiz.durationMinutes * 60_000);
+  }
+  if (!candidates.length) return start;
+  return new Date(Math.min(...candidates));
+}
+
 export function getQuizWindow(quiz: Quiz) {
   const start = new Date(quiz.startAt);
-  const end = new Date(start.getTime() + quiz.durationMinutes * 60_000);
+  const end = quizEffectiveEnd(quiz);
   return { start, end };
 }
 
 export function getQuizPhase(quiz: Quiz, now = new Date()): QuizPhase {
-  if (quiz.status === "closed") return "closed";
+  if (quiz.status === "closed" || quiz.windowStatus === "closed") return "closed";
   const { start, end } = getQuizWindow(quiz);
-  if (now < start) return "upcoming";
-  if (now >= end) return "closed";
+  if (now < start || quiz.windowStatus === "scheduled") return "upcoming";
+  if (now >= end || quiz.windowStatus === "ended") return "closed";
   return "open";
 }
 
@@ -51,14 +63,5 @@ export function toDatetimeLocalValue(iso: string): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
-export function calculateQuizScore(
-  questions: Quiz["questions"],
-  answers: number[]
-): { score: number; maxScore: number } {
-  const maxScore = questions.length;
-  const score = questions.reduce(
-    (sum, q, i) => sum + (answers[i] === q.correctIndex ? 1 : 0),
-    0
-  );
-  return { score, maxScore };
-}
+export { quizTotalPoints as calculateQuizMaxScore } from "@/lib/quiz-scoring";
+export { calculateQuizScore } from "@/lib/quiz-scoring";

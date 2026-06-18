@@ -43,7 +43,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const result = await authLogin(username, password);
       if (!result) return false;
       setUser(result);
-      router.push(getDashboardPath(result.role));
+      router.replace(getDashboardPath(result.role));
       return true;
     },
     [router]
@@ -52,7 +52,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = useCallback(() => {
     authLogout();
     setUser(null);
-    router.push("/login");
+    router.replace("/login");
   }, [router]);
 
   return (

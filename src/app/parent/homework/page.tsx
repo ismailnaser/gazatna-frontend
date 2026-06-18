@@ -2,131 +2,139 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Alert } from "@/components/atoms/Alert";
-import { Badge } from "@/components/atoms/Badge";
-import { Button } from "@/components/atoms/Button";
 import { Card } from "@/components/atoms/Card";
-import { Textarea } from "@/components/atoms/Textarea";
 import { PageHeader } from "@/components/molecules/PageHeader";
-import { useAssignments } from "@/context/AssignmentsContext";
-import { useAuth } from "@/context/AuthContext";
 import { api } from "@/lib/api";
-import type { Homework, ParentChild } from "@/types";
-import { Calendar, CheckCircle2 } from "lucide-react";
+import type { ParentSubjectSummary } from "@/types";
+import { BookOpen, ChevronLeft, ClipboardList, FolderOpen, Megaphone, PenLine } from "lucide-react";
 
-export default function ParentHomeworkPage() {
-  const { user } = useAuth();
-  const [child, setChild] = useState<ParentChild | undefined>();
-  const { getHomeworkByClass, getHomeworkSubmission, submitHomework } = useAssignments();
+function SubjectStat({
+  icon: Icon,
+  count,
+  label,
+  tone,
+}: {
+  icon: typeof BookOpen;
+  count: number;
+  label: string;
+  tone: "orange" | "blue" | "amber" | "teal";
+}) {
+  const tones = {
+    orange: "bg-brand-orange/10 text-brand-orange",
+    blue: "bg-brand-blue/10 text-brand-blue",
+    amber: "bg-amber-50 text-amber-700",
+    teal: "bg-p-green/10 text-p-green",
+  };
 
-  const [activeId, setActiveId] = useState<string | null>(null);
-  const [content, setContent] = useState("");
-  const [saved, setSaved] = useState(false);
+  return (
+    <div className="flex min-w-0 items-center gap-2 rounded-xl bg-neutral-50 px-3 py-2.5">
+      <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${tones[tone]}`}>
+        <Icon className="h-4 w-4" />
+      </span>
+      <div className="min-w-0">
+        <p className="text-base font-bold leading-none text-p-black">{count}</p>
+        <p className="mt-0.5 truncate text-xs text-p-black/55">{label}</p>
+      </div>
+    </div>
+  );
+}
+
+export default function ParentHomeworkSubjectsPage() {
+  const [subjects, setSubjects] = useState<ParentSubjectSummary[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (user) {
-      api.getParentChild().then((c) => setChild(c as ParentChild)).catch(() => {});
-    }
-  }, [user]);
-
-  if (!child) {
-    return <p className="text-neutral-500">لم يتم ربط حسابك بملف طالب.</p>;
-  }
-
-  const items = getHomeworkByClass(child.classId);
-
-  async function handleSubmit(hw: Homework) {
-    if (!content.trim()) return;
-    await submitHomework({
-      homeworkId: hw.id,
-      studentId: child!.studentId,
-      content: content.trim(),
-    });
-    setContent("");
-    setActiveId(null);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
-  }
+    api
+      .getParentSubjects()
+      .then((data) => setSubjects(data as ParentSubjectSummary[]))
+      .catch(() => setSubjects([]))
+      .finally(() => setLoading(false));
+  }, []);
 
   return (
     <div>
       <PageHeader
-        title="الواجبات"
-        description={`واجبات ${child.name} — عرض وتسليم`}
+        title="محتوى المواد"
+        description="اختر المادة لعرض واجباتها واختباراتها وإعلاناتها ومرفقاتها"
       />
 
-      {saved && (
-        <Alert variant="success" className="mb-4">
-          تم تسليم الواجب بنجاح
-        </Alert>
-      )}
-
-      {items.length === 0 ? (
-        <Card className="text-center text-neutral-500">لا توجد واجبات حالياً.</Card>
+      {loading ? (
+        <p className="text-neutral-500">جاري التحميل...</p>
+      ) : subjects.length === 0 ? (
+        <Card className="text-center text-neutral-500">لا توجد مواد أو واجبات حالياً.</Card>
       ) : (
-        <div className="space-y-4">
-          {items.map((hw) => {
-            const submission = getHomeworkSubmission(hw.id, child.studentId);
-            const isPastDue = new Date(hw.dueDate) < new Date(new Date().toDateString());
-            const canSubmit = hw.status === "active" && !submission && !isPastDue;
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4">
+          {subjects.map((row) => {
+            const stats = [
+              row.homeworkCount > 0 && {
+                key: "hw",
+                icon: PenLine,
+                count: row.homeworkCount,
+                label: row.homeworkCount === 1 ? "واجب" : "واجبات",
+                tone: "orange" as const,
+              },
+              row.quizCount > 0 && {
+                key: "quiz",
+                icon: ClipboardList,
+                count: row.quizCount,
+                label: row.quizCount === 1 ? "اختبار" : "اختبارات",
+                tone: "blue" as const,
+              },
+              (row.announcementCount ?? 0) > 0 && {
+                key: "ann",
+                icon: Megaphone,
+                count: row.announcementCount ?? 0,
+                label: (row.announcementCount ?? 0) === 1 ? "إعلان" : "إعلانات",
+                tone: "amber" as const,
+              },
+              (row.materialCount ?? 0) > 0 && {
+                key: "mat",
+                icon: FolderOpen,
+                count: row.materialCount ?? 0,
+                label: (row.materialCount ?? 0) === 1 ? "مرفق" : "مرفقات",
+                tone: "teal" as const,
+              },
+            ].filter(Boolean) as Array<{
+              key: string;
+              icon: typeof BookOpen;
+              count: number;
+              label: string;
+              tone: "orange" | "blue" | "amber" | "teal";
+            }>;
 
             return (
-              <Card key={hw.id}>
-                <div className="mb-2 flex flex-wrap items-center gap-2">
-                  <h3 className="font-bold text-neutral-950">{hw.title}</h3>
-                  {submission ? (
-                    <Badge variant="success">
-                      <CheckCircle2 className="me-1 inline h-3 w-3" />
-                      مُسلّم
-                    </Badge>
-                  ) : hw.status === "closed" || isPastDue ? (
-                    <Badge variant="default">منتهي</Badge>
-                  ) : (
-                    <Badge variant="warning">بانتظار التسليم</Badge>
-                  )}
+            <Link
+              key={row.subject}
+              href={`/parent/homework/subject/${encodeURIComponent(row.subject)}`}
+              className="block"
+            >
+              <Card className="p-4 transition-shadow hover:shadow-md sm:p-5">
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <div className="flex min-w-0 items-center gap-2.5">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-orange/10">
+                      <BookOpen className="h-5 w-5 text-brand-orange" />
+                    </span>
+                    <h3 className="truncate text-base font-bold text-p-black sm:text-lg">{row.subject}</h3>
+                  </div>
+                  <ChevronLeft className="h-5 w-5 shrink-0 text-p-black/30" />
                 </div>
-                <p className="text-sm leading-relaxed text-neutral-700">{hw.description}</p>
-                <p className="mt-2 flex items-center gap-1 text-xs text-neutral-500">
-                  <Calendar className="h-3.5 w-3.5" />
-                  موعد التسليم: {hw.dueDate}
-                </p>
-
-                {submission && (
-                  <div className="mt-4 rounded-xl bg-neutral-50 p-4">
-                    <p className="mb-1 text-xs font-semibold text-neutral-500">التسليم:</p>
-                    <p className="text-sm text-neutral-800">{submission.content}</p>
-                    <p className="mt-2 text-xs text-neutral-400">
-                      سُلّم: {new Date(submission.submittedAt).toLocaleString("ar-PS")}
-                    </p>
+                {stats.length > 0 ? (
+                  <div className="grid grid-cols-2 gap-2">
+                    {stats.map((item) => (
+                      <SubjectStat
+                        key={item.key}
+                        icon={item.icon}
+                        count={item.count}
+                        label={item.label}
+                        tone={item.tone}
+                      />
+                    ))}
                   </div>
-                )}
-
-                {canSubmit && activeId !== hw.id && (
-                  <Button className="mt-4" onClick={() => setActiveId(hw.id)}>
-                    تسليم الواجب
-                  </Button>
-                )}
-
-                {activeId === hw.id && (
-                  <div className="mt-4 space-y-3 border-t border-neutral-100 pt-4">
-                    <Textarea
-                      label="اكتب الإجابة أو وصف التسليم"
-                      value={content}
-                      onChange={(e) => setContent(e.target.value)}
-                      placeholder="مثال: أنجزت التمارين 1-10..."
-                      required
-                    />
-                    <div className="flex gap-2">
-                      <Button onClick={() => handleSubmit(hw)} disabled={!content.trim()}>
-                        إرسال التسليم
-                      </Button>
-                      <Button variant="ghost" onClick={() => setActiveId(null)}>
-                        إلغاء
-                      </Button>
-                    </div>
-                  </div>
+                ) : (
+                  <p className="text-sm text-p-black/45">لا يوجد محتوى بعد</p>
                 )}
               </Card>
+            </Link>
             );
           })}
         </div>

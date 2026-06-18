@@ -2,10 +2,13 @@ import type { UserRole } from "@/types";
 import { getAdminNav, isAdminRole } from "@/lib/adminRoles";
 import {
   BarChart3,
+  Bell,
   BookOpen,
+  BookOpenCheck,
   ClipboardList,
   CreditCard,
   FileText,
+  FolderOpen,
   GraduationCap,
   Home,
   PenLine,
@@ -29,16 +32,18 @@ export const publicNavLinks = [
 
 const parentNav: NavItem[] = [
   { href: "/parent", label: "الرئيسية", icon: Home },
-  { href: "/parent/homework", label: "الواجبات", icon: PenLine },
-  { href: "/parent/quizzes", label: "الاختبارات", icon: ClipboardList },
+  { href: "/parent/homework", label: "محتوى المواد", icon: PenLine },
+  { href: "/parent/assessments", label: "التقييمات", icon: BookOpenCheck },
   { href: "/parent/grades", label: "النتائج", icon: BookOpen },
   { href: "/parent/fees", label: "المالية", icon: CreditCard },
 ];
 
 const teacherNav: NavItem[] = [
   { href: "/teacher", label: "فصولي", icon: GraduationCap },
-  { href: "/teacher/homework", label: "إضافة واجب", icon: PenLine },
-  { href: "/teacher/quizzes", label: "إضافة اختبار", icon: ClipboardList },
+  { href: "/teacher/homework", label: "الواجبات", icon: PenLine },
+  { href: "/teacher/quizzes", label: "الاختبارات", icon: ClipboardList },
+  { href: "/teacher/announcements", label: "الإعلانات", icon: Bell },
+  { href: "/teacher/materials", label: "مرفقات المواد", icon: FolderOpen },
   { href: "/teacher/profile", label: "سيرتي الذاتية", icon: FileText },
 ];
 

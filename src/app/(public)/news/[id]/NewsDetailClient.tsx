@@ -4,9 +4,9 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Badge } from "@/components/atoms/Badge";
 import { Button } from "@/components/atoms/Button";
-import { NewsCover } from "@/components/molecules/NewsCover";
+import { NewsImageCarousel } from "@/components/molecules/NewsImageCarousel";
 import { api } from "@/lib/api";
-import { mapNewsItem, type PublicNewsItem } from "@/types/news";
+import { mapNewsItem, newsSlideUrls, type PublicNewsItem } from "@/types/news";
 import { ArrowRight, Calendar } from "lucide-react";
 
 export function NewsDetailClient({ id }: { id: string }) {
@@ -40,10 +40,10 @@ export function NewsDetailClient({ id }: { id: string }) {
     );
   }
 
-  const gallery = (item.images ?? []).filter((image) => !image.isCover);
+  const slideUrls = newsSlideUrls(item);
 
   return (
-    <article className="mx-auto max-w-4xl px-4 py-10 sm:px-6 lg:px-8">
+    <article className="mx-auto max-w-4xl px-4 pb-10 pt-[var(--nav-height)] sm:px-6 sm:pb-10 lg:px-8">
       <Link
         href="/news"
         className="mb-6 inline-flex items-center gap-2 text-sm font-semibold text-[var(--brand-teal)] hover:underline"
@@ -64,37 +64,18 @@ export function NewsDetailClient({ id }: { id: string }) {
         {item.date}
       </p>
 
-      <NewsCover
-        imageUrl={item.imageUrl}
+      <NewsImageCarousel
+        images={slideUrls}
         gradient={item.gradient}
         className="mt-8 h-56 rounded-2xl sm:h-80 lg:h-[28rem]"
+        alt={item.title}
       />
 
-      <div className="mt-8 space-y-4 text-base leading-8 text-[#1a1a1a]/80 whitespace-pre-line">
+      <div className="mt-8 space-y-4 whitespace-pre-line text-base leading-8 text-[#1a1a1a]/80">
         {(item.body || item.description).split("\n").map((paragraph, index) => (
           <p key={index}>{paragraph}</p>
         ))}
       </div>
-
-      {gallery.length > 0 && (
-        <section className="mt-10">
-          <h2 className="mb-4 text-xl font-bold text-[#1a1a1a]">معرض الصور</h2>
-          <div className="grid gap-4 sm:grid-cols-2">
-            {gallery.map((image, index) => (
-              <a
-                key={image.id ?? `gallery-${index}`}
-                href={image.url}
-                target="_blank"
-                rel="noreferrer"
-                className="overflow-hidden rounded-2xl border border-neutral-100 shadow-sm"
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={image.url} alt="" className="h-56 w-full object-cover transition-transform hover:scale-[1.02]" />
-              </a>
-            ))}
-          </div>
-        </section>
-      )}
     </article>
   );
 }

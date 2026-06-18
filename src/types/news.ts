@@ -61,6 +61,22 @@ export function mapNewsItem(
   };
 }
 
+/** Ordered image URLs for carousels — cover first, then the rest. */
+export function newsSlideUrls(item: Pick<PublicNewsItem, "imageUrl" | "images">): string[] {
+  const gallery = item.images ?? [];
+  if (gallery.length > 0) {
+    const cover = gallery.find((image) => image.isCover);
+    const rest = gallery.filter((image) => image !== cover);
+    const ordered = cover ? [cover, ...rest] : gallery;
+    return [...new Set(ordered.map((image) => image.url).filter(Boolean))];
+  }
+  return item.imageUrl ? [item.imageUrl] : [];
+}
+
+export function newsHasMultipleImages(item: Pick<PublicNewsItem, "imageUrl" | "images">) {
+  return newsSlideUrls(item).length > 1;
+}
+
 export const newsFilters = ["الكل", "أخبار", "فعاليات", "إنجازات"] as const;
 export type NewsFilter = (typeof newsFilters)[number];
 

@@ -28,6 +28,7 @@ export type Grade = {
   id: string;
   name: string;
   sectionsCount: number;
+  sortOrder?: number;
 };
 
 export type Subject = {

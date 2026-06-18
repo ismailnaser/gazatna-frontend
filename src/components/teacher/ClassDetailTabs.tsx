@@ -21,25 +21,27 @@ export function ClassDetailTabs({
   counts?: Partial<Record<ClassTab, number>>;
 }) {
   return (
-    <div className="mb-6 flex flex-wrap gap-2 rounded-2xl border border-neutral-200 bg-neutral-50 p-1.5">
+    <div className="mb-5 grid grid-cols-3 gap-1.5 rounded-2xl border border-neutral-100 bg-neutral-50/80 p-1.5">
       {tabs.map(({ id, label, icon: Icon }) => (
         <button
           key={id}
           type="button"
           onClick={() => onChange(id)}
           className={cn(
-            "inline-flex flex-1 items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors sm:flex-none",
+            "flex min-w-0 flex-col items-center justify-center gap-1 rounded-xl px-2 py-2.5 text-[11px] font-semibold transition-colors sm:flex-row sm:gap-1.5 sm:px-3 sm:text-sm",
             active === id
               ? "bg-white text-brand-blue shadow-sm ring-1 ring-neutral-200"
               : "text-neutral-600 hover:bg-white/60 hover:text-neutral-900"
           )}
         >
-          <Icon className="h-4 w-4" />
-          {label}
+          <span className="inline-flex items-center gap-1">
+            <Icon className="h-4 w-4 shrink-0" />
+            <span className="truncate">{label}</span>
+          </span>
           {counts?.[id] != null && (
             <span
               className={cn(
-                "rounded-full px-2 py-0.5 text-xs",
+                "rounded-full px-1.5 py-0.5 text-[10px] sm:text-xs",
                 active === id ? "bg-brand-blue/10 text-brand-blue" : "bg-neutral-200 text-neutral-600"
               )}
             >

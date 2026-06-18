@@ -6,12 +6,14 @@ import { Badge } from "@/components/atoms/Badge";
 import { Button } from "@/components/atoms/Button";
 import { Card } from "@/components/atoms/Card";
 import { Input } from "@/components/atoms/Input";
+import { NumberFieldWithKeypad } from "@/components/teacher/NumberFieldWithKeypad";
+import { NumberKeypadGroup } from "@/components/teacher/NumberKeypadGroup";
 import { Select } from "@/components/atoms/Select";
 import { PageHeader } from "@/components/molecules/PageHeader";
 import { useSchool } from "@/context/SchoolContext";
 import { api } from "@/lib/api";
 import type { Grade } from "@/types/teacher";
-import { Plus, Save, Trash2 } from "lucide-react";
+import { GripVertical, Plus, Save, Trash2 } from "lucide-react";
 import type { AdminStudent } from "@/types";
 
 function mapStudent(s: Record<string, unknown>): AdminStudent {
@@ -25,7 +27,7 @@ function mapStudent(s: Record<string, unknown>): AdminStudent {
     username: s.username ? String(s.username) : undefined,
     generatedPassword: s.generatedPassword ? String(s.generatedPassword) : undefined,
     paymentStatus: (s.paymentStatus as AdminStudent["paymentStatus"]) ?? "pending",
-    documents: (s.documents as string[]) ?? [],
+    documents: (s.documents as AdminStudent["documents"]) ?? [],
   };
 }
 
@@ -36,9 +38,13 @@ export default function AdminClassesPage() {
   const [grades, setGrades] = useState<Grade[]>([]);
   const [loadingGrades, setLoadingGrades] = useState(true);
   const [editing, setEditing] = useState<Record<string, number>>({});
+  const [newSectionsCount, setNewSectionsCount] = useState("2");
   const [expandedGradeId, setExpandedGradeId] = useState<string>("");
   const [confirmDeleteGradeId, setConfirmDeleteGradeId] = useState<string>("");
   const [deletingGrade, setDeletingGrade] = useState(false);
+  const [draggingGradeId, setDraggingGradeId] = useState("");
+  const [dropTargetGradeId, setDropTargetGradeId] = useState("");
+  const [reorderingGrades, setReorderingGrades] = useState(false);
   const [selectedClassId, setSelectedClassId] = useState<string>("");
   const [classStudents, setClassStudents] = useState<AdminStudent[]>([]);
   const [loadingClassDetail, setLoadingClassDetail] = useState(false);
@@ -58,12 +64,15 @@ export default function AdminClassesPage() {
     return Array.from(map.entries()).sort(([a], [b]) => a.localeCompare(b, "ar"));
   }, [classes]);
 
+  const sortGrades = (list: Grade[]) =>
+    [...list].sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || a.name.localeCompare(b.name, "ar"));
+
   useEffect(() => {
     let mounted = true;
     api.getAdminGrades()
       .then((data) => {
         if (!mounted) return;
-        setGrades(data as Grade[]);
+        setGrades(sortGrades(data as Grade[]));
       })
       .catch(() => {
         if (!mounted) return;
@@ -98,8 +107,38 @@ export default function AdminClassesPage() {
   async function reloadAll() {
     await Promise.all([
       refresh(),
-      api.getAdminGrades().then((data) => setGrades(data as Grade[])).catch(() => setGrades([])),
+      api.getAdminGrades().then((data) => setGrades(sortGrades(data as Grade[]))).catch(() => setGrades([])),
     ]);
+  }
+
+  async function handleGradeDrop(e: React.DragEvent<HTMLDivElement>, toId: string) {
+    e.preventDefault();
+    const fromId = e.dataTransfer.getData("text/plain");
+    setDraggingGradeId("");
+    setDropTargetGradeId("");
+    if (!fromId || fromId === toId) return;
+
+    const fromIdx = grades.findIndex((g) => g.id === fromId);
+    const toIdx = grades.findIndex((g) => g.id === toId);
+    if (fromIdx < 0 || toIdx < 0) return;
+
+    const next = [...grades];
+    const [moved] = next.splice(fromIdx, 1);
+    next.splice(toIdx, 0, moved);
+
+    setGrades(next);
+    setReorderingGrades(true);
+    setClassError("");
+    try {
+      const data = await api.reorderAdminGrades(next.map((g) => g.id));
+      setGrades(sortGrades(data as Grade[]));
+    } catch (err) {
+      setClassError(err instanceof Error ? err.message : "تعذر حفظ ترتيب الفصول");
+      const data = await api.getAdminGrades();
+      setGrades(sortGrades(data as Grade[]));
+    } finally {
+      setReorderingGrades(false);
+    }
   }
 
   async function handleAddGrade(e: React.FormEvent<HTMLFormElement>) {
@@ -220,6 +259,7 @@ export default function AdminClassesPage() {
   }
 
   return (
+    <NumberKeypadGroup>
     <div>
       <PageHeader
         title="إدارة الفصول والشعب"
@@ -238,13 +278,14 @@ export default function AdminClassesPage() {
 
         <form onSubmit={handleAddGrade} className="grid gap-4 sm:grid-cols-3">
           <Input label="اسم الفصل (مثال: الصف التاسع)" name="name" required />
-          <Input
+          <NumberFieldWithKeypad
+            fieldId="newSectionsCount"
             label="عدد الشعب"
             name="sectionsCount"
-            type="number"
+            value={newSectionsCount}
+            onChange={setNewSectionsCount}
             min={1}
             max={20}
-            defaultValue={2}
             required
           />
           <div className="flex items-end">
@@ -257,7 +298,18 @@ export default function AdminClassesPage() {
       </Card>
 
       <Card>
-        <h3 className="mb-4 font-bold text-[#1a1a1a]">الفصول المسجّلة</h3>
+        <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h3 className="font-bold text-[#1a1a1a]">الفصول المسجّلة</h3>
+            <p className="mt-1 text-sm text-neutral-500">
+              اسحب الفصول لتحديد ترتيب التصعيد — الطالب ينتقل للفصل التالي في القائمة عند
+              التصعيد.
+            </p>
+          </div>
+          {reorderingGrades && (
+            <span className="text-xs font-medium text-p-green">جاري حفظ الترتيب...</span>
+          )}
+        </div>
 
         {loadingGrades ? (
           <p className="rounded-xl bg-neutral-50 px-4 py-8 text-center text-sm text-neutral-500">
@@ -269,30 +321,68 @@ export default function AdminClassesPage() {
           </p>
         ) : (
           <div className="space-y-3">
-            {grades.map((g) => {
+            {grades.map((g, index) => {
               const isOpen = expandedGradeId === g.id;
               const sections = classesByGradeName.get(g.name) ?? [];
+              const isDragging = draggingGradeId === g.id;
+              const isDropTarget = dropTargetGradeId === g.id && draggingGradeId && draggingGradeId !== g.id;
               return (
-                <div key={g.id} className="rounded-2xl border border-neutral-100 bg-white">
-                  <button
-                    type="button"
-                    onClick={() => setExpandedGradeId(isOpen ? "" : g.id)}
-                    className={[
-                      "flex w-full flex-wrap items-center justify-between gap-3 rounded-2xl px-5 py-4 text-start",
-                      isOpen ? "bg-neutral-50" : "hover:bg-neutral-50",
-                    ].join(" ")}
-                  >
-                    <div className="min-w-[240px]">
-                      <p className="text-base font-bold text-brand-blue">{g.name}</p>
-                      <p className="mt-1 text-xs text-neutral-500">
-                        عدد الشعب: <span className="font-semibold">{g.sectionsCount}</span>
-                      </p>
+                <div
+                  key={g.id}
+                  className={[
+                    "rounded-2xl border bg-white transition-shadow",
+                    isDragging ? "border-dashed border-neutral-300 opacity-60" : "border-neutral-100",
+                    isDropTarget ? "ring-2 ring-p-green ring-offset-2" : "",
+                  ].join(" ")}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    setDropTargetGradeId(g.id);
+                  }}
+                  onDragLeave={() => {
+                    if (dropTargetGradeId === g.id) setDropTargetGradeId("");
+                  }}
+                  onDrop={(e) => handleGradeDrop(e, g.id)}
+                >
+                  <div className="flex items-stretch">
+                    <div
+                      draggable={!reorderingGrades}
+                      onDragStart={(e) => {
+                        e.dataTransfer.setData("text/plain", g.id);
+                        e.dataTransfer.effectAllowed = "move";
+                        setDraggingGradeId(g.id);
+                      }}
+                      onDragEnd={() => {
+                        setDraggingGradeId("");
+                        setDropTargetGradeId("");
+                      }}
+                      className="flex cursor-grab items-center border-e border-neutral-100 px-3 text-neutral-400 active:cursor-grabbing hover:text-neutral-600"
+                      title="اسحب لإعادة الترتيب"
+                      aria-label={`إعادة ترتيب ${g.name}`}
+                    >
+                      <GripVertical className="h-5 w-5" />
                     </div>
+                    <button
+                      type="button"
+                      onClick={() => setExpandedGradeId(isOpen ? "" : g.id)}
+                      className={[
+                        "flex flex-1 flex-wrap items-center justify-between gap-3 rounded-2xl px-5 py-4 text-start",
+                        isOpen ? "bg-neutral-50" : "hover:bg-neutral-50",
+                      ].join(" ")}
+                    >
+                      <div className="min-w-[240px]">
+                        <p className="text-base font-bold text-brand-blue">{g.name}</p>
+                        <p className="mt-1 text-xs text-neutral-500">
+                          الترتيب: <span className="font-semibold">{index + 1}</span>
+                          {" · "}
+                          عدد الشعب: <span className="font-semibold">{g.sectionsCount}</span>
+                        </p>
+                      </div>
 
-                    <div className="text-xs text-neutral-500">
-                      {isOpen ? "إخفاء التفاصيل" : "عرض الشعب"}
-                    </div>
-                  </button>
+                      <div className="text-xs text-neutral-500">
+                        {isOpen ? "إخفاء التفاصيل" : "عرض الشعب"}
+                      </div>
+                    </button>
+                  </div>
 
                   {isOpen && (
                     <div className="px-5 pb-5">
@@ -323,16 +413,17 @@ export default function AdminClassesPage() {
                         </div>
 
                         <div className="flex flex-wrap items-end gap-3">
-                          <Input
+                          <NumberFieldWithKeypad
+                            fieldId={`sections-${g.id}`}
                             label="تعديل عدد الشعب"
-                            type="number"
+                            value={String(editing[g.id] ?? g.sectionsCount)}
+                            onChange={(value) =>
+                              setEditing((prev) => ({ ...prev, [g.id]: Number(value) || 1 }))
+                            }
                             min={1}
                             max={20}
-                            value={editing[g.id] ?? g.sectionsCount}
-                            onChange={(e) =>
-                              setEditing((prev) => ({ ...prev, [g.id]: Number(e.target.value) }))
-                            }
-                            className="w-[160px]"
+                            className="w-[200px]"
+                            inputClassName="w-full"
                           />
                           <Button
                             type="button"
@@ -461,5 +552,6 @@ export default function AdminClassesPage() {
         </div>
       )}
     </div>
+    </NumberKeypadGroup>
   );
 }

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo } from "react";
 import { Card } from "@/components/atoms/Card";
+import { DashboardLoadingState } from "@/components/dashboard/DashboardLoadingState";
 import {
   ClassDetailTabs,
   type ClassTab,
@@ -11,14 +12,13 @@ import {
 import { GradebookPanel } from "@/components/teacher/GradebookPanel";
 import { HomeworkPanel } from "@/components/teacher/HomeworkPanel";
 import { QuizPanel } from "@/components/teacher/QuizPanel";
-import { PageHeader } from "@/components/molecules/PageHeader";
 import { useAssignments } from "@/context/AssignmentsContext";
 import { useAuth } from "@/context/AuthContext";
 import { useSchool } from "@/context/SchoolContext";
 import { ArrowRight } from "lucide-react";
 
 const tabDescriptions: Record<ClassTab, string> = {
-  grades: "دفتر العلامات — إدخال وتعديل درجات الطلاب",
+  grades: "إدخال وتعديل درجات الطلاب وملاحظاتهم",
   homework: "إنشاء وإدارة الواجبات المنزلية للطلاب",
   quizzes: "إنشاء وإدارة الاختبارات القصيرة والكويزات",
 };
@@ -55,9 +55,10 @@ export function ClassDetailClient({
 
   if (authLoading || loading) {
     return (
-      <Card className="text-center">
-        <p className="text-neutral-500">جاري التحميل...</p>
-      </Card>
+      <DashboardLoadingState
+        message="جاري تحميل بيانات الفصل..."
+        hint="نجهّز قائمة الطلاب والواجبات والاختبارات"
+      />
     );
   }
 
@@ -82,7 +83,19 @@ export function ClassDetailClient({
 
   return (
     <div>
-      <PageHeader title={classInfo.name} description={tabDescriptions[activeTab]} />
+      <Link
+        href="/teacher"
+        className="mb-4 inline-flex items-center gap-1.5 text-sm font-semibold text-brand-blue hover:underline"
+      >
+        <ArrowRight className="h-4 w-4" />
+        العودة لفصولي
+      </Link>
+
+      <header className="mb-5">
+        <h1 className="text-xl font-bold text-p-green sm:text-2xl">{classInfo.name}</h1>
+        <div className="mt-2 h-1 w-12 rounded-full bg-p-red" />
+        <p className="mt-2 text-sm text-p-black/60">{tabDescriptions[activeTab]}</p>
+      </header>
 
       <ClassDetailTabs active={activeTab} onChange={setTab} counts={counts} />
 

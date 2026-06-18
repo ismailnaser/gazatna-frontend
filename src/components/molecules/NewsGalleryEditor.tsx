@@ -29,9 +29,14 @@ export function NewsGalleryEditor({
     <div className="flex flex-col gap-3 sm:col-span-2">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <label className="text-sm font-medium text-p-black/80">صور الخبر</label>
-        <Button type="button" variant="outline" className="px-3 py-1.5 text-xs" onClick={onAddClick}>
-          <ImagePlus className="h-4 w-4" />
-          إضافة صورة
+        <Button
+          type="button"
+          variant="outline"
+          className="border-brand-blue/30 bg-brand-blue/5 px-4 py-2 text-sm font-semibold text-brand-blue hover:bg-brand-blue/10"
+          onClick={onAddClick}
+        >
+          <ImagePlus className="h-5 w-5" />
+          اضغط لإضافة صورة
         </Button>
       </div>
 
@@ -43,10 +48,15 @@ export function NewsGalleryEditor({
         <button
           type="button"
           onClick={onAddClick}
-          className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-neutral-300 bg-neutral-50 px-4 py-8 text-sm text-neutral-600 transition-colors hover:border-brand-blue hover:bg-brand-blue/5"
+          className="flex cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-brand-blue/30 bg-brand-blue/5 px-5 py-8 text-center transition-colors hover:border-brand-blue hover:bg-brand-blue/10 sm:flex-row sm:text-start"
         >
-          <ImagePlus className="h-6 w-6 text-brand-blue" />
-          <span>اضغط لإضافة صور الخبر</span>
+          <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-brand-blue/15 text-brand-blue">
+            <ImagePlus className="h-7 w-7" />
+          </span>
+          <span>
+            <span className="block text-base font-bold text-p-black">اضغط لإضافة صور الخبر</span>
+            <span className="mt-1 block text-xs text-neutral-500">صور JPG أو PNG من جهازك</span>
+          </span>
         </button>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2">

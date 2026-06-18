@@ -1,13 +1,16 @@
 import {
   BarChart3,
+  Bell,
   BookMarked,
   ClipboardList,
   CreditCard,
   GraduationCap,
   Layers,
+  LineChart,
   Mail,
   Newspaper,
   Settings,
+  Settings2,
   Users,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -33,6 +36,8 @@ export type AdminRole = (typeof ADMIN_ROLES)[number];
 
 export type UserRole = AdminRole | "teacher" | "parent";
 
+export type AdminAnalyticsTab = "grades" | "fees";
+
 export const adminRoleLabels: Record<AdminRole, string> = {
   admin: "إدارة كلية",
   admin_students: "إدارة الطلاب",
@@ -42,8 +47,19 @@ export const adminRoleLabels: Record<AdminRole, string> = {
   admin_staff: "إدارة الكادر",
 };
 
+export const adminRoleDescriptions: Record<AdminRole, string> = {
+  admin: "صلاحية كاملة — جميع أقسام الإدارة: المستخدمون، التحليلات، إعدادات الموقع، والتنبيهات.",
+  admin_students: "إدارة الطلاب، طلبات التسجيل، والتنبيهات (الطلاب غير النشطين).",
+  admin_academics: "إدارة الفصول والمواد وتحليلات نسب النجاح.",
+  admin_finance: "إدارة المالية، تحليلات التحصيل، والتنبيهات (رسوم متأخرة).",
+  admin_content: "إدارة محتوى الموقع، الأخبار، رسائل التواصل، وإعدادات الموقع.",
+  admin_staff: "إدارة الكادر التعليمي وملفات المعلمين.",
+};
+
 const allAdminNav: NavItem[] = [
   { href: "/admin", label: "الرئيسية", icon: BarChart3 },
+  { href: "/admin/analytics", label: "التحليلات", icon: LineChart },
+  { href: "/admin/notifications", label: "التنبيهات", icon: Bell },
   { href: "/admin/students", label: "الطلاب", icon: Users },
   { href: "/admin/admissions", label: "طلبات التسجيل", icon: ClipboardList },
   { href: "/admin/classes", label: "الفصول", icon: Layers },
@@ -51,21 +67,40 @@ const allAdminNav: NavItem[] = [
   { href: "/admin/finance", label: "المالية", icon: CreditCard },
   { href: "/admin/content", label: "المحتوى", icon: Newspaper },
   { href: "/admin/messages", label: "رسائل التواصل", icon: Mail },
+  { href: "/admin/site", label: "إعدادات الموقع", icon: Settings2 },
   { href: "/admin/teachers", label: "الكادر", icon: GraduationCap },
   { href: "/admin/users", label: "المستخدمون", icon: Settings },
 ];
 
 const roleNavPaths: Record<AdminRole, string[]> = {
   admin: allAdminNav.map((item) => item.href),
-  admin_students: ["/admin", "/admin/students", "/admin/admissions", "/admin/notifications"],
-  admin_academics: ["/admin", "/admin/classes", "/admin/subjects"],
-  admin_finance: ["/admin", "/admin/finance", "/admin/notifications"],
-  admin_content: ["/admin", "/admin/content", "/admin/messages"],
+  admin_students: [
+    "/admin",
+    "/admin/students",
+    "/admin/admissions",
+    "/admin/notifications",
+  ],
+  admin_academics: ["/admin", "/admin/classes", "/admin/subjects", "/admin/analytics"],
+  admin_finance: ["/admin", "/admin/finance", "/admin/notifications", "/admin/analytics"],
+  admin_content: ["/admin", "/admin/content", "/admin/messages", "/admin/site"],
   admin_staff: ["/admin", "/admin/teachers"],
+};
+
+const roleAnalyticsTabs: Record<AdminRole, AdminAnalyticsTab[]> = {
+  admin: ["grades", "fees"],
+  admin_students: [],
+  admin_academics: ["grades"],
+  admin_finance: ["fees"],
+  admin_content: [],
+  admin_staff: [],
 };
 
 export function isAdminRole(role: string): role is AdminRole {
   return (ADMIN_ROLES as readonly string[]).includes(role);
+}
+
+export function isSuperAdmin(role: string): role is typeof SUPER_ADMIN_ROLE {
+  return role === SUPER_ADMIN_ROLE;
 }
 
 export function getAdminNav(role: AdminRole): NavItem[] {
@@ -79,6 +114,14 @@ export function canAccessAdminPath(role: AdminRole, pathname: string): boolean {
   return allowed.some(
     (path) => pathname === path || pathname.startsWith(`${path}/`)
   );
+}
+
+export function canAccessAdminAnalyticsTab(role: AdminRole, tab: AdminAnalyticsTab): boolean {
+  return roleAnalyticsTabs[role].includes(tab);
+}
+
+export function getAdminAnalyticsTabs(role: AdminRole): AdminAnalyticsTab[] {
+  return roleAnalyticsTabs[role];
 }
 
 export const adminRoleOptions = ADMIN_ROLES.map((role) => ({

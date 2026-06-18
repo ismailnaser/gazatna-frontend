@@ -5,14 +5,16 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { getDashboardNav } from "@/data/navigation";
 import { api } from "@/lib/api";
+import { countUnreadTeacherAlerts } from "@/lib/teacherAlerts";
 import { cn } from "@/lib/utils";
 import { isAdminRole } from "@/lib/adminRoles";
-import type { UserRole } from "@/types";
+import type { UserRole, TeacherAlert } from "@/types";
 
 export function DashboardSidebar({ role }: { role: UserRole }) {
   const pathname = usePathname();
   const items = getDashboardNav(role);
   const [pendingPayments, setPendingPayments] = useState(0);
+  const [pendingSubmissions, setPendingSubmissions] = useState(0);
 
   const uniqueItems = items.filter(
     (item, index, arr) => arr.findIndex((i) => i.href === item.href) === index
@@ -32,6 +34,16 @@ export function DashboardSidebar({ role }: { role: UserRole }) {
       .catch(() => setPendingPayments(0));
   }, [role, pathname]);
 
+  useEffect(() => {
+    if (role !== "teacher") return;
+    api
+      .getTeacherAlerts()
+      .then((data) => {
+        setPendingSubmissions(countUnreadTeacherAlerts(data as TeacherAlert[]));
+      })
+      .catch(() => setPendingSubmissions(0));
+  }, [role, pathname]);
+
   return (
     <aside className="hidden w-56 shrink-0 border-s border-neutral-200 bg-white md:block">
       <nav className="flex flex-col gap-1 p-4">
@@ -41,6 +53,7 @@ export function DashboardSidebar({ role }: { role: UserRole }) {
             (item.href !== basePath && pathname.startsWith(item.href));
           const Icon = item.icon;
           const showFinanceBadge = isAdminRole(role) && item.href === "/admin/finance" && pendingPayments > 0;
+          const showTeacherBadge = role === "teacher" && item.href === "/teacher" && pendingSubmissions > 0;
           return (
             <Link
               key={item.href + item.label}
@@ -58,6 +71,11 @@ export function DashboardSidebar({ role }: { role: UserRole }) {
                 {showFinanceBadge && (
                   <span className="inline-flex min-w-6 items-center justify-center rounded-full bg-p-red px-2 py-0.5 text-xs font-bold text-white">
                     {pendingPayments}
+                  </span>
+                )}
+                {showTeacherBadge && (
+                  <span className="inline-flex min-w-6 items-center justify-center rounded-full bg-amber-500 px-2 py-0.5 text-xs font-bold text-white">
+                    {pendingSubmissions}
                   </span>
                 )}
               </span>
