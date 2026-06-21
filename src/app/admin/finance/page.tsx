@@ -7,6 +7,7 @@ import { Card } from "@/components/atoms/Card";
 import { Input } from "@/components/atoms/Input";
 import { NumberFieldWithKeypad } from "@/components/teacher/NumberFieldWithKeypad";
 import { ConfirmDialog } from "@/components/molecules/ConfirmDialog";
+import { ImagePreviewModal } from "@/components/molecules/ImagePreviewModal";
 import { PageHeader } from "@/components/molecules/PageHeader";
 import { AdminFeePlanFormPanel } from "@/components/admin/AdminFeePlanFormPanel";
 import { AdminFeePlansTable } from "@/components/admin/AdminFeePlansTable";
@@ -70,6 +71,10 @@ export default function AdminFinancePage() {
   const [recordingManual, setRecordingManual] = useState(false);
   const [manualLogs, setManualLogs] = useState<ManualPaymentLog[]>([]);
   const [loadingManualLogs, setLoadingManualLogs] = useState(false);
+  const [receiptPreview, setReceiptPreview] = useState<{
+    url: string;
+    title: string;
+  } | null>(null);
   const planFormRef = useRef<HTMLDivElement>(null);
 
   async function loadManualLogs() {
@@ -370,15 +375,19 @@ export default function AdminFinancePage() {
                   <td className="px-4 py-3">{n.date}</td>
                   <td className="px-4 py-3">
                     {n.receiptUrl ? (
-                      <a
-                        href={n.receiptUrl}
-                        target="_blank"
-                        rel="noreferrer"
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setReceiptPreview({
+                            url: n.receiptUrl!,
+                            title: `إشعار دفع — ${n.studentName}`,
+                          })
+                        }
                         className="flex items-center gap-1 text-p-green hover:underline"
                       >
                         <Image className="h-4 w-4" />
                         عرض
-                      </a>
+                      </button>
                     ) : n.source === "manual" ? (
                       <span className="text-p-black/60">يدوي</span>
                     ) : (
@@ -739,6 +748,13 @@ export default function AdminFinancePage() {
           </Card>
         </div>
       )}
+
+      <ImagePreviewModal
+        open={Boolean(receiptPreview)}
+        src={receiptPreview?.url ?? null}
+        title={receiptPreview?.title}
+        onClose={() => setReceiptPreview(null)}
+      />
     </div>
   );
 }

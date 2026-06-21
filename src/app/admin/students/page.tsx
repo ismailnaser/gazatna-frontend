@@ -11,9 +11,10 @@ import { NumberFieldWithKeypad } from "@/components/teacher/NumberFieldWithKeypa
 import { PageHeader } from "@/components/molecules/PageHeader";
 import { useSchool } from "@/context/SchoolContext";
 import { formatClassLabel, mapAdminStudent } from "@/lib/adminStudents";
+import { exportStudentsToExcel } from "@/lib/exportStudentsExcel";
 import { api } from "@/lib/api";
 import type { AccountCredentials, AdminStudent, PaymentStatus } from "@/types";
-import { Plus, Search, Users } from "lucide-react";
+import { Download, Plus, Search, Users } from "lucide-react";
 
 export default function AdminStudentsPage() {
   const { classes, grades } = useSchool();
@@ -107,6 +108,11 @@ export default function AdminStudentsPage() {
     setClassFilters([]);
     setPaymentFilter("");
     setDocumentsFilter("");
+  }
+
+  function handleExportExcel() {
+    if (filteredStudents.length === 0) return;
+    exportStudentsToExcel(filteredStudents);
   }
 
   useEffect(() => {
@@ -384,7 +390,19 @@ export default function AdminStudentsPage() {
 
       <section className="rounded-2xl border border-neutral-100 bg-white shadow-sm">
         <header className="relative z-10 space-y-3 border-b border-neutral-100 bg-neutral-50/70 px-3 py-3 sm:px-4 sm:py-4">
-          <h2 className="text-sm font-bold text-p-black">بحث وتصفية</h2>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h2 className="text-sm font-bold text-p-black">بحث وتصفية</h2>
+            <Button
+              type="button"
+              variant="outline"
+              className="gap-1.5 px-3 py-1.5 text-xs"
+              onClick={handleExportExcel}
+              disabled={loading || filteredStudents.length === 0}
+            >
+              <Download className="h-3.5 w-3.5" />
+              تصدير Excel ({filteredStudents.length})
+            </Button>
+          </div>
           <div className="relative">
             <Search className="pointer-events-none absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-p-black/40" />
             <input

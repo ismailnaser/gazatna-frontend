@@ -1,17 +1,19 @@
 import type { UserRole } from "@/types";
 import { getAdminNav, isAdminRole } from "@/lib/adminRoles";
 import {
-  BarChart3,
   Bell,
   BookMarked,
   BookOpen,
   BookOpenCheck,
+  CalendarDays,
   ClipboardList,
   CreditCard,
   FileText,
   FolderOpen,
   GraduationCap,
   Home,
+  Layers,
+  Medal,
   PenLine,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -36,7 +38,9 @@ const parentNav: NavItem[] = [
   { href: "/parent/subjects", label: "المواد المسندة", icon: BookMarked },
   { href: "/parent/homework", label: "محتوى المواد", icon: PenLine },
   { href: "/parent/assessments", label: "التقييمات", icon: BookOpenCheck },
-  { href: "/parent/grades", label: "النتائج", icon: BookOpen },
+  { href: "/parent/grades", label: "العلامات", icon: BookOpen },
+  { href: "/parent/certificates", label: "الشهادات", icon: Medal },
+  { href: "/parent/schedules", label: "الجداول", icon: CalendarDays },
   { href: "/parent/fees", label: "المالية", icon: CreditCard },
 ];
 
@@ -44,6 +48,8 @@ const teacherNav: NavItem[] = [
   { href: "/teacher", label: "فصولي", icon: GraduationCap },
   { href: "/teacher/homework", label: "الواجبات", icon: PenLine },
   { href: "/teacher/quizzes", label: "الاختبارات", icon: ClipboardList },
+  { href: "/teacher/grade-schemes", label: "تقسيمة العلامات والتقييمات", icon: Layers },
+  { href: "/teacher/grade-entry", label: "إضافة التقييمات والعلامات للطلاب", icon: BookOpenCheck },
   { href: "/teacher/announcements", label: "الإعلانات", icon: Bell },
   { href: "/teacher/materials", label: "مرفقات المواد", icon: FolderOpen },
   { href: "/teacher/profile", label: "سيرتي الذاتية", icon: FileText },

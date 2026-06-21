@@ -1,12 +1,19 @@
 export type NumberInputConfig = {
   min?: number;
-  max: number;
+  max?: number;
   allowDecimal?: boolean;
   maxDecimalPlaces?: number;
 };
 
 export function formatNumberBound(value: number): string {
   return Number.isInteger(value) ? String(value) : String(value);
+}
+
+function withinBounds(n: number, min: number, max?: number): boolean {
+  if (!Number.isFinite(n)) return false;
+  if (n < min) return false;
+  if (max != null && n > max) return false;
+  return true;
 }
 
 export function isValidNumberDraft(raw: string, config: NumberInputConfig): boolean {
@@ -16,8 +23,7 @@ export function isValidNumberDraft(raw: string, config: NumberInputConfig): bool
 
   if (!allowDecimal) {
     if (!/^\d+$/.test(raw)) return false;
-    const n = Number(raw);
-    return Number.isFinite(n) && n <= max;
+    return withinBounds(Number(raw), min, max);
   }
 
   const pattern = new RegExp(`^\\d*\\.?\\d{0,${maxDecimalPlaces}}$`);
@@ -26,12 +32,10 @@ export function isValidNumberDraft(raw: string, config: NumberInputConfig): bool
   if (raw.endsWith(".")) {
     const head = raw.slice(0, -1);
     if (head === "") return true;
-    const n = Number(head);
-    return Number.isFinite(n) && n >= min && n <= max;
+    return withinBounds(Number(head), min, max);
   }
 
-  const n = Number(raw);
-  return Number.isFinite(n) && n >= min && n <= max;
+  return withinBounds(Number(raw), min, max);
 }
 
 export function applyNumberKey(
@@ -50,6 +54,7 @@ export function applyNumberKey(
   } else if (key === "zero") {
     next = "0";
   } else if (key === "max") {
+    if (max == null) return current;
     next = formatNumberBound(max);
   } else if (key === "dot") {
     if (!config.allowDecimal || current.includes(".")) return current;
@@ -71,6 +76,6 @@ export function validateFinalNumber(raw: string, config: NumberInputConfig): str
   const n = Number(raw);
   if (!Number.isFinite(n)) return "الرقم غير صالح";
   if (n < min) return `القيمة يجب ألا تقل عن ${formatNumberBound(min)}`;
-  if (n > max) return `القيمة يجب ألا تتجاوز ${formatNumberBound(max)}`;
+  if (max != null && n > max) return `القيمة يجب ألا تتجاوز ${formatNumberBound(max)}`;
   return null;
 }

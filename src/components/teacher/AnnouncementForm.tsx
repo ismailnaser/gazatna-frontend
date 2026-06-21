@@ -132,7 +132,7 @@ export function AnnouncementForm({
           name="body"
           required
           defaultValue={initial?.body}
-          placeholder="مثال: يوم الخميس عطلة رسمية..."
+          placeholder="مثال: الامتحان النصفي يوم الخميس..."
           className="min-h-[140px]"
         />
       </FormSection>

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Alert } from "@/components/atoms/Alert";
+import { SaveFeedback } from "@/components/molecules/SaveFeedback";
 import { DashboardLoadingState } from "@/components/dashboard/DashboardLoadingState";
 import { Button } from "@/components/atoms/Button";
 import { Input } from "@/components/atoms/Input";
@@ -45,6 +46,7 @@ export function GradebookPanel({ classId }: { classId: string }) {
   const [students, setStudents] = useState<ClassStudent[]>([]);
   const [search, setSearch] = useState("");
   const [saved, setSaved] = useState(false);
+  const [scrollFeedback, setScrollFeedback] = useState(false);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -84,6 +86,7 @@ export function GradebookPanel({ classId }: { classId: string }) {
       )
     );
     setSaved(false);
+    setScrollFeedback(false);
   }
 
   async function handleSave() {
@@ -97,6 +100,7 @@ export function GradebookPanel({ classId }: { classId: string }) {
       const updated = await api.updateTeacherGradebook(classId, entries);
       setStudents(updated as ClassStudent[]);
       setSaved(true);
+      setScrollFeedback(true);
     } catch {
       setSaved(false);
     } finally {
@@ -116,9 +120,10 @@ export function GradebookPanel({ classId }: { classId: string }) {
 
   return (
     <div className="space-y-4">
-      {saved && (
-        <Alert variant="success">تم حفظ التغييرات بنجاح</Alert>
-      )}
+      <SaveFeedback
+        success={saved ? "تم حفظ التغييرات بنجاح" : null}
+        scrollIntoView={scrollFeedback}
+      />
 
       <section className="flex gap-1.5 sm:gap-2">
         <StatChip icon={Users} label="عدد الطلاب" shortLabel="الطلاب" value={stats.total} />
@@ -155,6 +160,11 @@ export function GradebookPanel({ classId }: { classId: string }) {
               {saving ? "جاري الحفظ..." : "حفظ التغييرات"}
             </Button>
           </div>
+          <SaveFeedback
+            success={saved ? "تم حفظ التغييرات بنجاح" : null}
+            scrollIntoView={scrollFeedback}
+            className="mt-2"
+          />
 
           {students.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-neutral-200 bg-neutral-50/60 px-4 py-10 text-center">

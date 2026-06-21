@@ -147,7 +147,7 @@ export default function ParentDashboard() {
     <div>
       <PageHeader
         title="الرئيسية"
-        description="متابعة ابنك/ابنتك — محتوى المواد، الاختبارات، والنتائج"
+        description="متابعة ابنك/ابنتك — محتوى المواد، الاختبارات، والعلامات"
       />
 
       <div className="mb-8 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">

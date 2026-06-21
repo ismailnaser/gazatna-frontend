@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
-import { Alert } from "@/components/atoms/Alert";
+import { SaveFeedback } from "@/components/molecules/SaveFeedback";
 import { Badge } from "@/components/atoms/Badge";
 import { Button } from "@/components/atoms/Button";
 import { Card } from "@/components/atoms/Card";
@@ -68,6 +68,7 @@ export function TeacherQuizGradeEditor({
   const [activeQuestionId, setActiveQuestionId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
   const autoTotal = submission.autoScore ?? 0;
 
@@ -82,6 +83,7 @@ export function TeacherQuizGradeEditor({
 
   async function handleSave() {
     setError("");
+    setSuccess("");
     for (const q of manualQuestions) {
       const raw = manualScores[q.id];
       const validationError = validateFinalScore(raw ?? "", q.points ?? 1);
@@ -105,8 +107,11 @@ export function TeacherQuizGradeEditor({
         manualScores: payload,
         teacherNote: note,
       });
+      setSuccess("تم حفظ التقييم بنجاح");
       onSaved?.();
-      router.push(quizGradePath(overviewQuizId));
+      window.setTimeout(() => {
+        router.push(quizGradePath(overviewQuizId));
+      }, 1200);
     } catch {
       setError("تعذر حفظ التقييم");
     } finally {
@@ -155,11 +160,7 @@ export function TeacherQuizGradeEditor({
         </div>
       </div>
 
-      {error && (
-        <Alert variant="error" className="mb-4">
-          {error}
-        </Alert>
-      )}
+      <SaveFeedback success={success} error={error} className="mb-4" />
 
       <section className="mb-4 overflow-hidden rounded-2xl border border-brand-blue/20 bg-brand-blue/5 shadow-sm">
         <header className="border-b border-brand-blue/10 bg-white/60 px-3 py-2.5 sm:px-4">
@@ -296,6 +297,7 @@ export function TeacherQuizGradeEditor({
               <Save className="h-4 w-4" />
               {saving ? "جاري الحفظ..." : "حفظ التقييم وإظهار العلامة للطالب"}
             </Button>
+            <SaveFeedback success={success} scrollIntoView className="mt-3" />
             <p className="mt-3 text-xs text-neutral-500">
               بعد اكتمال التصحيح ستظهر العلامة للطالب في صفحة التقييمات ومحتوى المادة.
             </p>
@@ -307,6 +309,7 @@ export function TeacherQuizGradeEditor({
               <Save className="h-4 w-4" />
               {saving ? "جاري الحفظ..." : "حفظ التقييم وإظهار العلامة للطالب"}
             </Button>
+            <SaveFeedback success={success} scrollIntoView className="mt-3" />
             <p className="mt-3 text-xs text-neutral-500">
               أدخل درجة كل سؤال، ثم احفظ التقييم الكامل من هنا.
             </p>

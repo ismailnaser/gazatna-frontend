@@ -13,7 +13,7 @@ type NumberFieldWithKeypadProps = NumberInputConfig & {
   fieldId?: string;
   active?: boolean;
   onActivate?: () => void;
-  onDeactivate?: () => void;
+  onDeactivate?: (value: string) => void;
   name?: string;
   required?: boolean;
   className?: string;
@@ -69,7 +69,7 @@ export function NumberFieldWithKeypad({
         value={value}
         onChange={handleChange}
         onFocus={() => onActivate?.()}
-        onBlur={() => onDeactivate?.()}
+        onBlur={(e) => onDeactivate?.(e.target.value)}
         required={required}
         placeholder={placeholder}
         aria-label={compact ? label : undefined}

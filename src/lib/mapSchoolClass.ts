@@ -1,4 +1,5 @@
 import type { Grade, SchoolClass } from "@/types/teacher";
+import { mapPromotionPolicy } from "@/types/academic";
 
 export function mapSchoolClass(raw: Record<string, unknown>): SchoolClass {
   const gradeLevelRaw = raw.gradeLevel ?? raw.grade_level;
@@ -34,6 +35,9 @@ export function mapGrade(raw: Record<string, unknown>): Grade {
     name: String(raw.name ?? ""),
     sectionsCount: Number(raw.sectionsCount ?? raw.sections_count ?? 0),
     sortOrder: Number(raw.sortOrder ?? raw.sort_order ?? 0),
+    promotionPolicy: raw.promotionPolicy
+      ? mapPromotionPolicy(raw.promotionPolicy as Record<string, unknown>)
+      : null,
   };
 }
 

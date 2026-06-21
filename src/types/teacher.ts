@@ -1,3 +1,5 @@
+import type { PromotionPolicy } from "@/types/academic";
+
 export type TeacherProfile = {
   id: string;
   userId?: string;
@@ -12,6 +14,8 @@ export type TeacherProfile = {
   imageGradient: string;
   imageUrl?: string | null;
   classIds?: string[];
+  teachableClassIds?: string[];
+  subjectClassIds?: Record<string, string[]>;
 };
 
 export type SchoolClass = {
@@ -29,6 +33,7 @@ export type Grade = {
   name: string;
   sectionsCount: number;
   sortOrder?: number;
+  promotionPolicy?: PromotionPolicy | null;
 };
 
 export type Subject = {

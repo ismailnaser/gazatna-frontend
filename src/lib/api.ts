@@ -291,6 +291,62 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ order }),
     }),
+  getAcademicContext: () => apiFetch<unknown>("/academic-context/"),
+  getAdminAcademicYears: () => apiList<unknown>("/admin/academic-years/"),
+  createAdminAcademicYear: (data: unknown) =>
+    apiFetch<unknown>("/admin/academic-years/", { method: "POST", body: JSON.stringify(data) }),
+  updateAdminAcademicYear: (id: string, data: unknown) =>
+    apiFetch<unknown>(`/admin/academic-years/${id}/`, { method: "PATCH", body: JSON.stringify(data) }),
+  setAdminAcademicYearActive: (id: string) =>
+    apiFetch<unknown>(`/admin/academic-years/${id}/set-active/`, { method: "POST" }),
+  setAdminAcademicCurrentTerm: (yearId: string, termId: string) =>
+    apiFetch<unknown>(`/admin/academic-years/${yearId}/set-current-term/`, {
+      method: "POST",
+      body: JSON.stringify({ termId }),
+    }),
+  updateAdminGradePromotionPolicy: (gradeId: string, data: unknown) =>
+    apiFetch<unknown>(`/admin/grades/${gradeId}/promotion-policy/`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    }),
+  getAdminPromotionPreview: (yearId: string, decisions?: Array<{ studentId: string; action: string }>) =>
+    decisions?.length
+      ? apiFetch<unknown>(`/admin/academic-years/${yearId}/promotion-preview/`, {
+          method: "POST",
+          body: JSON.stringify({ decisions }),
+        })
+      : apiFetch<unknown>(`/admin/academic-years/${yearId}/promotion-preview/`),
+  executeAdminYearRollover: (
+    yearId: string,
+    data: { decisions?: Array<{ studentId: string; action: string }>; newYearName?: string }
+  ) =>
+    apiFetch<unknown>(`/admin/academic-years/${yearId}/execute-rollover/`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+  getAdminCertificateConfig: (yearId: string) =>
+    apiFetch<unknown>(`/admin/academic-years/${yearId}/certificate-config/`),
+  updateAdminCertificateConfig: (yearId: string, data: unknown) =>
+    apiFetch<unknown>(`/admin/academic-years/${yearId}/certificate-config/`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    }),
+  publishAdminCertificates: (yearId: string, data?: { termId?: string }) =>
+    apiFetch<unknown>(`/admin/academic-years/${yearId}/publish-certificates/`, {
+      method: "POST",
+      body: JSON.stringify(data ?? {}),
+    }),
+  unpublishAdminCertificates: (yearId: string) =>
+    apiFetch<unknown>(`/admin/academic-years/${yearId}/unpublish-certificates/`, {
+      method: "POST",
+    }),
+  getAdminCertificatePreview: (yearId: string, draft?: Record<string, unknown>) =>
+    draft
+      ? apiFetch<unknown>(`/admin/academic-years/${yearId}/certificate-preview/`, {
+          method: "POST",
+          body: JSON.stringify(draft),
+        })
+      : apiFetch<unknown>(`/admin/academic-years/${yearId}/certificate-preview/`),
   getAdminClasses: () => apiList<unknown>("/admin/classes/"),
   createAdminClass: (data: unknown) =>
     apiFetch<unknown>("/admin/classes/", { method: "POST", body: JSON.stringify(data) }),
@@ -309,6 +365,14 @@ export const api = {
     apiFetch<unknown>(`/admin/subjects/${id}/`, { method: "PATCH", body: JSON.stringify(data) }),
   deleteAdminSubject: (id: string) =>
     apiFetch<void>(`/admin/subjects/${id}/`, { method: "DELETE" }),
+  getAdminSchedules: (type?: "exam" | "class") =>
+    apiList<unknown>(type ? `/admin/schedules/?type=${type}` : "/admin/schedules/"),
+  createAdminSchedule: (data: unknown) =>
+    apiFetch<unknown>("/admin/schedules/", { method: "POST", body: JSON.stringify(data) }),
+  updateAdminSchedule: (id: string, data: unknown) =>
+    apiFetch<unknown>(`/admin/schedules/${id}/`, { method: "PATCH", body: JSON.stringify(data) }),
+  deleteAdminSchedule: (id: string) =>
+    apiFetch<void>(`/admin/schedules/${id}/`, { method: "DELETE" }),
   getAdminTeachers: () => apiList<unknown>("/admin/teachers/"),
   createAdminTeacher: (data: FormData | Record<string, unknown>) =>
     data instanceof FormData
@@ -396,6 +460,33 @@ export const api = {
       method: "DELETE",
     }),
   getTeacherAssessments: () => apiFetch<unknown[]>("/teacher/assessments/"),
+  getTeacherGradeScheme: (classIds: string[], subject?: string) => {
+    const params = new URLSearchParams();
+    for (const id of classIds) params.append("classIds", id);
+    if (subject) params.set("subject", subject);
+    const query = params.toString();
+    return apiFetch<unknown>(`/teacher/grade-schemes/${query ? `?${query}` : ""}`);
+  },
+  saveTeacherGradeScheme: (data: {
+    classIds: string[];
+    subjects: string[];
+    maxScore: number;
+    components: unknown[];
+  }) =>
+    apiFetch<unknown>("/teacher/grade-schemes/", {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+  saveTeacherGradeSchemeEntries: (data: {
+    classIds: string[];
+    subjects: string[];
+    activeSubject?: string;
+    entries: unknown[];
+  }) =>
+    apiFetch<unknown>("/teacher/grade-schemes/", {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    }),
   getTeacherAlerts: () => apiList<unknown>("/teacher/alerts/"),
   markTeacherAlertRead: (alertKey: string) =>
     apiFetch<{ ok: boolean }>("/teacher/alerts/read/", {
@@ -461,7 +552,10 @@ export const api = {
     }),
   getParentChild: () => apiFetch<unknown>("/parent/child/"),
   getParentStudent: () => apiFetch<unknown>("/parent/student/"),
+  getParentSchedules: (type?: "exam" | "class") =>
+    apiList<unknown>(type ? `/parent/schedules/?type=${type}` : "/parent/schedules/"),
   getParentGrades: () => apiList<unknown>("/parent/grades/"),
+  getParentCertificates: () => apiFetch<unknown>("/parent/certificates/"),
   getParentAssessments: () => apiList<unknown>("/parent/assessments/"),
   getParentFees: () =>
     apiFetch<{ student: unknown; notices: unknown[]; feeStatus: unknown }>("/parent/fees/"),

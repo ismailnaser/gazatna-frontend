@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Alert } from "@/components/atoms/Alert";
+import { SaveFeedback } from "@/components/molecules/SaveFeedback";
 import { Badge } from "@/components/atoms/Badge";
 import { Button } from "@/components/atoms/Button";
 import { Card } from "@/components/atoms/Card";
@@ -40,12 +40,14 @@ export function TeacherHomeworkGradeEditor({
   const [scoreFieldActive, setScoreFieldActive] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
   const attachmentUrl = resolveMediaUrl(submission.attachmentUrl);
   const attachmentName = attachmentLabel(attachmentUrl, submission.attachmentName);
 
   async function handleSave() {
     setError("");
+    setSuccess("");
     const validationError = validateFinalScore(score, maxScore);
     if (validationError) {
       setError(validationError);
@@ -57,8 +59,11 @@ export function TeacherHomeworkGradeEditor({
         score: score === "" ? null : Number(score),
         teacherNote: note,
       });
+      setSuccess("تم حفظ التقييم بنجاح");
       onSaved?.();
-      router.push(homeworkGradePath(overviewHomeworkId));
+      window.setTimeout(() => {
+        router.push(homeworkGradePath(overviewHomeworkId));
+      }, 1200);
     } catch {
       setError("تعذر حفظ التقييم");
     } finally {
@@ -98,11 +103,7 @@ export function TeacherHomeworkGradeEditor({
         </div>
       </div>
 
-      {error && (
-        <Alert variant="error" className="mb-4">
-          {error}
-        </Alert>
-      )}
+      <SaveFeedback success={success} error={error} className="mb-4" />
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
@@ -173,6 +174,7 @@ export function TeacherHomeworkGradeEditor({
               <Save className="h-4 w-4" />
               {saving ? "جاري الحفظ..." : isEdit ? "حفظ التعديلات" : "حفظ التقييم وإظهار العلامة"}
             </Button>
+            <SaveFeedback success={success} error={error} scrollIntoView />
             <Link href={homeworkGradePath(overviewHomeworkId)}>
               <Button variant="ghost">إلغاء</Button>
             </Link>

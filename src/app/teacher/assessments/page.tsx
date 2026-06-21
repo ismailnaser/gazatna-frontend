@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
 
 export default function TeacherAssessmentsRedirectPage() {
-  redirect("/teacher/homework");
+  redirect("/teacher/grade-entry");
 }

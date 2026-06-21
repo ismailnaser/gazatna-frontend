@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { getDashboardNav } from "@/data/navigation";
 import { api } from "@/lib/api";
-import { countUnreadTeacherAlerts } from "@/lib/teacherAlerts";
+import { countPendingTeacherAlerts } from "@/lib/teacherAlerts";
 import { cn } from "@/lib/utils";
 import { isAdminRole } from "@/lib/adminRoles";
 import type { UserRole, TeacherAlert } from "@/types";
@@ -39,7 +39,7 @@ export function DashboardSidebar({ role }: { role: UserRole }) {
     api
       .getTeacherAlerts()
       .then((data) => {
-        setPendingSubmissions(countUnreadTeacherAlerts(data as TeacherAlert[]));
+        setPendingSubmissions(countPendingTeacherAlerts(data as TeacherAlert[]));
       })
       .catch(() => setPendingSubmissions(0));
   }, [role, pathname]);
@@ -53,7 +53,8 @@ export function DashboardSidebar({ role }: { role: UserRole }) {
             (item.href !== basePath && pathname.startsWith(item.href));
           const Icon = item.icon;
           const showFinanceBadge = isAdminRole(role) && item.href === "/admin/finance" && pendingPayments > 0;
-          const showTeacherBadge = role === "teacher" && item.href === "/teacher" && pendingSubmissions > 0;
+          const showTeacherBadge =
+            role === "teacher" && item.href === "/teacher/grade-entry" && pendingSubmissions > 0;
           return (
             <Link
               key={item.href + item.label}

@@ -11,7 +11,7 @@ import { SubjectCardShell, SubjectMetaGrid } from "@/components/parent/ParentSub
 import { useAssignments } from "@/context/AssignmentsContext";
 import { useAuth } from "@/context/AuthContext";
 import { api } from "@/lib/api";
-import { resolveMediaUrl } from "@/lib/media";
+import { downloadMediaFile, resolveMediaUrl } from "@/lib/media";
 import { getQuizPhase } from "@/lib/quiz-timing";
 import { quizAttemptLabel } from "@/lib/quizAttempts";
 import type { ParentChild, ParentSubjectDetail, ParentSubjectItem } from "@/types";
@@ -143,19 +143,28 @@ function SubjectItemRow({
                 const url = resolveMediaUrl(att.url);
                 if (!url) return null;
                 return (
-                  <a
+                  <div
                     key={att.id}
-                    href={url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center justify-between gap-2 rounded-xl border border-neutral-100 bg-neutral-50 px-3 py-2.5 text-sm font-medium text-brand-blue transition-colors hover:bg-brand-blue/5"
+                    className="flex items-center gap-2 rounded-xl border border-neutral-100 bg-neutral-50 px-3 py-2.5"
                   >
-                    <span className="flex min-w-0 items-center gap-2">
+                    <a
+                      href={url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex min-w-0 flex-1 items-center gap-2 text-sm font-medium text-brand-blue transition-colors hover:text-brand-blue/80"
+                    >
                       <Paperclip className="h-4 w-4 shrink-0" />
                       <span className="truncate">{att.name}</span>
-                    </span>
-                    <Download className="h-4 w-4 shrink-0" />
-                  </a>
+                    </a>
+                    <button
+                      type="button"
+                      onClick={() => void downloadMediaFile(url, att.name)}
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-brand-blue transition-colors hover:bg-brand-blue/10"
+                      aria-label={`تحميل ${att.name}`}
+                    >
+                      <Download className="h-4 w-4" />
+                    </button>
+                  </div>
                 );
               })}
             </div>

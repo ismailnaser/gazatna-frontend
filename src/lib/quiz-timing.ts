@@ -3,28 +3,27 @@ import { quizTotalPoints } from "@/lib/quiz-scoring";
 
 export type QuizPhase = "upcoming" | "open" | "closed";
 
-function quizEffectiveEnd(quiz: Quiz): Date {
+function getQuizWindowEnd(quiz: Quiz): Date {
   const start = new Date(quiz.startAt);
-  const candidates: number[] = [];
-  if (quiz.endAt) candidates.push(new Date(quiz.endAt).getTime());
+  const endAt = quiz.endAt || quiz.dueDate;
+  if (endAt) return new Date(endAt);
   if (quiz.durationMinutes) {
-    candidates.push(start.getTime() + quiz.durationMinutes * 60_000);
+    return new Date(start.getTime() + quiz.durationMinutes * 60_000);
   }
-  if (!candidates.length) return start;
-  return new Date(Math.min(...candidates));
+  return start;
 }
 
 export function getQuizWindow(quiz: Quiz) {
   const start = new Date(quiz.startAt);
-  const end = quizEffectiveEnd(quiz);
+  const end = getQuizWindowEnd(quiz);
   return { start, end };
 }
 
 export function getQuizPhase(quiz: Quiz, now = new Date()): QuizPhase {
   if (quiz.status === "closed" || quiz.windowStatus === "closed") return "closed";
   const { start, end } = getQuizWindow(quiz);
-  if (now < start || quiz.windowStatus === "scheduled") return "upcoming";
-  if (now >= end || quiz.windowStatus === "ended") return "closed";
+  if (now < start) return "upcoming";
+  if (now >= end) return "closed";
   return "open";
 }
 

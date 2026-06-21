@@ -8,6 +8,7 @@ import { Select } from "@/components/atoms/Select";
 import { Textarea } from "@/components/atoms/Textarea";
 import { ClassSelect, getSelectedClassIds } from "@/components/teacher/ClassSelect";
 import { NumberFieldWithKeypad } from "@/components/teacher/NumberFieldWithKeypad";
+import { validateFinalNumber } from "@/lib/numberInput";
 import { quizTotalPoints } from "@/lib/quiz-scoring";
 import { toDatetimeLocalValue } from "@/lib/quiz-timing";
 import type { MatchingPair, QuestionType, Quiz, QuizQuestion } from "@/types";
@@ -194,8 +195,23 @@ export function QuizForm({
     String(initial?.durationMinutes ?? 15)
   );
   const [maxAttempts, setMaxAttempts] = useState(String(initial?.maxAttempts ?? 1));
+  const [pointsByQuestion, setPointsByQuestion] = useState<Record<string, string>>({});
 
   const totalPoints = useMemo(() => quizTotalPoints(questions), [questions]);
+
+  const pointsFieldConfig = {
+    min: 0.5,
+    max: 500,
+    allowDecimal: true,
+    maxDecimalPlaces: 1,
+  } as const;
+
+  function commitQuestionPoints(id: string, draft: string) {
+    const err = validateFinalNumber(draft, pointsFieldConfig);
+    const final = err ? "1" : draft;
+    setPointsByQuestion((prev) => ({ ...prev, [id]: final }));
+    updateQuestion(id, { points: Number(final) });
+  }
 
   function updateQuestion(id: string, patch: Partial<QuizQuestion>) {
     setQuestions((prev) => prev.map((q) => (q.id === id ? { ...q, ...patch } : q)));
@@ -205,6 +221,7 @@ export function QuizForm({
     setQuestions((prev) =>
       prev.map((q) => (q.id === id ? { ...emptyQuestion(type), id: q.id, prompt: q.prompt } : q))
     );
+    setPointsByQuestion((prev) => ({ ...prev, [id]: "1" }));
   }
 
   function updateOption(qId: string, optIndex: number, value: string) {
@@ -247,7 +264,9 @@ export function QuizForm({
   }
 
   function addQuestion() {
-    setQuestions((prev) => [...prev, emptyQuestion()]);
+    const q = emptyQuestion();
+    setQuestions((prev) => [...prev, q]);
+    setPointsByQuestion((prev) => ({ ...prev, [q.id]: "1" }));
   }
 
   function removeQuestion(id: string) {
@@ -269,7 +288,15 @@ export function QuizForm({
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const form = new FormData(e.currentTarget);
-    for (const q of questions) {
+    const normalizedQuestions = questions.map((q) => {
+      const draft = pointsByQuestion[q.id] ?? String(q.points);
+      const parsed = Number(draft);
+      return {
+        ...q,
+        points: draft === "" || draft === "." || !Number.isFinite(parsed) ? 0 : parsed,
+      };
+    });
+    for (const q of normalizedQuestions) {
       const err = validateQuestion(q);
       if (err) {
         alert(err);
@@ -299,7 +326,7 @@ export function QuizForm({
       gradesVisible: form.get("gradesVisible") === "on",
       reviewAllowed: form.get("reviewAllowed") === "on",
       status: form.get("status") as Quiz["status"],
-      questions,
+      questions: normalizedQuestions,
     });
   }
 
@@ -483,11 +510,16 @@ export function QuizForm({
                   <NumberFieldWithKeypad
                     fieldId={`points-${q.id}`}
                     label="درجة السؤال"
-                    value={String(q.points)}
-                    onChange={(next) =>
-                      updateQuestion(q.id, { points: next === "" ? 1 : Number(next) })
-                    }
-                    min={0.5}
+                    value={pointsByQuestion[q.id] ?? String(q.points)}
+                    onChange={(next) => {
+                      setPointsByQuestion((prev) => ({ ...prev, [q.id]: next }));
+                      if (next !== "" && next !== ".") {
+                        const n = Number(next);
+                        if (Number.isFinite(n)) updateQuestion(q.id, { points: n });
+                      }
+                    }}
+                    onDeactivate={(draft) => commitQuestionPoints(q.id, draft)}
+                    min={0}
                     max={500}
                     allowDecimal
                     maxDecimalPlaces={1}

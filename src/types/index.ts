@@ -22,12 +22,24 @@ export type Student = {
   balance: { total: number; paid: number; remaining: number };
 };
 
+export type GradeComponent = {
+  id: string;
+  name: string;
+  score: number | null;
+  maxScore: number;
+  passScore: number;
+  passed: boolean | null;
+};
+
 export type Grade = {
   id: string;
   subject: string;
-  score: number;
+  score: number | null;
   maxScore: number;
+  passScore: number;
+  passed: boolean | null;
   note?: string;
+  components?: GradeComponent[];
 };
 
 export type PaymentNotice = {

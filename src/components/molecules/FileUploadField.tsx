@@ -85,6 +85,7 @@ export const FileUploadField = forwardRef<HTMLInputElement, FileUploadFieldProps
 
     const hasSelection =
       Boolean(selectedFileName) || (selectedCount != null && selectedCount > 0);
+    const nativeRequired = required && !hasSelection;
 
     function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
       onChange(e.target.files);
@@ -119,7 +120,7 @@ export const FileUploadField = forwardRef<HTMLInputElement, FileUploadFieldProps
             accept={resolvedAccept || undefined}
             multiple={multiple}
             disabled={disabled}
-            required={required}
+            required={nativeRequired}
             className="sr-only"
             onChange={handleChange}
           />
@@ -175,7 +176,7 @@ export const FileUploadField = forwardRef<HTMLInputElement, FileUploadFieldProps
           accept={resolvedAccept || undefined}
           multiple={multiple}
           disabled={disabled}
-          required={required}
+          required={nativeRequired}
           className="sr-only"
           onChange={handleChange}
         />
