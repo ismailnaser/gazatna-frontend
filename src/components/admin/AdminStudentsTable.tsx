@@ -75,6 +75,7 @@ export function AdminStudentsTable({
                   <p className="font-semibold leading-snug text-p-black">{student.name}</p>
                   <p className="text-xs text-p-black/50" dir="ltr">
                     {student.studentNumber ? `#${student.studentNumber}` : "—"}
+                    {student.nationalId ? ` · ${student.nationalId}` : ""}
                   </p>
                   {student.username ? (
                     <p className="text-[11px] text-p-black/40" dir="ltr">

@@ -12,6 +12,7 @@ import {
   canAccessAdminAnalyticsTab,
   canAccessAdminPath,
   isAdminRole,
+  isSuperAdmin,
 } from "@/lib/adminRoles";
 import type { AdminAnalytics } from "@/types/news";
 import { emptyAdminAnalytics } from "@/types/news";
@@ -23,7 +24,9 @@ export default function AdminDashboard() {
   const [data, setData] = useState<AdminAnalytics>(emptyAdminAnalytics);
   const [loading, setLoading] = useState(true);
 
-  const canOpenSite = user && isAdminRole(user.role) && canAccessAdminPath(user.role, "/admin/site");
+  const canOpenSite = user && isSuperAdmin(user.role);
+  const canOpenNotifications =
+    user && isAdminRole(user.role) && canAccessAdminPath(user.role, "/admin/notifications");
   const canOpenGradesAnalytics =
     user && isAdminRole(user.role) && canAccessAdminAnalyticsTab(user.role, "grades");
   const canOpenFeesAnalytics =
@@ -138,19 +141,34 @@ export default function AdminDashboard() {
                     {task.text}
                   </Link>
                 ) : task.type === "fees_blocked" ? (
+                  canOpenNotifications ? (
                   <Link
                     href="/admin/notifications?type=fees_blocked"
                     className="block rounded-lg bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800 hover:bg-amber-100"
                   >
                     {task.text}
                   </Link>
+                  ) : (
+                  <div className="rounded-lg bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">
+                    {task.text}
+                  </div>
+                  )
                 ) : task.type === "students_inactive" ? (
+                  canOpenNotifications ? (
                   <Link
                     href="/admin/notifications?type=students_inactive"
                     className="block rounded-lg bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800 hover:bg-amber-100"
                   >
                     {task.text}
                   </Link>
+                  ) : (
+                  <Link
+                    href="/admin/students"
+                    className="block rounded-lg bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800 hover:bg-amber-100"
+                  >
+                    {task.text}
+                  </Link>
+                  )
                 ) : (
                   <div className="rounded-lg bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">
                     {task.text}

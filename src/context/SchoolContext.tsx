@@ -5,12 +5,14 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useRef,
   useState,
 } from "react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import { isAdminRole } from "@/lib/adminRoles";
-import type { SchoolClass, Subject, TeacherProfile } from "@/types/teacher";
+import { mapGrades, mapSchoolClasses } from "@/lib/mapSchoolClass";
+import type { Grade, SchoolClass, Subject, TeacherProfile } from "@/types/teacher";
 
 type SchoolState = {
   teachers: TeacherProfile[];
@@ -19,6 +21,7 @@ type SchoolState = {
 
 type SchoolContextValue = SchoolState & {
   classes: SchoolClass[];
+  grades: Grade[];
   subjects: Subject[];
   currentTeacher: TeacherProfile | null;
   loading: boolean;
@@ -32,6 +35,7 @@ type SchoolContextValue = SchoolState & {
   removeClass: (id: string) => Promise<void>;
   addSubject: (name: string) => Promise<Subject>;
   updateSubject: (id: string, name: string) => Promise<Subject>;
+  setSubjectClasses: (id: string, classIds: string[]) => Promise<Subject>;
   removeSubject: (id: string) => Promise<void>;
   refresh: () => Promise<void>;
 };
@@ -46,6 +50,15 @@ function buildAssignments(teachers: TeacherProfile[]): Record<string, string[]> 
   return map;
 }
 
+function normalizeSubject(raw: Subject): Subject {
+  return {
+    ...raw,
+    id: String(raw.id),
+    teacherCount: Number(raw.teacherCount ?? 0),
+    classIds: Array.isArray(raw.classIds) ? raw.classIds.map(String) : [],
+  };
+}
+
 export function SchoolProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
   const [state, setState] = useState<SchoolState>({
@@ -53,11 +66,19 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
     assignments: {},
   });
   const [classes, setClasses] = useState<SchoolClass[]>([]);
+  const [grades, setGrades] = useState<Grade[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [currentTeacher, setCurrentTeacher] = useState<TeacherProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const initialLoadDoneRef = useRef(false);
+
+  useEffect(() => {
+    initialLoadDoneRef.current = false;
+    setLoading(true);
+  }, [user?.id]);
 
   const refresh = useCallback(async () => {
+    const showLoading = !initialLoadDoneRef.current;
     if (!user) {
       try {
         const teachersData = await api.getTeachers();
@@ -73,26 +94,41 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    setLoading(true);
+    if (showLoading) setLoading(true);
     try {
       if (isAdminRole(user.role)) {
-        const [teachersData, classesData, subjectsData] = await Promise.all([
+        const [teachersResult, classesResult, subjectsResult, gradesResult] = await Promise.allSettled([
           api.getAdminTeachers(),
           api.getAdminClasses(),
           api.getAdminSubjects(),
+          api.getAdminGrades(),
         ]);
-        const teachers = teachersData as TeacherProfile[];
+        const teachers =
+          teachersResult.status === "fulfilled" ? (teachersResult.value as TeacherProfile[]) : [];
+        const classesData =
+          classesResult.status === "fulfilled"
+            ? mapSchoolClasses(classesResult.value as unknown[])
+            : [];
+        const subjectsData =
+          subjectsResult.status === "fulfilled"
+            ? (subjectsResult.value as Subject[]).map(normalizeSubject)
+            : [];
+        const gradesData =
+          gradesResult.status === "fulfilled" ? mapGrades(gradesResult.value as unknown[]) : [];
         setCurrentTeacher(null);
         setState({ teachers, assignments: buildAssignments(teachers) });
-        setClasses(classesData as SchoolClass[]);
-        setSubjects(subjectsData as Subject[]);
+        setClasses(classesData);
+        setGrades(gradesData);
+        setSubjects(subjectsData);
       } else if (user.role === "teacher") {
         const [classesResult, profileResult] = await Promise.allSettled([
           api.getTeacherClasses(),
           api.getTeacherProfile(),
         ]);
         const classesData =
-          classesResult.status === "fulfilled" ? (classesResult.value as SchoolClass[]) : [];
+          classesResult.status === "fulfilled"
+            ? mapSchoolClasses(classesResult.value as unknown[])
+            : [];
         const teacher =
           profileResult.status === "fulfilled" ? (profileResult.value as TeacherProfile) : null;
         setClasses(classesData);
@@ -106,6 +142,7 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
         setCurrentTeacher(null);
         setState({ teachers: [], assignments: {} });
         setClasses([]);
+        setGrades([]);
         setSubjects([]);
       } else {
         const teachersData = await api.getTeachers();
@@ -117,8 +154,10 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
       setCurrentTeacher(null);
       setState({ teachers: [], assignments: {} });
       setClasses([]);
+      setGrades([]);
       setSubjects([]);
     } finally {
+      initialLoadDoneRef.current = true;
       setLoading(false);
     }
   }, [user]);
@@ -190,7 +229,7 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
     }
     setState((prev) => ({
       teachers: [...prev.teachers, created],
-      assignments: { ...prev.assignments, [created.id]: [] },
+      assignments: { ...prev.assignments, [created.id]: created.classIds ?? [] },
     }));
     return created;
   }, []);
@@ -208,11 +247,17 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
         delete payload.subject;
         delete payload.subjects;
       }
+      if (data.classIds) {
+        payload.classIds = data.classIds.map(Number);
+      }
       updated = (await api.updateAdminTeacher(id, payload)) as TeacherProfile;
     }
     setState((prev) => ({
       ...prev,
       teachers: prev.teachers.map((t) => (t.id === id ? { ...t, ...updated } : t)),
+      assignments: updated.classIds
+        ? { ...prev.assignments, [id]: updated.classIds }
+        : prev.assignments,
     }));
     return updated;
   }, []);
@@ -283,9 +328,41 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
     return updated;
   }, [subjects]);
 
+  const setSubjectClasses = useCallback(async (id: string, classIds: string[]) => {
+    const updated = (await api.updateAdminSubject(id, {
+      classIds: classIds.map(Number),
+    })) as Subject;
+    setSubjects((prev) =>
+      prev.map((subject) => (subject.id === id ? { ...subject, ...updated } : subject))
+    );
+    return updated;
+  }, []);
+
   const removeSubject = useCallback(async (id: string) => {
+    let removedName = "";
+    setSubjects((prev) => {
+      removedName = prev.find((s) => s.id === id)?.name ?? "";
+      return prev;
+    });
     await api.deleteAdminSubject(id);
     setSubjects((prev) => prev.filter((s) => s.id !== id));
+    if (removedName) {
+      setState((prev) => ({
+        ...prev,
+        teachers: prev.teachers.map((teacher) => {
+          const subjectIds = teacher.subjectIds ?? [];
+          if (!subjectIds.includes(id)) return teacher;
+          const nextSubjects =
+            teacher.subjects?.filter((name) => name !== removedName) ?? [];
+          return {
+            ...teacher,
+            subjectIds: subjectIds.filter((subjectId) => subjectId !== id),
+            subjects: nextSubjects,
+            subject: nextSubjects.join("، "),
+          };
+        }),
+      }));
+    }
   }, []);
 
   return (
@@ -293,6 +370,7 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
       value={{
         ...state,
         classes,
+        grades,
         subjects,
         currentTeacher,
         loading,
@@ -306,6 +384,7 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
         removeClass,
         addSubject,
         updateSubject,
+        setSubjectClasses,
         removeSubject,
         refresh,
       }}

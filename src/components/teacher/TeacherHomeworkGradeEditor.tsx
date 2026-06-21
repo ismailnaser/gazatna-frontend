@@ -158,7 +158,7 @@ export function TeacherHomeworkGradeEditor({
               value={score}
               onChange={setScore}
               maxScore={maxScore}
-              inputLabel={`العلامة (من ${maxScore}) — اضغط لإظهار لوحة الأرقام`}
+              inputLabel={`العلامة (من ${maxScore})`}
               keypadLabel="علامة الواجب"
               onConfirm={handleConfirm}
               confirmLabel="تأكيد الدرجة"
@@ -176,9 +176,7 @@ export function TeacherHomeworkGradeEditor({
             <Link href={homeworkGradePath(overviewHomeworkId)}>
               <Button variant="ghost">إلغاء</Button>
             </Link>
-            <p className="text-xs text-p-black/45">
-              أكّد الدرجة من لوحة الأرقام لإخفائها، ثم احفظ التقييم من الزر أعلاه.
-            </p>
+            <p className="text-xs text-p-black/45">أدخل الدرجة ثم احفظ التقييم من الزر أعلاه.</p>
           </div>
         </Card>
       </div>

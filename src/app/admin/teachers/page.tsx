@@ -6,6 +6,7 @@ import { Button } from "@/components/atoms/Button";
 import { Card } from "@/components/atoms/Card";
 import { MultiSelect } from "@/components/atoms/MultiSelect";
 import { AdminTeachersTable } from "@/components/admin/AdminTeachersTable";
+import { GradeSectionClassMultiSelect } from "@/components/shared/GradeSectionClassMultiSelect";
 import { PageHeader } from "@/components/molecules/PageHeader";
 import { useSchool } from "@/context/SchoolContext";
 import { cn } from "@/lib/utils";
@@ -47,7 +48,7 @@ function StatChip({
 
 export default function AdminTeachersPage() {
   const router = useRouter();
-  const { teachers, classes, subjects, assignments } = useSchool();
+  const { teachers, classes, grades, subjects, assignments } = useSchool();
 
   const [search, setSearch] = useState("");
   const [subjectFilters, setSubjectFilters] = useState<string[]>([]);
@@ -147,9 +148,10 @@ export default function AdminTeachersPage() {
             placeholder="كل المواد"
             countLabel="مواد"
           />
-          <MultiSelect
+          <GradeSectionClassMultiSelect
             label="فلترة حسب الفصل"
-            options={classes.map((schoolClass) => ({ value: schoolClass.id, label: schoolClass.name }))}
+            classes={classes}
+            grades={grades}
             value={classFilters}
             onChange={setClassFilters}
             placeholder="كل الفصول"

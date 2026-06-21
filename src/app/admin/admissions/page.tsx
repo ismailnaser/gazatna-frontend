@@ -5,15 +5,17 @@ import { useEffect, useMemo, useState } from "react";
 import { Alert } from "@/components/atoms/Alert";
 import { Button } from "@/components/atoms/Button";
 import { Card } from "@/components/atoms/Card";
-import { Select } from "@/components/atoms/Select";
 import {
   AdminAdmissionsTable,
   type AdminAdmissionRow,
 } from "@/components/admin/AdminAdmissionsTable";
+import { GradeSectionClassPicker } from "@/components/shared/GradeSectionClassPicker";
 import { PageHeader } from "@/components/molecules/PageHeader";
 import { ExpandableText } from "@/components/molecules/ExpandableText";
 import { StatusBadge } from "@/components/molecules/StatusBadge";
 import { useSchool } from "@/context/SchoolContext";
+import { useAuth } from "@/context/AuthContext";
+import { canManageAdminClasses, isAdminRole } from "@/lib/adminRoles";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import type { AccountCredentials, AdminStudent } from "@/types";
@@ -59,6 +61,7 @@ function mapStudent(s: Record<string, unknown>): AdminStudent {
     section: s.section ? String(s.section) : undefined,
     classId: s.classId ? String(s.classId) : undefined,
     studentNumber: s.studentNumber ? String(s.studentNumber) : undefined,
+    nationalId: s.nationalId ? String(s.nationalId) : undefined,
     username: s.username ? String(s.username) : undefined,
     generatedPassword: s.generatedPassword ? String(s.generatedPassword) : undefined,
     paymentStatus: s.paymentStatus as AdminStudent["paymentStatus"],
@@ -76,6 +79,7 @@ function mapAdmission(row: Record<string, unknown>): AdminAdmissionRow {
   return {
     id: String(row.id),
     studentName: String(row.studentName ?? ""),
+    nationalId: row.nationalId ? String(row.nationalId) : "",
     birthDate: row.birthDate ? String(row.birthDate) : null,
     grade: String(row.grade ?? ""),
     parentName: String(row.parentName ?? ""),
@@ -126,7 +130,10 @@ function StatChip({
 }
 
 export default function AdminAdmissionsPage() {
-  const { classes } = useSchool();
+  const { user } = useAuth();
+  const { classes, grades } = useSchool();
+  const canManageClasses =
+    user && isAdminRole(user.role) && canManageAdminClasses(user.role);
   const [items, setItems] = useState<AdminAdmissionRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -146,17 +153,6 @@ export default function AdminAdmissionsPage() {
   const [studentDetail, setStudentDetail] = useState<AdminStudent | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [detailError, setDetailError] = useState("");
-
-  const classOptions = useMemo(
-    () => [
-      { value: "", label: "اختر الفصل والشعبة" },
-      ...classes.map((cls) => ({
-        value: cls.id,
-        label: cls.name,
-      })),
-    ],
-    [classes]
-  );
 
   async function load() {
     setLoading(true);
@@ -190,6 +186,7 @@ export default function AdminAdmissionsPage() {
     return list.filter((row) => {
       const haystack = [
         row.studentName,
+        row.nationalId,
         row.parentName,
         row.phone,
         row.email,
@@ -407,7 +404,7 @@ export default function AdminAdmissionsPage() {
                 type="search"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="بحث بالاسم أو الهاتف..."
+                placeholder="بحث بالاسم أو الهاتف أو رقم الهوية..."
                 className="w-full rounded-xl border border-neutral-200 py-2.5 pe-3 ps-9 text-sm outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20"
               />
             </div>
@@ -454,6 +451,12 @@ export default function AdminAdmissionsPage() {
                 <p>
                   <span className="text-p-black/55">ولي الأمر:</span> {approveTarget.parentName}
                 </p>
+                {approveTarget.nationalId ? (
+                  <p>
+                    <span className="text-p-black/55">رقم الهوية:</span>{" "}
+                    <span dir="ltr">{approveTarget.nationalId}</span>
+                  </p>
+                ) : null}
                 <p>
                   <span className="text-p-black/55">الهاتف:</span>{" "}
                   <span dir="ltr">{approveTarget.phone}</span>
@@ -480,15 +483,19 @@ export default function AdminAdmissionsPage() {
             <div className="mt-4 space-y-3">
               {classes.length === 0 ? (
                 <p className="rounded-xl border border-dashed border-neutral-200 px-4 py-6 text-center text-sm text-neutral-500">
-                  لا توجد فصول مسجّلة. أضف الفصول أولاً من صفحة إدارة الفصول.
+                  لا توجد فصول مسجّلة.{" "}
+                  {canManageClasses
+                    ? "أضف الفصول أولاً من صفحة إدارة الفصول."
+                    : "تواصل مع إدارة الفصول لإضافتها."}
                 </p>
               ) : (
-                <Select
+                <GradeSectionClassPicker
+                  classes={classes}
+                  grades={grades}
+                  mode="single"
+                  value={classId ? [classId] : []}
+                  onChange={(ids) => setClassId(ids[0] ?? "")}
                   label="الفصل والشعبة"
-                  name="classId"
-                  options={classOptions}
-                  value={classId}
-                  onChange={(e) => setClassId(e.target.value)}
                   required
                 />
               )}
@@ -628,6 +635,14 @@ export default function AdminAdmissionsPage() {
                           الاسم
                         </th>
                         <td className="px-3 py-2">{studentDetail.name}</td>
+                      </tr>
+                      <tr className="border-b border-neutral-50">
+                        <th className="bg-neutral-50 px-3 py-2 text-start text-xs font-bold text-p-black/55">
+                          رقم الهوية
+                        </th>
+                        <td className="px-3 py-2" dir="ltr">
+                          {studentDetail.nationalId ?? detailTarget.nationalId ?? "—"}
+                        </td>
                       </tr>
                       <tr className="border-b border-neutral-50">
                         <th className="bg-neutral-50 px-3 py-2 text-start text-xs font-bold text-p-black/55">

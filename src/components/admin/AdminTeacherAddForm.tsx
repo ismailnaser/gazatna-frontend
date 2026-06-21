@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Alert } from "@/components/atoms/Alert";
 import { Button } from "@/components/atoms/Button";
 import { Input } from "@/components/atoms/Input";
@@ -12,6 +12,7 @@ import { TeacherProfileImageField } from "@/components/admin/TeacherProfileImage
 import { TeacherSubjectPicker } from "@/components/admin/TeacherSubjectPicker";
 import { useSchool } from "@/context/SchoolContext";
 import { pickTeacherGradient } from "@/lib/adminTeachers";
+import { buildOccupiedPairs, findAssignmentConflicts } from "@/lib/adminTeacherAssignments";
 import type { AccountCredentials } from "@/types";
 import type { TeacherProfile } from "@/types/teacher";
 import { BookMarked, Layers, Save, UserRound } from "lucide-react";
@@ -22,7 +23,7 @@ type AdminTeacherAddFormProps = {
 };
 
 export function AdminTeacherAddForm({ onCancel, onCreated }: AdminTeacherAddFormProps) {
-  const { teachers, classes, subjects, addTeacher } = useSchool();
+  const { teachers, classes, grades, subjects, addTeacher } = useSchool();
   const [name, setName] = useState("");
   const [experience, setExperience] = useState("");
   const [bio, setBio] = useState("");
@@ -46,6 +47,7 @@ export function AdminTeacherAddForm({ onCancel, onCreated }: AdminTeacherAddForm
   const [cropping, setCropping] = useState(false);
 
   const gradient = pickTeacherGradient(teachers.length);
+  const occupiedPairs = useMemo(() => buildOccupiedPairs(teachers), [teachers]);
 
   function handleFileSelect(file: File | null) {
     if (!file) {
@@ -87,8 +89,14 @@ export function AdminTeacherAddForm({ onCancel, onCreated }: AdminTeacherAddForm
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!name.trim() || !experience.trim() || !bio.trim() || subjectIds.length === 0) {
+    if (!name.trim() || !experience.trim() || subjectIds.length === 0) {
       setError("يرجى تعبئة جميع الحقول المطلوبة واختيار مادة واحدة على الأقل");
+      return;
+    }
+
+    const conflicts = findAssignmentConflicts(teachers, subjects, classes, subjectIds, classIds);
+    if (conflicts.length > 0) {
+      setError(conflicts[0]);
       return;
     }
 
@@ -160,11 +168,10 @@ export function AdminTeacherAddForm({ onCancel, onCreated }: AdminTeacherAddForm
               onFileSelect={handleFileSelect}
             />
             <Textarea
-              label="نبذة (السيرة الذاتية)"
+              label="نبذة (السيرة الذاتية) (اختياري)"
               value={bio}
               onChange={(e) => setBio(e.target.value)}
               rows={5}
-              required
             />
           </div>
         </TeacherFormSection>
@@ -175,7 +182,13 @@ export function AdminTeacherAddForm({ onCancel, onCreated }: AdminTeacherAddForm
           description="اختر مادة واحدة على الأقل"
           tone="violet"
         >
-          <TeacherSubjectPicker subjects={subjects} value={subjectIds} onChange={setSubjectIds} />
+          <TeacherSubjectPicker
+            subjects={subjects}
+            value={subjectIds}
+            onChange={setSubjectIds}
+            classIds={classIds}
+            occupiedPairs={occupiedPairs}
+          />
         </TeacherFormSection>
 
         <TeacherFormSection
@@ -184,7 +197,14 @@ export function AdminTeacherAddForm({ onCancel, onCreated }: AdminTeacherAddForm
           description="اختياري — يمكن تعيين الفصول لاحقاً"
           tone="green"
         >
-          <TeacherClassPicker classes={classes} value={classIds} onChange={setClassIds} />
+          <TeacherClassPicker
+            classes={classes}
+            grades={grades}
+            value={classIds}
+            onChange={setClassIds}
+            subjectIds={subjectIds}
+            occupiedPairs={occupiedPairs}
+          />
         </TeacherFormSection>
 
         <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">

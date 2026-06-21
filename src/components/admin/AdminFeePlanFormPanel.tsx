@@ -6,8 +6,11 @@ import { MultiSelect } from "@/components/atoms/MultiSelect";
 import { NumberFieldWithKeypad } from "@/components/teacher/NumberFieldWithKeypad";
 import {
   applyTotalToInstallments,
+  installmentsMatchTotal,
   installmentsTotal,
-  rebuildInstallmentsForCount,
+  normalizeInstallmentsCount,
+  syncLastInstallmentAmount,
+  updateInstallmentsCount,
   type FeePlanFormState,
 } from "@/lib/feePlanForm";
 import { cn } from "@/lib/utils";
@@ -33,8 +36,10 @@ export function AdminFeePlanFormPanel({
   onCancel,
 }: AdminFeePlanFormPanelProps) {
   const installmentsSum = installmentsTotal(form.installments);
-  const planTotal = Number(form.totalAmount) || 0;
-  const totalsMatch = installmentsSum === planTotal;
+  const planTotal = Math.max(0, Math.round(Number(form.totalAmount) || 0));
+  const expectedCount = Number(form.installmentsCount) || 0;
+  const totalsMatch = installmentsMatchTotal(form.installments, planTotal);
+  const countMatchesRows = expectedCount > 0 && form.installments.length === expectedCount;
 
   return (
     <form onSubmit={onSubmit} className="space-y-5">
@@ -85,10 +90,9 @@ export function AdminFeePlanFormPanel({
           <NumberFieldWithKeypad
             fieldId="installmentsCount"
             label="عدد الدفعات"
-            value={String(form.installmentsCount)}
-            onChange={(value) =>
-              onChange(rebuildInstallmentsForCount(form, Number(value) || 1))
-            }
+            value={form.installmentsCount}
+            onChange={(value) => onChange(updateInstallmentsCount(form, value))}
+            onDeactivate={() => onChange(normalizeInstallmentsCount(form))}
             min={1}
             max={12}
             required
@@ -101,7 +105,9 @@ export function AdminFeePlanFormPanel({
           <div>
             <h4 className="text-sm font-bold text-p-black">جدول الأقساط</h4>
             <p className="mt-0.5 text-xs text-p-black/50">
-              يمكن ترك تواريخ بعض الدفعات فارغة وتحديدها لاحقاً.
+              {expectedCount > 0
+                ? `يُنشأ تلقائياً ${expectedCount} دفعة — يمكن تعديل المبالغ والمواعيد أدناه.`
+                : "حدّد عدد الدفعات أولاً لعرض جدول الأقساط."}
             </p>
           </div>
           <p
@@ -115,6 +121,11 @@ export function AdminFeePlanFormPanel({
         </div>
 
         <div className="overflow-x-auto">
+          {expectedCount === 0 || form.installments.length === 0 ? (
+            <p className="px-4 py-8 text-center text-sm text-p-black/50 sm:px-5">
+              أدخل عدد الدفعات في البيانات الأساسية لإنشاء جدول الأقساط تلقائياً.
+            </p>
+          ) : (
           <table className="w-full min-w-[720px] text-sm">
             <thead>
               <tr className="border-b border-neutral-100 bg-neutral-50 text-p-black/55">
@@ -139,13 +150,18 @@ export function AdminFeePlanFormPanel({
                         value={String(row.amount)}
                         onChange={(value) => {
                           const installments = [...form.installments];
-                          installments[index] = { ...row, amount: Number(value) || 0 };
+                          const parsed = value === "" ? 0 : Math.round(Number(value));
+                          installments[index] = {
+                            ...row,
+                            amount: Number.isFinite(parsed) ? parsed : 0,
+                          };
                           onChange({ ...form, installments });
                         }}
+                        onDeactivate={() =>
+                          onChange(syncLastInstallmentAmount(form))
+                        }
                         min={0}
                         max={999999}
-                        allowDecimal
-                        maxDecimalPlaces={2}
                         inputClassName="w-28 py-1.5"
                       />
                     </td>
@@ -190,6 +206,7 @@ export function AdminFeePlanFormPanel({
               })}
             </tbody>
           </table>
+          )}
         </div>
       </section>
 
@@ -197,7 +214,17 @@ export function AdminFeePlanFormPanel({
         <Button type="button" variant="outline" onClick={onCancel} disabled={saving}>
           إلغاء
         </Button>
-        <Button type="submit" disabled={saving || !form.name.trim() || !totalsMatch}>
+        <Button
+          type="submit"
+          disabled={
+            saving ||
+            !form.name.trim() ||
+            !form.installmentsCount ||
+            Number(form.installmentsCount) < 1 ||
+            !countMatchesRows ||
+            !totalsMatch
+          }
+        >
           <Save className="h-4 w-4" />
           {saving ? "جاري الحفظ..." : form.id ? "حفظ التعديلات" : "حفظ الخطة"}
         </Button>

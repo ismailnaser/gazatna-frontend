@@ -106,9 +106,15 @@ async function parseFailedResponse(res: Response): Promise<string> {
         ? "انتهت جلسة الدخول. سجّل الدخول من جديد."
         : res.status === 403
           ? "ليس لديك صلاحية لهذا الإجراء."
-          : "حدث خطأ في الاتصال بالخادم";
+          : res.status === 404
+            ? "العنصر غير موجود أو تم حذفه مسبقاً."
+            : "حدث خطأ في الاتصال بالخادم";
   const err = await res.json().catch(() => null);
-  return formatApiError(err, fallback);
+  const message = formatApiError(err, fallback);
+  if (message.includes("No SchoolClass matches the given query")) {
+    return "الشعبة غير موجودة. حدّث الصفحة وحاول مرة أخرى.";
+  }
+  return message;
 }
 
 function rebuildFormData(entries: [string, FormDataEntryValue][]): FormData {
@@ -299,7 +305,7 @@ export const api = {
   getAdminSubjects: () => apiList<unknown>("/admin/subjects/"),
   createAdminSubject: (data: unknown) =>
     apiFetch<unknown>("/admin/subjects/", { method: "POST", body: JSON.stringify(data) }),
-  updateAdminSubject: (id: string, data: { name: string }) =>
+  updateAdminSubject: (id: string, data: { name?: string; classIds?: number[] }) =>
     apiFetch<unknown>(`/admin/subjects/${id}/`, { method: "PATCH", body: JSON.stringify(data) }),
   deleteAdminSubject: (id: string) =>
     apiFetch<void>(`/admin/subjects/${id}/`, { method: "DELETE" }),

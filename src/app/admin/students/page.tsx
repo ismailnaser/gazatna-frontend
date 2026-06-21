@@ -3,12 +3,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Alert } from "@/components/atoms/Alert";
 import { Button } from "@/components/atoms/Button";
-import { MultiSelect } from "@/components/atoms/MultiSelect";
 import { Select } from "@/components/atoms/Select";
 import { AdminStudentFormPanel } from "@/components/admin/AdminStudentFormPanel";
 import { AdminStudentsTable } from "@/components/admin/AdminStudentsTable";
+import { GradeSectionClassMultiSelect } from "@/components/shared/GradeSectionClassMultiSelect";
 import { NumberFieldWithKeypad } from "@/components/teacher/NumberFieldWithKeypad";
-import { NumberKeypadGroup } from "@/components/teacher/NumberKeypadGroup";
 import { PageHeader } from "@/components/molecules/PageHeader";
 import { useSchool } from "@/context/SchoolContext";
 import { formatClassLabel, mapAdminStudent } from "@/lib/adminStudents";
@@ -17,7 +16,7 @@ import type { AccountCredentials, AdminStudent, PaymentStatus } from "@/types";
 import { Plus, Search, Users } from "lucide-react";
 
 export default function AdminStudentsPage() {
-  const { classes } = useSchool();
+  const { classes, grades } = useSchool();
   const [students, setStudents] = useState<AdminStudent[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -40,20 +39,12 @@ export default function AdminStudentsPage() {
   const [paymentFilter, setPaymentFilter] = useState("");
   const [documentsFilter, setDocumentsFilter] = useState("");
   const formRef = useRef<HTMLDivElement>(null);
+  const pageTopRef = useRef<HTMLDivElement>(null);
   const scrollToFormRef = useRef(false);
 
-  const classOptions = useMemo(
-    () => [
-      { value: "", label: "اختر الفصل والشعبة" },
-      ...classes.map((cls) => ({ value: cls.id, label: cls.name })),
-    ],
-    [classes]
-  );
-
-  const filterClassOptions = useMemo(
-    () => classes.map((cls) => ({ value: cls.id, label: cls.name })),
-    [classes]
-  );
+  function scrollToPageTop() {
+    pageTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
 
   const paymentFilterOptions = [
     { value: "", label: "جميع حالات الدفع" },
@@ -98,6 +89,7 @@ export default function AdminStudentsPage() {
         const haystack = [
           student.name,
           student.studentNumber,
+          student.nationalId,
           student.username,
           formatClassLabel(student.grade, student.section),
         ]
@@ -223,6 +215,8 @@ export default function AdminStudentsPage() {
     try {
       const payload = new FormData();
       payload.append("name", String(form.get("name") ?? ""));
+      const nationalId = String(form.get("nationalId") ?? "").trim();
+      if (nationalId) payload.append("nationalId", nationalId);
       payload.append("classId", String(Number(classId)));
       for (const row of docRows) {
         if (!row.file) continue;
@@ -244,6 +238,7 @@ export default function AdminStudentsPage() {
       }
       closeForm();
       formEl.reset();
+      scrollToPageTop();
     } catch (err) {
       setError(err instanceof Error ? err.message : "فشل إضافة الطالب");
     } finally {
@@ -267,6 +262,7 @@ export default function AdminStudentsPage() {
     try {
       const updated = (await api.updateAdminStudent(editing.id, {
         name: form.get("name"),
+        nationalId: String(form.get("nationalId") ?? "").trim(),
         classId: Number(classId),
       })) as Record<string, unknown>;
       setStudents((prev) =>
@@ -274,6 +270,7 @@ export default function AdminStudentsPage() {
       );
       setSuccess("تم حفظ تعديلات الطالب بنجاح.");
       closeForm();
+      scrollToPageTop();
     } catch (err) {
       setError(err instanceof Error ? err.message : "فشل تحديث الطالب");
     } finally {
@@ -291,7 +288,7 @@ export default function AdminStudentsPage() {
     "";
 
   return (
-    <div className="space-y-4">
+    <div ref={pageTopRef} className="space-y-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <PageHeader
           title="إدارة الطلاب"
@@ -337,7 +334,7 @@ export default function AdminStudentsPage() {
           <AdminStudentFormPanel
             mode="create"
             classes={classes}
-            classOptions={classOptions}
+            grades={grades}
             docRows={docRows}
             onDocRowsChange={setDocRows}
             error={error}
@@ -352,7 +349,7 @@ export default function AdminStudentsPage() {
             mode="edit"
             editing={editing}
             classes={classes}
-            classOptions={classOptions}
+            grades={grades}
             editingClassId={editingClassId}
             docRows={docRows}
             onDocRowsChange={setDocRows}
@@ -385,23 +382,24 @@ export default function AdminStudentsPage() {
         </div>
       </div>
 
-      <section className="overflow-hidden rounded-2xl border border-neutral-100 bg-white shadow-sm">
-        <header className="space-y-3 border-b border-neutral-100 bg-neutral-50/70 px-3 py-3 sm:px-4 sm:py-4">
+      <section className="rounded-2xl border border-neutral-100 bg-white shadow-sm">
+        <header className="relative z-10 space-y-3 border-b border-neutral-100 bg-neutral-50/70 px-3 py-3 sm:px-4 sm:py-4">
           <h2 className="text-sm font-bold text-p-black">بحث وتصفية</h2>
           <div className="relative">
             <Search className="pointer-events-none absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-p-black/40" />
             <input
               type="search"
-              placeholder="بحث بالاسم، رقم الطالب، أو اسم المستخدم..."
+              placeholder="بحث بالاسم، رقم الطالب، رقم الهوية، أو اسم المستخدم..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full rounded-xl border border-neutral-200 bg-white py-2.5 pe-4 ps-10 text-sm focus:border-p-green focus:outline-none focus:ring-2 focus:ring-p-green/20"
             />
           </div>
           <div className="grid gap-3 sm:grid-cols-3">
-            <MultiSelect
+            <GradeSectionClassMultiSelect
               label="الفصل والشعبة"
-              options={filterClassOptions}
+              classes={classes}
+              grades={grades}
               value={classFilters}
               onChange={setClassFilters}
               placeholder="جميع الفصول"
@@ -430,7 +428,7 @@ export default function AdminStudentsPage() {
           ) : null}
         </header>
 
-        <div className="p-3 sm:p-4">
+        <div className="overflow-x-auto p-3 sm:p-4">
           {loading ? (
             <p className="py-10 text-center text-sm text-neutral-500">جاري التحميل...</p>
           ) : (
@@ -498,7 +496,6 @@ export default function AdminStudentsPage() {
               ) : null}
             </div>
             <div className="mt-4">
-              <NumberKeypadGroup>
                 <NumberFieldWithKeypad
                   fieldId="accessDays"
                   label="مدة الفتح (بالأيام)"
@@ -508,7 +505,6 @@ export default function AdminStudentsPage() {
                   max={30}
                   required
                 />
-              </NumberKeypadGroup>
             </div>
             <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
               <Button

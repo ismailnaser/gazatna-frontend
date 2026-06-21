@@ -1,13 +1,16 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { Alert } from "@/components/atoms/Alert";
 import { Button } from "@/components/atoms/Button";
 import { Input } from "@/components/atoms/Input";
-import { Select } from "@/components/atoms/Select";
 import { FileUploadField } from "@/components/molecules/FileUploadField";
+import { GradeSectionClassPicker } from "@/components/shared/GradeSectionClassPicker";
+import { useAuth } from "@/context/AuthContext";
+import { canManageAdminClasses, isAdminRole } from "@/lib/adminRoles";
 import type { AdminStudent } from "@/types";
-import type { SchoolClass } from "@/types/teacher";
+import type { Grade, SchoolClass } from "@/types/teacher";
 import { FileText, Plus, X } from "lucide-react";
 
 function FormSection({
@@ -36,7 +39,7 @@ type AdminStudentFormPanelProps = {
   mode: "create" | "edit";
   editing?: AdminStudent | null;
   classes: SchoolClass[];
-  classOptions: Array<{ value: string; label: string }>;
+  grades?: Grade[];
   editingClassId?: string;
   docRows: DocRow[];
   onDocRowsChange: (rows: DocRow[]) => void;
@@ -50,7 +53,7 @@ export function AdminStudentFormPanel({
   mode,
   editing,
   classes,
-  classOptions,
+  grades,
   editingClassId = "",
   docRows,
   onDocRowsChange,
@@ -60,6 +63,15 @@ export function AdminStudentFormPanel({
   onClose,
 }: AdminStudentFormPanelProps) {
   const isCreate = mode === "create";
+  const { user } = useAuth();
+  const canManageClasses = user && isAdminRole(user.role) && canManageAdminClasses(user.role);
+  const [selectedClassIds, setSelectedClassIds] = useState<string[]>(
+    editingClassId ? [editingClassId] : []
+  );
+
+  useEffect(() => {
+    setSelectedClassIds(editingClassId ? [editingClassId] : []);
+  }, [editingClassId, mode]);
 
   return (
     <article className="overflow-hidden rounded-2xl border border-brand-blue/20 bg-white shadow-sm">
@@ -102,24 +114,40 @@ export function AdminStudentFormPanel({
                 defaultValue={editing?.name}
                 required
               />
+              <Input
+                label="رقم الهوية"
+                name="nationalId"
+                defaultValue={editing?.nationalId ?? ""}
+                placeholder="رقم هوية الطالب"
+                dir="ltr"
+              />
 
               {classes.length === 0 ? (
                 <div className="sm:col-span-2 rounded-xl border border-dashed border-neutral-200 px-4 py-6 text-center text-sm text-neutral-500">
                   لا توجد فصول مسجّلة.{" "}
-                  <Link href="/admin/classes" className="font-semibold text-brand-blue hover:underline">
-                    أضف الفصول أولاً
-                  </Link>
+                  {canManageClasses ? (
+                    <Link href="/admin/classes" className="font-semibold text-brand-blue hover:underline">
+                      أضف الفصول أولاً
+                    </Link>
+                  ) : (
+                    <span>تواصل مع إدارة الفصول لإضافتها.</span>
+                  )}
                 </div>
               ) : (
-                <Select
-                  label="الفصل والشعبة"
-                  name="classId"
-                  options={classOptions}
-                  defaultValue={isCreate ? "" : editingClassId}
-                  required
-                />
+                <div className="sm:col-span-2">
+                  <GradeSectionClassPicker
+                    classes={classes}
+                    grades={grades}
+                    mode="single"
+                    value={selectedClassIds}
+                    onChange={setSelectedClassIds}
+                    label="الفصل والشعبة"
+                    required
+                    formFieldName="classId"
+                    resetKey={`${mode}-${editingClassId}`}
+                  />
+                </div>
               )}
-
               {!isCreate && editing?.studentNumber ? (
                 <Input
                   label="رقم الطالب"

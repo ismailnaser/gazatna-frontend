@@ -8,7 +8,6 @@ import { Select } from "@/components/atoms/Select";
 import { Textarea } from "@/components/atoms/Textarea";
 import { ClassSelect, getSelectedClassIds } from "@/components/teacher/ClassSelect";
 import { NumberFieldWithKeypad } from "@/components/teacher/NumberFieldWithKeypad";
-import { NumberKeypadGroup } from "@/components/teacher/NumberKeypadGroup";
 import { FileUploadField } from "@/components/molecules/FileUploadField";
 import type { Homework, HomeworkAttachmentItem } from "@/types";
 import type { SchoolClass } from "@/types/teacher";
@@ -148,7 +147,6 @@ export function HomeworkForm({
   }
 
   const form = (
-    <NumberKeypadGroup>
     <form
       onSubmit={(e) => {
         e.preventDefault();
@@ -360,7 +358,6 @@ export function HomeworkForm({
         </Button>
       </div>
     </form>
-    </NumberKeypadGroup>
   );
 
   if (embedded) return form;

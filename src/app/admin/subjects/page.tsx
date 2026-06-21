@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Alert } from "@/components/atoms/Alert";
 import { Button } from "@/components/atoms/Button";
 import { Card } from "@/components/atoms/Card";
@@ -10,11 +10,14 @@ import { Select } from "@/components/atoms/Select";
 import { AdminSubjectsGrid } from "@/components/admin/AdminSubjectsGrid";
 import { ConfirmDialog } from "@/components/molecules/ConfirmDialog";
 import { PageHeader } from "@/components/molecules/PageHeader";
+import { GradeSectionClassPicker } from "@/components/shared/GradeSectionClassPicker";
 import { useSchool } from "@/context/SchoolContext";
+import { api } from "@/lib/api";
+import { mapGrades, mapSchoolClasses } from "@/lib/mapSchoolClass";
 import { teacherCountLabel, teachersAvailableForSubject, teachersForSubject } from "@/lib/adminSubjects";
 import { cn } from "@/lib/utils";
-import type { Subject } from "@/types/teacher";
-import { BookMarked, BookOpen, ChevronLeft, Plus, Save, Search, UserPlus, Users, X } from "lucide-react";
+import type { Grade, SchoolClass, Subject } from "@/types/teacher";
+import { BookMarked, BookOpen, ChevronLeft, GraduationCap, Plus, Save, Search, UserPlus, Users, X } from "lucide-react";
 
 function StatChip({
   icon: Icon,
@@ -51,9 +54,22 @@ function StatChip({
 }
 
 export default function AdminSubjectsPage() {
-  const { subjects, teachers, addSubject, updateSubject, removeSubject, updateTeacher } =
-    useSchool();
+  const {
+    subjects,
+    teachers,
+    classes,
+    grades,
+    loading,
+    refresh,
+    addSubject,
+    updateSubject,
+    setSubjectClasses,
+    removeSubject,
+    updateTeacher,
+  } = useSchool();
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const pageTopRef = useRef<HTMLDivElement>(null);
   const [adding, setAdding] = useState(false);
   const [search, setSearch] = useState("");
   const [confirmDeleteSubject, setConfirmDeleteSubject] = useState<Subject | null>(null);
@@ -62,8 +78,31 @@ export default function AdminSubjectsPage() {
   const [viewSubject, setViewSubject] = useState<Subject | null>(null);
   const [assignTeacherId, setAssignTeacherId] = useState("");
   const [assigningTeacher, setAssigningTeacher] = useState(false);
+  const [assignClassIds, setAssignClassIds] = useState<string[]>([]);
+  const [savingClasses, setSavingClasses] = useState(false);
   const [editName, setEditName] = useState("");
   const [savingEdit, setSavingEdit] = useState(false);
+  const [modalClasses, setModalClasses] = useState<SchoolClass[]>([]);
+  const [modalGrades, setModalGrades] = useState<Grade[]>([]);
+
+  useEffect(() => {
+    if (!viewSubject) return;
+    let active = true;
+    Promise.all([api.getAdminClasses(), api.getAdminGrades()])
+      .then(([classesData, gradesData]) => {
+        if (!active) return;
+        setModalClasses(mapSchoolClasses(classesData as unknown[]));
+        setModalGrades(mapGrades(gradesData as unknown[]));
+      })
+      .catch(() => {
+        if (!active) return;
+        setModalClasses(classes);
+        setModalGrades(grades);
+      });
+    return () => {
+      active = false;
+    };
+  }, [viewSubject, classes, grades]);
 
   const subjectsWithCounts = useMemo(
     () =>
@@ -99,7 +138,31 @@ export default function AdminSubjectsPage() {
   function openSubjectView(subject: Subject) {
     setViewSubject(subject);
     setAssignTeacherId("");
+    setAssignClassIds(subject.classIds ?? []);
     setError("");
+    setSuccess("");
+  }
+
+  function scrollToPageTop() {
+    pageTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  async function saveSubjectClasses() {
+    if (!viewSubject) return;
+
+    setSavingClasses(true);
+    setError("");
+    try {
+      const updated = await setSubjectClasses(viewSubject.id, assignClassIds);
+      setViewSubject(null);
+      setAssignTeacherId("");
+      setSuccess(`تم حفظ إسناد مادة ${updated.name} للفصول بنجاح.`);
+      scrollToPageTop();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "فشل إسناد المادة للفصول");
+    } finally {
+      setSavingClasses(false);
+    }
   }
 
   async function assignTeacherToSubject() {
@@ -193,12 +256,18 @@ export default function AdminSubjectsPage() {
   }
 
   return (
-    <div>
+    <div ref={pageTopRef}>
       <PageHeader
         title="إدارة المواد الدراسية"
-        description="أضف المواد وعدّل أسماءها، ثم اسندها للمعلمين عند إضافتهم"
+        description="أضف المواد، اسندها للفصول مباشرة، ثم اسند المعلمين عند الحاجة"
         className="mb-6"
       />
+
+      {success ? (
+        <Alert variant="success" className="mb-4">
+          {success}
+        </Alert>
+      ) : null}
 
       <div className="mb-4 grid gap-2 sm:grid-cols-2">
         <StatChip icon={BookMarked} label="عدد المواد" value={subjectsWithCounts.length} />
@@ -216,7 +285,7 @@ export default function AdminSubjectsPage() {
           مثال: الرياضيات، الفيزياء، اللغة العربية
         </p>
 
-        {error && !confirmDeleteSubject && !editingSubject && (
+        {error && !confirmDeleteSubject && !editingSubject && !viewSubject && (
           <Alert variant="error" className="mb-4">
             {error}
           </Alert>
@@ -253,17 +322,29 @@ export default function AdminSubjectsPage() {
           </div>
         </div>
 
-        <AdminSubjectsGrid
-          subjects={filteredSubjects}
-          hasActiveFilters={Boolean(search.trim())}
-          onView={openSubjectView}
-          onAssign={openSubjectView}
-          onEdit={openEdit}
-          onDelete={(subject) => {
-            setError("");
-            setConfirmDeleteSubject(subject);
-          }}
-        />
+        {loading ? (
+          <p className="py-10 text-center text-sm text-p-black/50">جاري تحميل المواد...</p>
+        ) : (
+          <AdminSubjectsGrid
+            subjects={filteredSubjects}
+            hasActiveFilters={Boolean(search.trim())}
+            onView={openSubjectView}
+            onAssign={openSubjectView}
+            onEdit={openEdit}
+            onDelete={(subject) => {
+              setError("");
+              setConfirmDeleteSubject(subject);
+            }}
+          />
+        )}
+
+        {!loading && subjectsWithCounts.length === 0 ? (
+          <div className="mt-4 flex justify-center">
+            <Button type="button" variant="outline" onClick={() => void refresh()}>
+              إعادة تحميل المواد
+            </Button>
+          </div>
+        ) : null}
       </Card>
 
       {viewSubject && (
@@ -274,18 +355,19 @@ export default function AdminSubjectsPage() {
           onClick={() => {
             setViewSubject(null);
             setAssignTeacherId("");
+            setAssignClassIds([]);
           }}
         >
           <div
-            className="w-full max-w-lg rounded-2xl bg-white p-6"
+            className="max-h-[min(90vh,720px)] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-6"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-4 flex items-start justify-between gap-3">
               <div>
-                <h3 className="text-lg font-bold text-p-black">معلمو المادة</h3>
+                <h3 className="text-lg font-bold text-p-black">إسناد المادة</h3>
                 <p className="mt-1 text-sm font-semibold text-brand-blue">{viewSubject.name}</p>
                 <p className="mt-1 text-xs text-p-black/50">
-                  {teacherCountLabel(viewSubjectTeachers.length)}
+                  يمكن إسناد المادة لفصل مباشرة حتى بدون معلم
                 </p>
               </div>
               <button
@@ -293,6 +375,7 @@ export default function AdminSubjectsPage() {
                 onClick={() => {
                   setViewSubject(null);
                   setAssignTeacherId("");
+                  setAssignClassIds([]);
                 }}
                 aria-label="إغلاق"
                 className="rounded-full p-1 text-p-black/40 hover:bg-neutral-100 hover:text-p-black"
@@ -307,79 +390,133 @@ export default function AdminSubjectsPage() {
               </Alert>
             )}
 
-            {viewSubjectTeachers.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-neutral-200 bg-neutral-50 px-4 py-6 text-center">
-                <p className="text-sm font-medium text-p-black/70">
-                  لا يوجد معلمون مسندون لهذه المادة بعد.
-                </p>
-              </div>
-            ) : (
-              <ul className="max-h-[min(18rem,50vh)] space-y-2 overflow-y-auto">
-                {viewSubjectTeachers.map((teacher) => (
-                  <li key={teacher.id}>
-                    <Link
-                      href={`/admin/teachers/${teacher.id}`}
-                      className="flex items-center justify-between gap-3 rounded-xl border border-neutral-100 px-3 py-3 transition-colors hover:border-brand-blue/20 hover:bg-brand-blue/5"
-                      onClick={() => setViewSubject(null)}
-                    >
-                      <div className="min-w-0">
-                        <p className="font-semibold text-p-black">{teacher.name}</p>
-                        {teacher.experience ? (
-                          <p className="mt-0.5 truncate text-xs text-p-black/50">
-                            {teacher.experience}
-                          </p>
-                        ) : null}
-                      </div>
-                      <ChevronLeft className="h-4 w-4 shrink-0 text-p-black/35" />
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            )}
-
-            <div className="mt-5 rounded-xl border border-neutral-100 bg-neutral-50/80 p-4">
-              <h4 className="mb-3 flex items-center gap-2 text-sm font-bold text-p-black">
-                <UserPlus className="h-4 w-4 text-brand-blue" />
-                إسناد معلم جديد للمادة
+            <div className="rounded-xl border border-neutral-100 bg-neutral-50/80 p-4">
+              <h4 className="mb-2 flex items-center gap-2 text-sm font-bold text-p-black">
+                <GraduationCap className="h-4 w-4 text-brand-teal" />
+                إسناد المادة للفصول
               </h4>
+              <p className="mb-4 text-xs leading-relaxed text-p-black/55">
+                اختر الفصول التي تُدرَّس فيها هذه المادة. ستظهر للطلاب في بوابة أولياء الأمور حتى
+                قبل إسناد معلم.
+              </p>
 
-              {teachers.length === 0 ? (
+              {modalClasses.length === 0 ? (
                 <p className="text-sm text-p-black/60">
-                  لا يوجد معلمون في النظام.{" "}
-                  <Link href="/admin/teachers" className="font-semibold text-brand-blue hover:underline">
-                    أضف معلماً أولاً
+                  لا توجد فصول مسجّلة.{" "}
+                  <Link href="/admin/classes" className="font-semibold text-brand-blue hover:underline">
+                    أضف فصولاً أولاً
                   </Link>
                 </p>
-              ) : availableTeachersForView.length === 0 ? (
-                <p className="text-sm text-p-black/60">
-                  جميع المعلمين مسندون لهذه المادة بالفعل.
-                </p>
               ) : (
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-                  <Select
-                    label="اختر المعلم"
-                    value={assignTeacherId}
-                    onChange={(e) => setAssignTeacherId(e.target.value)}
-                    className="flex-1"
-                    options={[
-                      { value: "", label: "اختر معلماً..." },
-                      ...availableTeachersForView.map((teacher) => ({
-                        value: teacher.id,
-                        label: teacher.name,
-                      })),
-                    ]}
+                <>
+                  <GradeSectionClassPicker
+                    key={viewSubject.id}
+                    classes={modalClasses}
+                    grades={modalGrades}
+                    mode="multiple"
+                    value={assignClassIds}
+                    onChange={setAssignClassIds}
+                    showBulkActions
+                    resetKey={viewSubject.id}
                   />
-                  <Button
-                    type="button"
-                    onClick={assignTeacherToSubject}
-                    disabled={!assignTeacherId || assigningTeacher}
-                    className="sm:min-w-[140px]"
-                  >
-                    <UserPlus className="h-4 w-4" />
-                    {assigningTeacher ? "جاري الإسناد..." : "إسناد"}
-                  </Button>
-                </div>
+                  <div className="mt-4 flex justify-end">
+                    <Button
+                      type="button"
+                      onClick={saveSubjectClasses}
+                      disabled={savingClasses}
+                      className="sm:min-w-[160px]"
+                    >
+                      <Save className="h-4 w-4" />
+                      {savingClasses ? "جاري الحفظ..." : "حفظ إسناد الفصول"}
+                    </Button>
+                  </div>
+                </>
               )}
+            </div>
+
+            <div className="mt-5 rounded-xl border border-neutral-100 bg-white p-4">
+              <h4 className="mb-1 flex items-center gap-2 text-sm font-bold text-p-black">
+                <Users className="h-4 w-4 text-brand-blue" />
+                المعلمون المسندون
+              </h4>
+              <p className="mb-4 text-xs text-p-black/50">
+                {teacherCountLabel(viewSubjectTeachers.length)}
+              </p>
+
+              {viewSubjectTeachers.length === 0 ? (
+                <div className="rounded-xl border border-dashed border-neutral-200 bg-neutral-50 px-4 py-5 text-center">
+                  <p className="text-sm font-medium text-p-black/70">
+                    لا يوجد معلمون مسندون لهذه المادة بعد.
+                  </p>
+                </div>
+              ) : (
+                <ul className="max-h-48 space-y-2 overflow-y-auto">
+                  {viewSubjectTeachers.map((teacher) => (
+                    <li key={teacher.id}>
+                      <Link
+                        href={`/admin/teachers/${teacher.id}`}
+                        className="flex items-center justify-between gap-3 rounded-xl border border-neutral-100 px-3 py-3 transition-colors hover:border-brand-blue/20 hover:bg-brand-blue/5"
+                        onClick={() => setViewSubject(null)}
+                      >
+                        <div className="min-w-0">
+                          <p className="font-semibold text-p-black">{teacher.name}</p>
+                          {teacher.experience ? (
+                            <p className="mt-0.5 truncate text-xs text-p-black/50">
+                              {teacher.experience}
+                            </p>
+                          ) : null}
+                        </div>
+                        <ChevronLeft className="h-4 w-4 shrink-0 text-p-black/35" />
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              <div className="mt-4 border-t border-neutral-100 pt-4">
+                <h5 className="mb-3 flex items-center gap-2 text-sm font-bold text-p-black">
+                  <UserPlus className="h-4 w-4 text-brand-blue" />
+                  إسناد معلم للمادة
+                </h5>
+
+                {teachers.length === 0 ? (
+                  <p className="text-sm text-p-black/60">
+                    لا يوجد معلمون في النظام.{" "}
+                    <Link href="/admin/teachers" className="font-semibold text-brand-blue hover:underline">
+                      أضف معلماً أولاً
+                    </Link>
+                  </p>
+                ) : availableTeachersForView.length === 0 ? (
+                  <p className="text-sm text-p-black/60">
+                    جميع المعلمين مسندون لهذه المادة بالفعل.
+                  </p>
+                ) : (
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+                    <Select
+                      label="اختر المعلم"
+                      value={assignTeacherId}
+                      onChange={(e) => setAssignTeacherId(e.target.value)}
+                      className="flex-1"
+                      options={[
+                        { value: "", label: "اختر معلماً..." },
+                        ...availableTeachersForView.map((teacher) => ({
+                          value: teacher.id,
+                          label: teacher.name,
+                        })),
+                      ]}
+                    />
+                    <Button
+                      type="button"
+                      onClick={assignTeacherToSubject}
+                      disabled={!assignTeacherId || assigningTeacher}
+                      className="sm:min-w-[140px]"
+                    >
+                      <UserPlus className="h-4 w-4" />
+                      {assigningTeacher ? "جاري الإسناد..." : "إسناد"}
+                    </Button>
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="mt-5 flex justify-end">
@@ -389,6 +526,7 @@ export default function AdminSubjectsPage() {
                 onClick={() => {
                   setViewSubject(null);
                   setAssignTeacherId("");
+                  setAssignClassIds([]);
                 }}
               >
                 إغلاق
@@ -467,8 +605,22 @@ export default function AdminSubjectsPage() {
           confirmDeleteSubject ? (
             <>
               هل أنت متأكد من حذف مادة{" "}
-              <span className="font-semibold">{confirmDeleteSubject.name}</span>؟ لا يمكن التراجع عن
-              هذا الإجراء.
+              <span className="font-semibold">{confirmDeleteSubject.name}</span>؟
+              {(confirmDeleteSubject.teacherCount > 0 ||
+                (confirmDeleteSubject.classIds?.length ?? 0) > 0) && (
+                <>
+                  {" "}
+                  سيتم إلغاء إسنادها من{" "}
+                  {confirmDeleteSubject.teacherCount > 0 &&
+                  (confirmDeleteSubject.classIds?.length ?? 0) > 0
+                    ? "المعلمين والفصول"
+                    : confirmDeleteSubject.teacherCount > 0
+                      ? "المعلمين"
+                      : "الفصول"}
+                  .
+                </>
+              )}{" "}
+              لا يمكن التراجع عن هذا الإجراء.
             </>
           ) : null
         }

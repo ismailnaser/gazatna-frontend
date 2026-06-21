@@ -8,7 +8,6 @@ import { Select } from "@/components/atoms/Select";
 import { Textarea } from "@/components/atoms/Textarea";
 import { ClassSelect, getSelectedClassIds } from "@/components/teacher/ClassSelect";
 import { NumberFieldWithKeypad } from "@/components/teacher/NumberFieldWithKeypad";
-import { NumberKeypadGroup } from "@/components/teacher/NumberKeypadGroup";
 import { quizTotalPoints } from "@/lib/quiz-scoring";
 import { toDatetimeLocalValue } from "@/lib/quiz-timing";
 import type { MatchingPair, QuestionType, Quiz, QuizQuestion } from "@/types";
@@ -315,7 +314,6 @@ export function QuizForm({
     defaultSelected ?? initial?.targets?.map((t) => t.classId) ?? (initial?.classId ? [initial.classId] : undefined);
 
   const form = (
-    <NumberKeypadGroup>
     <form onSubmit={handleSubmit} className="space-y-4">
       {showClassSelect && classes && classes.length > 0 && (
         <FormSection
@@ -624,7 +622,6 @@ export function QuizForm({
         </Button>
       </div>
     </form>
-    </NumberKeypadGroup>
   );
 
   if (embedded) return form;

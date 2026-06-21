@@ -1,18 +1,18 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Alert } from "@/components/atoms/Alert";
 import { Badge } from "@/components/atoms/Badge";
 import { Button } from "@/components/atoms/Button";
 import { Card } from "@/components/atoms/Card";
 import { Input } from "@/components/atoms/Input";
 import { NumberFieldWithKeypad } from "@/components/teacher/NumberFieldWithKeypad";
-import { NumberKeypadGroup } from "@/components/teacher/NumberKeypadGroup";
 import { Select } from "@/components/atoms/Select";
 import { PageHeader } from "@/components/molecules/PageHeader";
 import { useSchool } from "@/context/SchoolContext";
 import { api } from "@/lib/api";
-import type { Grade } from "@/types/teacher";
+import { mapGrades, mapSchoolClasses } from "@/lib/mapSchoolClass";
+import type { Grade, SchoolClass } from "@/types/teacher";
 import { GripVertical, Plus, Save, Trash2 } from "lucide-react";
 import type { AdminStudent } from "@/types";
 
@@ -24,6 +24,7 @@ function mapStudent(s: Record<string, unknown>): AdminStudent {
     section: s.section ? String(s.section) : undefined,
     classId: s.classId ? String(s.classId) : undefined,
     studentNumber: s.studentNumber ? String(s.studentNumber) : undefined,
+    nationalId: s.nationalId ? String(s.nationalId) : undefined,
     username: s.username ? String(s.username) : undefined,
     generatedPassword: s.generatedPassword ? String(s.generatedPassword) : undefined,
     paymentStatus: (s.paymentStatus as AdminStudent["paymentStatus"]) ?? "pending",
@@ -32,7 +33,8 @@ function mapStudent(s: Record<string, unknown>): AdminStudent {
 }
 
 export default function AdminClassesPage() {
-  const { classes, refresh } = useSchool();
+  const { refresh } = useSchool();
+  const [pageClasses, setPageClasses] = useState<SchoolClass[]>([]);
   const [classError, setClassError] = useState("");
   const [addingGrade, setAddingGrade] = useState(false);
   const [grades, setGrades] = useState<Grade[]>([]);
@@ -41,7 +43,11 @@ export default function AdminClassesPage() {
   const [newSectionsCount, setNewSectionsCount] = useState("2");
   const [expandedGradeId, setExpandedGradeId] = useState<string>("");
   const [confirmDeleteGradeId, setConfirmDeleteGradeId] = useState<string>("");
+  const [deleteGradeError, setDeleteGradeError] = useState("");
   const [deletingGrade, setDeletingGrade] = useState(false);
+  const [confirmDeleteClassId, setConfirmDeleteClassId] = useState<string>("");
+  const [deleteClassError, setDeleteClassError] = useState("");
+  const [deletingClass, setDeletingClass] = useState(false);
   const [draggingGradeId, setDraggingGradeId] = useState("");
   const [dropTargetGradeId, setDropTargetGradeId] = useState("");
   const [reorderingGrades, setReorderingGrades] = useState(false);
@@ -52,40 +58,40 @@ export default function AdminClassesPage() {
   const [classHomeroomTeacherId, setClassHomeroomTeacherId] = useState<string>("");
   const [savingHomeroom, setSavingHomeroom] = useState(false);
   const [teachers, setTeachers] = useState<Array<{ id: string; name: string }>>([]);
-
-  const classesByGrade = useMemo(() => {
-    const map = new Map<string, typeof classes>();
-    for (const cls of classes) {
-      const grade = cls.gradeLevel || cls.name;
-      const list = map.get(grade) ?? [];
-      list.push(cls);
-      map.set(grade, list);
-    }
-    return Array.from(map.entries()).sort(([a], [b]) => a.localeCompare(b, "ar"));
-  }, [classes]);
+  const mountedRef = useRef(true);
 
   const sortGrades = (list: Grade[]) =>
     [...list].sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || a.name.localeCompare(b.name, "ar"));
 
+  const reloadAll = useCallback(async (options?: { syncContext?: boolean }) => {
+    setLoadingGrades(true);
+    try {
+      const [gradesData, classesData] = await Promise.all([
+        api.getAdminGrades(),
+        api.getAdminClasses(),
+      ]);
+      if (!mountedRef.current) return;
+      setGrades(sortGrades(mapGrades(gradesData as unknown[])));
+      setPageClasses(mapSchoolClasses(classesData as unknown[]));
+      if (options?.syncContext) {
+        void refresh();
+      }
+    } catch {
+      if (!mountedRef.current) return;
+      setGrades([]);
+      setPageClasses([]);
+    } finally {
+      if (mountedRef.current) setLoadingGrades(false);
+    }
+  }, [refresh]);
+
   useEffect(() => {
-    let mounted = true;
-    api.getAdminGrades()
-      .then((data) => {
-        if (!mounted) return;
-        setGrades(sortGrades(data as Grade[]));
-      })
-      .catch(() => {
-        if (!mounted) return;
-        setGrades([]);
-      })
-      .finally(() => {
-        if (!mounted) return;
-        setLoadingGrades(false);
-      });
+    mountedRef.current = true;
+    void reloadAll();
     return () => {
-      mounted = false;
+      mountedRef.current = false;
     };
-  }, []);
+  }, [reloadAll]);
 
   useEffect(() => {
     let mounted = true;
@@ -103,13 +109,6 @@ export default function AdminClassesPage() {
       mounted = false;
     };
   }, []);
-
-  async function reloadAll() {
-    await Promise.all([
-      refresh(),
-      api.getAdminGrades().then((data) => setGrades(sortGrades(data as Grade[]))).catch(() => setGrades([])),
-    ]);
-  }
 
   async function handleGradeDrop(e: React.DragEvent<HTMLDivElement>, toId: string) {
     e.preventDefault();
@@ -131,11 +130,11 @@ export default function AdminClassesPage() {
     setClassError("");
     try {
       const data = await api.reorderAdminGrades(next.map((g) => g.id));
-      setGrades(sortGrades(data as Grade[]));
+      setGrades(sortGrades(mapGrades(data as unknown[])));
     } catch (err) {
       setClassError(err instanceof Error ? err.message : "تعذر حفظ ترتيب الفصول");
       const data = await api.getAdminGrades();
-      setGrades(sortGrades(data as Grade[]));
+      setGrades(sortGrades(mapGrades(data as unknown[])));
     } finally {
       setReorderingGrades(false);
     }
@@ -152,7 +151,7 @@ export default function AdminClassesPage() {
 
     try {
       await api.createAdminGrade({ name, sectionsCount });
-      await reloadAll();
+      await reloadAll({ syncContext: true });
       formEl.reset();
     } catch (err) {
       setClassError(err instanceof Error ? err.message : "فشل إضافة الفصل");
@@ -163,25 +162,78 @@ export default function AdminClassesPage() {
 
   function openDeleteGradeConfirm(id: string) {
     setConfirmDeleteGradeId(id);
+    setDeleteGradeError("");
     setClassError("");
   }
 
   function closeDeleteGradeConfirm() {
     setConfirmDeleteGradeId("");
+    setDeleteGradeError("");
   }
 
   async function confirmDeleteGrade() {
     if (!confirmDeleteGradeId) return;
-    setClassError("");
+    const gradeId = confirmDeleteGradeId;
+    setDeleteGradeError("");
     setDeletingGrade(true);
     try {
-      await api.deleteAdminGrade(confirmDeleteGradeId);
-      await reloadAll();
+      await api.deleteAdminGrade(gradeId);
+      setGrades((prev) => prev.filter((g) => g.id !== gradeId));
+      setExpandedGradeId((current) => (current === gradeId ? "" : current));
       setConfirmDeleteGradeId("");
+      try {
+        await reloadAll({ syncContext: true });
+      } catch {
+        // الحذف نجح؛ إعادة التحميل اختيارية
+      }
     } catch (err) {
-      setClassError(err instanceof Error ? err.message : "فشل حذف الفصل");
+      setDeleteGradeError(err instanceof Error ? err.message : "فشل حذف الفصل");
     } finally {
       setDeletingGrade(false);
+    }
+  }
+
+  function openDeleteClassConfirm(classId: string) {
+    setConfirmDeleteClassId(classId);
+    setDeleteClassError("");
+  }
+
+  function closeDeleteClassConfirm() {
+    setConfirmDeleteClassId("");
+    setDeleteClassError("");
+  }
+
+  async function confirmDeleteClass() {
+    if (!confirmDeleteClassId) return;
+    const classId = confirmDeleteClassId;
+    setDeleteClassError("");
+    setDeletingClass(true);
+    try {
+      await api.deleteAdminClass(classId);
+      if (selectedClassId === classId) {
+        setSelectedClassId("");
+        setClassStudents([]);
+        setClassHomeroomTeacherName(null);
+        setClassHomeroomTeacherId("");
+      }
+      setConfirmDeleteClassId("");
+      try {
+        await reloadAll({ syncContext: true });
+      } catch {
+        // الحذف نجح
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "فشل حذف الشعبة";
+      if (message.includes("غير موجود") || message.includes("تم حذفه")) {
+        setConfirmDeleteClassId("");
+        setSelectedClassId("");
+        await reloadAll({ syncContext: true });
+        setClassError(message);
+        return;
+      }
+      setDeleteClassError(message);
+    } finally {
+      setDeletingClass(false);
     }
   }
 
@@ -191,7 +243,7 @@ export default function AdminClassesPage() {
     setClassError("");
     try {
       await api.updateAdminGrade(grade.id, { sectionsCount: nextCount });
-      await reloadAll();
+      await reloadAll({ syncContext: true });
       setEditing((prev) => {
         const next = { ...prev };
         delete next[grade.id];
@@ -203,9 +255,10 @@ export default function AdminClassesPage() {
   }
 
   const classesByGradeName = useMemo(() => {
-    const map = new Map<string, typeof classes>();
-    for (const cls of classes) {
-      const grade = cls.gradeLevel || cls.name;
+    const map = new Map<string, SchoolClass[]>();
+    for (const cls of pageClasses) {
+      const grade = cls.gradeLevel?.trim();
+      if (!grade) continue;
       const list = map.get(grade) ?? [];
       list.push(cls);
       map.set(grade, list);
@@ -215,7 +268,7 @@ export default function AdminClassesPage() {
       map.set(k, list);
     }
     return map;
-  }, [classes]);
+  }, [pageClasses]);
 
   async function loadClassDetail(classId: string) {
     setSelectedClassId(classId);
@@ -258,8 +311,27 @@ export default function AdminClassesPage() {
     }
   }
 
+  const gradeToDelete = useMemo(
+    () => grades.find((g) => g.id === confirmDeleteGradeId) ?? null,
+    [grades, confirmDeleteGradeId]
+  );
+
+  const classToDelete = useMemo(
+    () => pageClasses.find((c) => c.id === confirmDeleteClassId) ?? null,
+    [pageClasses, confirmDeleteClassId]
+  );
+
+  const studentsInGradeToDelete = useMemo(() => {
+    if (!gradeToDelete) return 0;
+    return (classesByGradeName.get(gradeToDelete.name) ?? []).reduce(
+      (sum, cls) => sum + (cls.studentCount ?? 0),
+      0
+    );
+  }, [gradeToDelete, classesByGradeName]);
+
+  const studentsInClassToDelete = classToDelete?.studentCount ?? 0;
+
   return (
-    <NumberKeypadGroup>
     <div>
       <PageHeader
         title="إدارة الفصول والشعب"
@@ -450,12 +522,23 @@ export default function AdminClassesPage() {
                         <div className="mt-4 rounded-2xl border border-neutral-100 bg-neutral-50 p-5">
                           <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
                             <p className="text-sm font-semibold text-p-black">تفاصيل الشعبة</p>
-                            <p className="text-xs text-neutral-600">
-                              مربي الصف:{" "}
-                              <span className="font-semibold text-p-black">
-                                {classHomeroomTeacherName ?? "غير محدد"}
-                              </span>
-                            </p>
+                            <div className="flex flex-wrap items-center gap-2">
+                              <p className="text-xs text-neutral-600">
+                                مربي الصف:{" "}
+                                <span className="font-semibold text-p-black">
+                                  {classHomeroomTeacherName ?? "غير محدد"}
+                                </span>
+                              </p>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                onClick={() => openDeleteClassConfirm(selectedClassId)}
+                                className="h-8 text-xs text-p-red hover:text-p-red"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                                حذف الشعبة
+                              </Button>
+                            </div>
                           </div>
 
                           <div className="mb-4 flex flex-wrap items-end gap-3">
@@ -495,6 +578,7 @@ export default function AdminClassesPage() {
                                   <tr className="border-b border-neutral-100 bg-white text-p-black/60">
                                     <th className="px-4 py-3 text-start font-semibold">الطالب</th>
                                     <th className="px-4 py-3 text-start font-semibold">رقم الطالب</th>
+                                    <th className="px-4 py-3 text-start font-semibold">رقم الهوية</th>
                                   </tr>
                                 </thead>
                                 <tbody>
@@ -503,6 +587,9 @@ export default function AdminClassesPage() {
                                       <td className="px-4 py-3 font-medium text-p-black">{s.name}</td>
                                       <td className="px-4 py-3 text-p-black/70">
                                         {s.studentNumber ?? "-"}
+                                      </td>
+                                      <td className="px-4 py-3 text-p-black/70" dir="ltr">
+                                        {s.nationalId ?? "-"}
                                       </td>
                                     </tr>
                                   ))}
@@ -532,8 +619,23 @@ export default function AdminClassesPage() {
             <Card className="p-6">
               <p className="text-base font-bold text-p-black">تأكيد حذف الصف</p>
               <p className="mt-2 text-sm text-p-black/70">
-                هل أنت متأكد؟ سيتم حذف الشعب المرتبطة بهذا الصف إذا لم تحتوي طلاباً.
+                هل أنت متأكد من حذف صف{" "}
+                <span className="font-semibold">{gradeToDelete?.name}</span>؟ سيتم حذف جميع شعبه
+                وإلغاء ربط الطلاب به.
+                {studentsInGradeToDelete > 0 ? (
+                  <>
+                    {" "}
+                    <span className="font-semibold text-p-red">
+                      ({studentsInGradeToDelete} طالب سيفقد ربطه بالشعبة)
+                    </span>
+                  </>
+                ) : null}
               </p>
+              {deleteGradeError ? (
+                <Alert variant="error" className="mt-4">
+                  {deleteGradeError}
+                </Alert>
+              ) : null}
               <div className="mt-6 flex flex-wrap justify-end gap-3">
                 <Button type="button" variant="outline" onClick={closeDeleteGradeConfirm}>
                   إلغاء
@@ -551,7 +653,52 @@ export default function AdminClassesPage() {
           </div>
         </div>
       )}
+
+      {confirmDeleteClassId && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          role="dialog"
+          aria-modal="true"
+          onClick={closeDeleteClassConfirm}
+        >
+          <div className="w-full max-w-lg" onClick={(e) => e.stopPropagation()}>
+            <Card className="p-6">
+              <p className="text-base font-bold text-p-black">تأكيد حذف الشعبة</p>
+              <p className="mt-2 text-sm text-p-black/70">
+                هل أنت متأكد من حذف شعبة{" "}
+                <span className="font-semibold">{classToDelete?.name}</span>؟ سيتم إلغاء ربط
+                الطلاب بهذه الشعبة.
+                {studentsInClassToDelete > 0 ? (
+                  <>
+                    {" "}
+                    <span className="font-semibold text-p-red">
+                      ({studentsInClassToDelete} طالب سيفقد ربطه بالشعبة)
+                    </span>
+                  </>
+                ) : null}
+              </p>
+              {deleteClassError ? (
+                <Alert variant="error" className="mt-4">
+                  {deleteClassError}
+                </Alert>
+              ) : null}
+              <div className="mt-6 flex flex-wrap justify-end gap-3">
+                <Button type="button" variant="outline" onClick={closeDeleteClassConfirm}>
+                  إلغاء
+                </Button>
+                <Button
+                  type="button"
+                  onClick={confirmDeleteClass}
+                  disabled={deletingClass}
+                  className="bg-p-red hover:bg-p-red/90 focus-visible:ring-p-red"
+                >
+                  {deletingClass ? "جاري الحذف..." : "حذف"}
+                </Button>
+              </div>
+            </Card>
+          </div>
+        </div>
+      )}
     </div>
-    </NumberKeypadGroup>
   );
 }

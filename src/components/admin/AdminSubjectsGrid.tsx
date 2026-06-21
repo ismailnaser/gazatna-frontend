@@ -5,7 +5,7 @@ import { Button } from "@/components/atoms/Button";
 import { subjectGradient, subjectInitial, teacherCountLabel } from "@/lib/adminSubjects";
 import { cn } from "@/lib/utils";
 import type { Subject } from "@/types/teacher";
-import { BookOpen, ChevronLeft, Pencil, Trash2, UserPlus, Users } from "lucide-react";
+import { BookOpen, ChevronLeft, GraduationCap, Pencil, Trash2, UserPlus, Users } from "lucide-react";
 
 type AdminSubjectsGridProps = {
   subjects: Subject[];
@@ -54,7 +54,7 @@ export function AdminSubjectsGrid({
               <p className="truncate text-base font-bold">{subject.name}</p>
               <p className="mt-0.5 flex items-center gap-1 text-xs text-white/85">
                 <BookOpen className="h-3.5 w-3.5 shrink-0" />
-                اضغط لعرض المعلمين
+                اضغط لإدارة الإسناد
               </p>
             </div>
             <ChevronLeft className="h-5 w-5 shrink-0 opacity-80" />
@@ -71,6 +71,18 @@ export function AdminSubjectsGrid({
               </Badge>
             </div>
 
+            <div className="flex items-center justify-between gap-2">
+              <span className="inline-flex items-center gap-1.5 text-sm text-p-black/60">
+                <GraduationCap className="h-4 w-4 text-brand-teal" />
+                {(subject.classIds?.length ?? 0) === 0
+                  ? "غير مسندة لفصول"
+                  : `${subject.classIds?.length ?? 0} فصل`}
+              </span>
+              <Badge variant={(subject.classIds?.length ?? 0) > 0 ? "success" : "default"}>
+                {subject.classIds?.length ?? 0}
+              </Badge>
+            </div>
+
             <div className="space-y-2 border-t border-neutral-50 pt-3">
               <Button
                 type="button"
@@ -78,7 +90,7 @@ export function AdminSubjectsGrid({
                 onClick={() => onAssign(subject)}
               >
                 <UserPlus className="h-3.5 w-3.5" />
-                إسناد معلم للمادة
+                إسناد للفصول والمعلمين
               </Button>
               <div className="flex flex-wrap gap-2">
               <Button
@@ -95,12 +107,7 @@ export function AdminSubjectsGrid({
                 variant="outline"
                 className="h-9 flex-1 text-xs text-p-red hover:text-p-red"
                 onClick={() => onDelete(subject)}
-                disabled={subject.teacherCount > 0}
-                title={
-                  subject.teacherCount > 0
-                    ? "لا يمكن حذف مادة مسندة لمعلمين"
-                    : `حذف ${subject.name}`
-                }
+                title={`حذف ${subject.name}`}
               >
                 <Trash2 className="h-3.5 w-3.5" />
                 حذف

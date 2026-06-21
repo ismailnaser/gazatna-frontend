@@ -7,11 +7,13 @@ import { Card } from "@/components/atoms/Card";
 import { PageHeader } from "@/components/molecules/PageHeader";
 import { InstallmentNotifications } from "@/components/parent/InstallmentPanel";
 import { useAuth } from "@/context/AuthContext";
+import { formatClassLabel } from "@/lib/adminStudents";
 import { api } from "@/lib/api";
-import type { ParentAlert, Student } from "@/types";
+import type { ParentAlert, ParentSubjectSummary, Student } from "@/types";
 import type { FeeInstallmentNotification } from "@/types/finance";
 import {
   Bell,
+  BookMarked,
   BookOpen,
   ChevronLeft,
   ClipboardList,
@@ -47,12 +49,16 @@ export default function ParentDashboard() {
   const [loading, setLoading] = useState(true);
   const [alerts, setAlerts] = useState<ParentAlert[]>([]);
   const [installmentNotices, setInstallmentNotices] = useState<FeeInstallmentNotification[]>([]);
+  const [subjects, setSubjects] = useState<ParentSubjectSummary[]>([]);
 
   useEffect(() => {
     if (!user) return;
 
     Promise.all([
       api.getParentStudent().then((s) => setStudent(s as Student)).catch(() => setStudent(null)),
+      api.getParentSubjects()
+        .then((data) => setSubjects(data as ParentSubjectSummary[]))
+        .catch(() => setSubjects([])),
       api.getParentAlerts()
         .then((data) => {
           const rows = data as Array<Record<string, unknown>>;
@@ -178,6 +184,54 @@ export default function ParentDashboard() {
           </div>
         </Card>
       </div>
+
+      <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-p-black">
+        <BookMarked className="h-5 w-5 text-brand-blue" />
+        المواد المسندة
+      </h2>
+
+      {subjects.length === 0 ? (
+        <Card className="mb-8 space-y-2 text-center text-neutral-500">
+          <p>لا توجد مواد مسندة لفصل الطالب حالياً.</p>
+          {student ? (
+            <p className="text-sm text-p-black/60">
+              فصل الطالب:{" "}
+              <span className="font-semibold text-p-black">
+                {formatClassLabel(student.grade, student.section)}
+              </span>
+            </p>
+          ) : null}
+        </Card>
+      ) : (
+        <div className="mb-8 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {subjects.map((row) => (
+            <Link
+              key={row.subject}
+              href={subjectContentPath(row.subject)}
+              className="block"
+            >
+              <Card className="h-full p-4 transition-shadow hover:shadow-md sm:p-5">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <h3 className="truncate text-base font-bold text-p-black">{row.subject}</h3>
+                    {row.teacherName ? (
+                      <p className="mt-1 text-xs text-p-black/55">المعلم: {row.teacherName}</p>
+                    ) : null}
+                    {row.totalCount > 0 ? (
+                      <p className="mt-2 text-xs font-medium text-brand-orange">
+                        {row.totalCount} عنصر جديد
+                      </p>
+                    ) : (
+                      <p className="mt-2 text-xs text-p-black/45">لا يوجد محتوى بعد</p>
+                    )}
+                  </div>
+                  <ChevronLeft className="h-5 w-5 shrink-0 text-p-black/30" />
+                </div>
+              </Card>
+            </Link>
+          ))}
+        </div>
+      )}
 
       <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-p-black">
         <BookOpen className="h-5 w-5 text-brand-orange" />

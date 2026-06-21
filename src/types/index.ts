@@ -16,6 +16,7 @@ export type Student = {
   grade: string;
   section: string;
   studentNumber: string;
+  nationalId?: string;
   feesPaid: boolean;
   paymentStatus: PaymentStatus;
   balance: { total: number; paid: number; remaining: number };
@@ -48,6 +49,7 @@ export type TeacherClass = {
 export type ClassStudent = {
   id: string;
   name: string;
+  nationalId?: string;
   grade: number | "";
   note: string;
 };
@@ -169,6 +171,7 @@ export type HomeworkSubjectGroup = {
 
 export type ParentSubjectSummary = {
   subject: string;
+  teacherName?: string;
   homeworkCount: number;
   quizCount: number;
   announcementCount?: number;
@@ -323,6 +326,7 @@ export type AdminStudent = {
   section?: string;
   classId?: string;
   studentNumber?: string;
+  nationalId?: string;
   username?: string;
   generatedPassword?: string;
   paymentStatus: PaymentStatus;

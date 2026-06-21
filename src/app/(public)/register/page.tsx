@@ -44,6 +44,7 @@ export default function RegisterPage() {
     const form = new FormData(e.currentTarget);
     const payload = {
       studentName: String(form.get("studentName") ?? ""),
+      nationalId: String(form.get("nationalId") ?? ""),
       birthDate: String(form.get("birthDate") ?? ""),
       grade: String(form.get("grade") ?? ""),
       parentName: String(form.get("parentName") ?? ""),
@@ -80,6 +81,7 @@ export default function RegisterPage() {
       >
         {error && <Alert variant="error">{error}</Alert>}
         <Input label="اسم الطالب" name="studentName" required />
+        <Input label="رقم هوية الطالب" name="nationalId" dir="ltr" placeholder="رقم الهوية الوطنية" />
         {reg.showBirthDate && (
           <Input label="تاريخ الميلاد" name="birthDate" type="date" required />
         )}

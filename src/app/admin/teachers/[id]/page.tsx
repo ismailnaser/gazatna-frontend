@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Alert } from "@/components/atoms/Alert";
 import { Badge } from "@/components/atoms/Badge";
 import { Button } from "@/components/atoms/Button";
@@ -18,6 +18,7 @@ import { PageHeader } from "@/components/molecules/PageHeader";
 import { useSchool } from "@/context/SchoolContext";
 import { api } from "@/lib/api";
 import { teacherInitial } from "@/lib/adminTeachers";
+import { buildOccupiedPairs, findAssignmentConflicts } from "@/lib/adminTeacherAssignments";
 import { resolveMediaUrl } from "@/lib/media";
 import { cn } from "@/lib/utils";
 import type { AccountCredentials } from "@/types";
@@ -28,9 +29,12 @@ export default function AdminTeacherDetailPage() {
   const router = useRouter();
   const teacherId = String(params.id);
 
-  const { teachers, classes, subjects, assignments, setTeacherClasses, updateTeacher, removeTeacher } =
-    useSchool();
+  const { teachers, classes, grades, subjects, assignments, updateTeacher, removeTeacher } = useSchool();
   const current = teachers.find((teacher) => teacher.id === teacherId);
+  const occupiedPairs = useMemo(
+    () => buildOccupiedPairs(teachers, teacherId),
+    [teachers, teacherId]
+  );
 
   const [name, setName] = useState("");
   const [experience, setExperience] = useState("");
@@ -42,8 +46,9 @@ export default function AdminTeacherDetailPage() {
   const [savingProfile, setSavingProfile] = useState(false);
   const [savingAssignments, setSavingAssignments] = useState(false);
   const [profileSaved, setProfileSaved] = useState(false);
-  const [assignmentsSaved, setAssignmentsSaved] = useState(false);
+  const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
+  const pageTopRef = useRef<HTMLDivElement>(null);
 
   const [resetCredentials, setResetCredentials] = useState<AccountCredentials | null>(null);
   const [resettingPassword, setResettingPassword] = useState(false);
@@ -72,11 +77,14 @@ export default function AdminTeacherDetailPage() {
     setDraftClasses(assignments[current.id] ?? []);
     setDraftSubjects(current.subjectIds ?? []);
     setImagePreview(current.imageUrl ?? null);
+  }, [current?.id, assignments, current]);
+
+  useEffect(() => {
     setProfileSaved(false);
-    setAssignmentsSaved(false);
+    setSuccess("");
     setResetCredentials(null);
     setError("");
-  }, [current?.id, assignments, current]);
+  }, [current?.id]);
 
   function handleFileSelect(file: File | null) {
     if (!file || !current) return;
@@ -134,15 +142,31 @@ export default function AdminTeacherDetailPage() {
 
   async function saveAssignments() {
     if (!current || draftSubjects.length === 0) return;
+
+    const conflicts = findAssignmentConflicts(
+      teachers,
+      subjects,
+      classes,
+      draftSubjects,
+      draftClasses,
+      current.id
+    );
+    if (conflicts.length > 0) {
+      setError(conflicts[0]);
+      setSuccess("");
+      return;
+    }
+
     setSavingAssignments(true);
     setError("");
-    setAssignmentsSaved(false);
+    setSuccess("");
     try {
-      await Promise.all([
-        setTeacherClasses(current.id, draftClasses),
-        updateTeacher(current.id, { subjectIds: draftSubjects }),
-      ]);
-      setAssignmentsSaved(true);
+      await updateTeacher(current.id, {
+        subjectIds: draftSubjects,
+        classIds: draftClasses,
+      });
+      setSuccess("تم حفظ الإسناد بنجاح.");
+      pageTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     } catch (err) {
       setError(err instanceof Error ? err.message : "فشل حفظ الإسناد");
     } finally {
@@ -203,8 +227,14 @@ export default function AdminTeacherDetailPage() {
     : resolveMediaUrl(imagePreview ?? current.imageUrl);
 
   return (
-    <div className="mx-auto max-w-4xl">
+    <div ref={pageTopRef} className="mx-auto max-w-4xl">
       <PageHeader title="تعديل المعلم" description={current.name} className="mb-6" />
+
+      {success ? (
+        <Alert variant="success" className="mb-4">
+          {success}
+        </Alert>
+      ) : null}
 
       {error ? (
         <Alert variant="error" className="mb-4">
@@ -274,7 +304,12 @@ export default function AdminTeacherDetailPage() {
               disabled={uploadingImage}
               onFileSelect={handleFileSelect}
             />
-            <Textarea label="نبذة (السيرة الذاتية)" value={bio} onChange={(e) => setBio(e.target.value)} rows={5} />
+            <Textarea
+              label="نبذة (السيرة الذاتية) (اختياري)"
+              value={bio}
+              onChange={(e) => setBio(e.target.value)}
+              rows={5}
+            />
             <div className="flex flex-wrap items-center gap-3 border-t border-neutral-100 pt-4">
               <Button type="button" onClick={saveProfile} disabled={savingProfile}>
                 <Save className="h-4 w-4" />
@@ -291,7 +326,13 @@ export default function AdminTeacherDetailPage() {
           description="اختر مادة واحدة على الأقل"
           tone="violet"
         >
-          <TeacherSubjectPicker subjects={subjects} value={draftSubjects} onChange={setDraftSubjects} />
+          <TeacherSubjectPicker
+            subjects={subjects}
+            value={draftSubjects}
+            onChange={setDraftSubjects}
+            classIds={draftClasses}
+            occupiedPairs={occupiedPairs}
+          />
         </TeacherFormSection>
 
         <TeacherFormSection
@@ -300,13 +341,19 @@ export default function AdminTeacherDetailPage() {
           description="الفصول التي يدرّسها المعلم"
           tone="green"
         >
-          <TeacherClassPicker classes={classes} value={draftClasses} onChange={setDraftClasses} />
+          <TeacherClassPicker
+            classes={classes}
+            grades={grades}
+            value={draftClasses}
+            onChange={setDraftClasses}
+            subjectIds={draftSubjects}
+            occupiedPairs={occupiedPairs}
+          />
           <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-neutral-100 pt-4">
             <Button type="button" onClick={saveAssignments} disabled={savingAssignments || draftSubjects.length === 0}>
               <Save className="h-4 w-4" />
               {savingAssignments ? "جاري الحفظ..." : "حفظ الإسناد"}
             </Button>
-            {assignmentsSaved ? <span className="text-sm text-p-green">تم الحفظ بنجاح</span> : null}
           </div>
         </TeacherFormSection>
 

@@ -3,6 +3,7 @@ import { getAdminNav, isAdminRole } from "@/lib/adminRoles";
 import {
   BarChart3,
   Bell,
+  BookMarked,
   BookOpen,
   BookOpenCheck,
   ClipboardList,
@@ -32,6 +33,7 @@ export const publicNavLinks = [
 
 const parentNav: NavItem[] = [
   { href: "/parent", label: "الرئيسية", icon: Home },
+  { href: "/parent/subjects", label: "المواد المسندة", icon: BookMarked },
   { href: "/parent/homework", label: "محتوى المواد", icon: PenLine },
   { href: "/parent/assessments", label: "التقييمات", icon: BookOpenCheck },
   { href: "/parent/grades", label: "النتائج", icon: BookOpen },

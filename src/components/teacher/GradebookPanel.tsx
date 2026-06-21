@@ -6,7 +6,6 @@ import { DashboardLoadingState } from "@/components/dashboard/DashboardLoadingSt
 import { Button } from "@/components/atoms/Button";
 import { Input } from "@/components/atoms/Input";
 import { NumberFieldWithKeypad } from "@/components/teacher/NumberFieldWithKeypad";
-import { NumberKeypadGroup } from "@/components/teacher/NumberKeypadGroup";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import type { ClassStudent } from "@/types";
@@ -58,10 +57,15 @@ export function GradebookPanel({ classId }: { classId: string }) {
       .finally(() => setLoading(false));
   }, [classId]);
 
-  const filtered = useMemo(
-    () => students.filter((s) => s.name.includes(search)),
-    [students, search]
-  );
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return students;
+    return students.filter(
+      (s) =>
+        s.name.toLowerCase().includes(q) ||
+        (s.nationalId ?? "").toLowerCase().includes(q)
+    );
+  }, [students, search]);
 
   const stats = useMemo(() => {
     const graded = students.filter((s) => s.grade !== "" && s.grade != null).length;
@@ -136,7 +140,7 @@ export function GradebookPanel({ classId }: { classId: string }) {
               <Search className="pointer-events-none absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-p-black/40" />
               <input
                 type="text"
-                placeholder="بحث عن طالب..."
+                placeholder="بحث بالاسم أو رقم الهوية..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="w-full rounded-xl border border-neutral-200 bg-white py-2.5 pe-4 ps-10 text-sm focus:border-p-green focus:outline-none focus:ring-2 focus:ring-p-green/20"
@@ -167,7 +171,6 @@ export function GradebookPanel({ classId }: { classId: string }) {
               لا توجد نتائج لـ «{search}»
             </div>
           ) : (
-            <NumberKeypadGroup>
             <div className="-mx-3 overflow-x-auto sm:mx-0">
               <table className="w-full min-w-[520px] text-sm">
                 <thead>
@@ -228,7 +231,6 @@ export function GradebookPanel({ classId }: { classId: string }) {
                 </tbody>
               </table>
             </div>
-            </NumberKeypadGroup>
           )}
         </div>
       </section>

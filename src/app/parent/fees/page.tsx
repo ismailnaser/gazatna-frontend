@@ -6,7 +6,6 @@ import { Button } from "@/components/atoms/Button";
 import { Card } from "@/components/atoms/Card";
 import { Input } from "@/components/atoms/Input";
 import { NumberFieldWithKeypad } from "@/components/teacher/NumberFieldWithKeypad";
-import { NumberKeypadGroup } from "@/components/teacher/NumberKeypadGroup";
 import { Textarea } from "@/components/atoms/Textarea";
 import { PageHeader } from "@/components/molecules/PageHeader";
 import { FileUploadField } from "@/components/molecules/FileUploadField";
@@ -143,7 +142,6 @@ export default function ParentFeesPage() {
               {error}
             </Alert>
           )}
-          <NumberKeypadGroup>
           <form onSubmit={handleUpload} className="space-y-4">
             <NumberFieldWithKeypad
               fieldId="feeAmount"
@@ -175,7 +173,6 @@ export default function ParentFeesPage() {
               {uploading ? "جاري الإرسال..." : "إرسال الإشعار"}
             </Button>
           </form>
-          </NumberKeypadGroup>
         </Card>
 
         <Card className="overflow-x-auto p-0">

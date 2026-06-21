@@ -6,7 +6,6 @@ import { Button } from "@/components/atoms/Button";
 import { Card } from "@/components/atoms/Card";
 import { Input } from "@/components/atoms/Input";
 import { NumberFieldWithKeypad } from "@/components/teacher/NumberFieldWithKeypad";
-import { NumberKeypadGroup } from "@/components/teacher/NumberKeypadGroup";
 import { ConfirmDialog } from "@/components/molecules/ConfirmDialog";
 import { PageHeader } from "@/components/molecules/PageHeader";
 import { AdminFeePlanFormPanel } from "@/components/admin/AdminFeePlanFormPanel";
@@ -40,7 +39,7 @@ export default function AdminFinancePage() {
   const [plans, setPlans] = useState<FeePlan[]>([]);
   const [grades, setGrades] = useState<Grade[]>([]);
   const [students, setStudents] = useState<
-    Array<{ id: string; name: string; grade: string; studentNumber: string }>
+    Array<{ id: string; name: string; grade: string; studentNumber: string; nationalId?: string }>
   >([]);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -101,6 +100,7 @@ export default function AdminFinancePage() {
             name: String(s.name),
             grade: String(s.grade ?? ""),
             studentNumber: String(s.studentNumber ?? ""),
+            nationalId: s.nationalId ? String(s.nationalId) : undefined,
           }))
         )
       ),
@@ -309,7 +309,6 @@ export default function AdminFinancePage() {
   }
 
   return (
-    <NumberKeypadGroup>
     <div>
       <PageHeader
         title="إدارة المالية"
@@ -446,7 +445,7 @@ export default function AdminFinancePage() {
               تسجيل دفع يدوي
             </h3>
             <p className="mb-4 text-sm text-p-black/60">
-              للطلاب الذين دفعوا خارج المنصة (نقداً أو تحويل مباشر). ابحث برقم الطالب، حدد المبلغ،
+              للطلاب الذين دفعوا خارج المنصة (نقداً أو تحويل مباشر). ابحث بالاسم أو رقم الطالب أو رقم الهوية، حدد المبلغ،
               وسيُخصم تلقائياً من رصيده.
             </p>
             <form onSubmit={recordManualPayment} className="space-y-4">
@@ -454,7 +453,7 @@ export default function AdminFinancePage() {
                 students={students}
                 value={manualStudentId}
                 onChange={setManualStudentId}
-                placeholder="ابحث برقم الطالب أو الاسم..."
+                placeholder="ابحث بالاسم أو رقم الطالب أو رقم الهوية..."
               />
               <NumberFieldWithKeypad
                 fieldId="manualAmount"
@@ -741,6 +740,5 @@ export default function AdminFinancePage() {
         </div>
       )}
     </div>
-    </NumberKeypadGroup>
   );
 }

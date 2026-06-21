@@ -13,6 +13,7 @@ export function mapAdminStudent(s: Record<string, unknown>): AdminStudent {
     section: s.section ? String(s.section) : undefined,
     classId: s.classId ? String(s.classId) : undefined,
     studentNumber: s.studentNumber ? String(s.studentNumber) : undefined,
+    nationalId: s.nationalId ? String(s.nationalId) : undefined,
     username: s.username ? String(s.username) : undefined,
     generatedPassword: s.generatedPassword ? String(s.generatedPassword) : undefined,
     paymentStatus: s.paymentStatus as AdminStudent["paymentStatus"],

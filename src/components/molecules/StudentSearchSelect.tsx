@@ -9,6 +9,7 @@ export type StudentSearchOption = {
   name: string;
   grade: string;
   studentNumber: string;
+  nationalId?: string;
 };
 
 type StudentSearchSelectProps = {
@@ -24,7 +25,7 @@ export function StudentSearchSelect({
   value,
   onChange,
   label = "الطالب",
-  placeholder = "ابحث بالاسم أو رقم الطالب...",
+  placeholder = "ابحث بالاسم أو رقم الطالب أو رقم الهوية...",
 }: StudentSearchSelectProps) {
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
@@ -43,6 +44,7 @@ export function StudentSearchSelect({
         (s) =>
           s.name.toLowerCase().includes(q) ||
           s.studentNumber.toLowerCase().includes(q) ||
+          (s.nationalId ?? "").toLowerCase().includes(q) ||
           s.grade.toLowerCase().includes(q)
       )
       .slice(0, 20);
@@ -79,7 +81,8 @@ export function StudentSearchSelect({
           <div className="min-w-0">
             <p className="truncate text-sm font-medium text-p-black">{selected.name}</p>
             <p className="text-xs text-p-black/50">
-              {selected.studentNumber} — {selected.grade}
+              {selected.studentNumber}
+              {selected.nationalId ? ` — ${selected.nationalId}` : ""} — {selected.grade}
             </p>
           </div>
           <button
@@ -125,7 +128,8 @@ export function StudentSearchSelect({
                 >
                   <span className="font-medium text-p-black">{student.name}</span>
                   <span className="mt-0.5 block text-xs text-p-black/50">
-                    {student.studentNumber} — {student.grade}
+                    {student.studentNumber}
+                    {student.nationalId ? ` — ${student.nationalId}` : ""} — {student.grade}
                   </span>
                 </button>
               </li>

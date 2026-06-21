@@ -49,10 +49,10 @@ export const adminRoleLabels: Record<AdminRole, string> = {
 
 export const adminRoleDescriptions: Record<AdminRole, string> = {
   admin: "صلاحية كاملة — جميع أقسام الإدارة: المستخدمون، التحليلات، إعدادات الموقع، والتنبيهات.",
-  admin_students: "إدارة الطلاب، طلبات التسجيل، والتنبيهات (الطلاب غير النشطين).",
+  admin_students: "إدارة الطلاب وطلبات التسجيل.",
   admin_academics: "إدارة الفصول والمواد وتحليلات نسب النجاح.",
   admin_finance: "إدارة المالية، تحليلات التحصيل، والتنبيهات (رسوم متأخرة).",
-  admin_content: "إدارة محتوى الموقع، الأخبار، رسائل التواصل، وإعدادات الموقع.",
+  admin_content: "إدارة محتوى الموقع، الأخبار، ورسائل التواصل.",
   admin_staff: "إدارة الكادر التعليمي وملفات المعلمين.",
 };
 
@@ -78,11 +78,10 @@ const roleNavPaths: Record<AdminRole, string[]> = {
     "/admin",
     "/admin/students",
     "/admin/admissions",
-    "/admin/notifications",
   ],
   admin_academics: ["/admin", "/admin/classes", "/admin/subjects", "/admin/analytics"],
   admin_finance: ["/admin", "/admin/finance", "/admin/notifications", "/admin/analytics"],
-  admin_content: ["/admin", "/admin/content", "/admin/messages", "/admin/site"],
+  admin_content: ["/admin", "/admin/content", "/admin/messages"],
   admin_staff: ["/admin", "/admin/teachers"],
 };
 
@@ -103,6 +102,10 @@ export function isSuperAdmin(role: string): role is typeof SUPER_ADMIN_ROLE {
   return role === SUPER_ADMIN_ROLE;
 }
 
+export function canManageAdminClasses(role: AdminRole): boolean {
+  return role === SUPER_ADMIN_ROLE || role === "admin_academics";
+}
+
 export function getAdminNav(role: AdminRole): NavItem[] {
   const allowed = new Set(roleNavPaths[role]);
   return allAdminNav.filter((item) => allowed.has(item.href));
@@ -111,9 +114,10 @@ export function getAdminNav(role: AdminRole): NavItem[] {
 export function canAccessAdminPath(role: AdminRole, pathname: string): boolean {
   const allowed = roleNavPaths[role];
   if (pathname === "/admin") return allowed.includes("/admin");
-  return allowed.some(
-    (path) => pathname === path || pathname.startsWith(`${path}/`)
-  );
+  return allowed.some((path) => {
+    if (path === "/admin") return false;
+    return pathname === path || pathname.startsWith(`${path}/`);
+  });
 }
 
 export function canAccessAdminAnalyticsTab(role: AdminRole, tab: AdminAnalyticsTab): boolean {

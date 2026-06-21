@@ -3,7 +3,7 @@
 import { Badge } from "@/components/atoms/Badge";
 import { Button } from "@/components/atoms/Button";
 import { formatMetaDate } from "@/lib/dateDisplay";
-import { installmentsTotal } from "@/lib/feePlanForm";
+import { installmentsMatchTotal, installmentsTotal } from "@/lib/feePlanForm";
 import { cn } from "@/lib/utils";
 import type { FeePlan } from "@/types/finance";
 import { Calendar, Pencil, Plus, Trash2 } from "lucide-react";
@@ -62,7 +62,7 @@ export function AdminFeePlansTable({
               (row) => row.startDate && row.endDate
             ).length;
             const sum = installmentsTotal(plan.installments);
-            const totalsMatch = sum === plan.totalAmount;
+            const totalsMatch = installmentsMatchTotal(plan.installments, plan.totalAmount);
 
             return (
               <tr

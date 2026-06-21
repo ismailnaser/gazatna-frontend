@@ -272,7 +272,7 @@ export function TeacherQuizGradeEditor({
                     setManualScores((prev) => ({ ...prev, [q.id]: next }))
                   }
                   maxScore={q.points ?? 1}
-                  inputLabel={`درجة السؤال (من ${q.points}) — اضغط لإظهار لوحة الأرقام`}
+                  inputLabel={`درجة السؤال (من ${q.points})`}
                   keypadLabel={`درجة السؤال (${q.prompt.slice(0, 28)}${q.prompt.length > 28 ? "…" : ""})`}
                   onConfirm={() => handleConfirmQuestion(q.id)}
                   confirmLabel="تأكيد الدرجة"
@@ -308,7 +308,7 @@ export function TeacherQuizGradeEditor({
               {saving ? "جاري الحفظ..." : "حفظ التقييم وإظهار العلامة للطالب"}
             </Button>
             <p className="mt-3 text-xs text-neutral-500">
-              أكّد درجة كل سؤال من لوحة الأرقام، ثم احفظ التقييم الكامل من هنا.
+              أدخل درجة كل سؤال، ثم احفظ التقييم الكامل من هنا.
             </p>
           </>
         )}

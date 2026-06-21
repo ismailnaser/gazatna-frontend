@@ -10,6 +10,7 @@ import { Check, Eye, RotateCcw, Trash2 } from "lucide-react";
 export type AdminAdmissionRow = {
   id: string;
   studentName: string;
+  nationalId: string;
   birthDate: string | null;
   grade: string;
   parentName: string;
@@ -102,6 +103,11 @@ export function AdminAdmissionsTable({
             >
               <td className="px-3 py-3 sm:px-4">
                 <p className="font-semibold text-p-black">{row.studentName}</p>
+                {row.nationalId ? (
+                  <p className="mt-1 text-xs text-p-black/50" dir="ltr">
+                    هوية: {row.nationalId}
+                  </p>
+                ) : null}
                 {row.birthDate ? (
                   <p className="mt-1 text-xs text-p-black/50">ميلاد: {row.birthDate}</p>
                 ) : null}

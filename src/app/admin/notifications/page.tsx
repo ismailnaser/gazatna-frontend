@@ -8,7 +8,6 @@ import { Badge } from "@/components/atoms/Badge";
 import { Button } from "@/components/atoms/Button";
 import { Card } from "@/components/atoms/Card";
 import { NumberFieldWithKeypad } from "@/components/teacher/NumberFieldWithKeypad";
-import { NumberKeypadGroup } from "@/components/teacher/NumberKeypadGroup";
 import { PageHeader } from "@/components/molecules/PageHeader";
 import { api } from "@/lib/api";
 import { formatMetaDate } from "@/lib/dateDisplay";
@@ -30,6 +29,7 @@ type BlockedStudent = {
   id: string;
   name: string;
   studentNumber: string;
+  nationalId?: string;
   grade: string;
   section: string;
   requiredAmount: number;
@@ -51,6 +51,7 @@ type InactiveStudent = {
   id: string;
   name: string;
   studentNumber: string;
+  nationalId?: string;
   grade: string;
   section: string;
   createdAt: string;
@@ -168,7 +169,7 @@ export default function AdminNotificationsPage() {
     const query = search.trim().toLowerCase();
     if (!query) return blocked;
     return blocked.filter((s) => {
-      const haystack = [s.name, s.studentNumber, s.grade, s.section]
+      const haystack = [s.name, s.studentNumber, s.nationalId, s.grade, s.section]
         .filter(Boolean)
         .join(" ")
         .toLowerCase();
@@ -180,7 +181,7 @@ export default function AdminNotificationsPage() {
     const query = search.trim().toLowerCase();
     if (!query) return inactive;
     return inactive.filter((s) => {
-      const haystack = [s.name, s.studentNumber, s.grade, s.section]
+      const haystack = [s.name, s.studentNumber, s.nationalId, s.grade, s.section]
         .filter(Boolean)
         .join(" ")
         .toLowerCase();
@@ -295,7 +296,7 @@ export default function AdminNotificationsPage() {
             <Search className="pointer-events-none absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-p-black/40" />
             <input
               type="search"
-              placeholder="بحث بالاسم أو رقم الطالب..."
+              placeholder="بحث بالاسم أو رقم الطالب أو رقم الهوية..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full rounded-xl border border-neutral-200 bg-white py-2.5 pe-4 ps-10 text-sm focus:border-p-green focus:outline-none focus:ring-2 focus:ring-p-green/20"
@@ -531,7 +532,6 @@ export default function AdminNotificationsPage() {
                 </p>
               </div>
               <div className="mt-4">
-                <NumberKeypadGroup>
                   <NumberFieldWithKeypad
                     fieldId="accessDays"
                     label="مدة الفتح (بالأيام)"
@@ -541,7 +541,6 @@ export default function AdminNotificationsPage() {
                     max={30}
                     required
                   />
-                </NumberKeypadGroup>
                 <p className="mt-2 text-xs text-p-black/50">
                   يسمح للطالب بالدخول لفترة محددة ثم يُغلق الوصول تلقائياً.
                 </p>
