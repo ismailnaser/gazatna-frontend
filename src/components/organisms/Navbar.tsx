@@ -5,6 +5,7 @@ import { LayoutDashboard, LogIn, Menu, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { PwaInstallButton } from "@/components/molecules/PwaInstallButton";
 import { Button } from "@/components/atoms/Button";
 import { Logo } from "@/components/atoms/Logo";
 import { useAuth } from "@/context/AuthContext";
@@ -37,35 +38,38 @@ export function Navbar() {
         scrolled ? "bg-white shadow-sm" : "bg-transparent"
       )}
     >
-      <nav className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-2 px-4 sm:gap-4 sm:px-6 lg:h-[4.5rem] lg:px-8">
+      <nav className="mx-auto grid h-16 max-w-7xl grid-cols-[minmax(0,1fr)_auto] items-center gap-2 px-4 sm:gap-4 sm:px-6 lg:h-[4.5rem] lg:grid-cols-[auto_minmax(0,1fr)_auto] lg:px-8">
         <div className="flex min-w-0 items-center gap-2 sm:gap-3">
           <Logo variant="full" />
         </div>
 
-        <ul className="hidden items-center lg:flex">
-          {publicNavLinks.map((link, i) => (
-            <li key={link.href} className="flex items-center">
-              {i > 0 && (
-                <span className="mx-3 text-brand-black/20" aria-hidden>
-                  |
-                </span>
-              )}
-              <Link
-                href={link.href}
-                className={cn(
-                  "text-sm font-semibold transition-colors",
-                  pathname === link.href
-                    ? "text-brand-blue"
-                    : "text-brand-black/80 hover:text-brand-blue"
+        <div className="hidden items-center justify-center gap-5 lg:flex">
+          <ul className="flex items-center">
+            {publicNavLinks.map((link, i) => (
+              <li key={link.href} className="flex items-center">
+                {i > 0 && (
+                  <span className="mx-3 text-brand-black/20" aria-hidden>
+                    |
+                  </span>
                 )}
-              >
-                {link.label}
-              </Link>
-            </li>
-          ))}
-        </ul>
+                <Link
+                  href={link.href}
+                  className={cn(
+                    "text-sm font-semibold transition-colors",
+                    pathname === link.href
+                      ? "text-brand-blue"
+                      : "text-brand-black/80 hover:text-brand-blue"
+                  )}
+                >
+                  {link.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+          <PwaInstallButton />
+        </div>
 
-        <div className="flex shrink-0 items-center gap-1.5 sm:gap-3">
+        <div className="flex shrink-0 items-center justify-end gap-1.5 sm:gap-3">
           <Link
             href={authHref}
             className="hidden items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold text-brand-black/80 transition-colors hover:text-brand-blue lg:flex"
@@ -122,6 +126,9 @@ export function Navbar() {
                   </Link>
                 </li>
               ))}
+              <li className="px-3 py-2">
+                <PwaInstallButton className="w-full [&>button]:w-full" />
+              </li>
             </ul>
           </motion.div>
         )}

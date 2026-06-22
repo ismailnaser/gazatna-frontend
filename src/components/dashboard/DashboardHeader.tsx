@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { LogOut } from "lucide-react";
 import { Logo } from "@/components/atoms/Logo";
+import { PwaInstallButton } from "@/components/molecules/PwaInstallButton";
 import { ConfirmDialog } from "@/components/molecules/ConfirmDialog";
 import { useAuth } from "@/context/AuthContext";
 import { roleLabels } from "@/data/navigation";
@@ -13,12 +14,16 @@ export function DashboardHeader() {
 
   return (
     <>
-      <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-neutral-200 bg-white px-4 sm:px-6">
-        <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+      <header className="sticky top-0 z-40 flex h-16 items-center justify-between gap-3 border-b border-neutral-200 bg-white px-4 sm:px-6">
+        <div className="flex min-w-0 shrink-0 items-center gap-2 sm:gap-3">
           <Logo variant="icon" />
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex min-w-0 flex-1 justify-center">
+          <PwaInstallButton compact />
+        </div>
+
+        <div className="flex shrink-0 items-center gap-4">
           {user && (
             <div className="text-end">
               <p className="text-sm font-semibold text-p-black">{user.name}</p>
