@@ -270,6 +270,8 @@ export const api = {
       : apiFetch<unknown>("/admin/students/", { method: "POST", body: JSON.stringify(data) }),
   updateAdminStudent: (id: string, data: unknown) =>
     apiFetch<unknown>(`/admin/students/${id}/`, { method: "PATCH", body: JSON.stringify(data) }),
+  deleteAdminStudent: (id: string) =>
+    apiFetch<void>(`/admin/students/${id}/`, { method: "DELETE" }),
   resetAdminStudentPassword: (id: string) =>
     apiFetch<unknown>(`/admin/students/${id}/reset-password/`, { method: "POST" }),
   getAdminStudentDocuments: (id: string) => apiList<unknown>(`/admin/students/${id}/documents/`),
@@ -297,6 +299,8 @@ export const api = {
     apiFetch<unknown>("/admin/academic-years/", { method: "POST", body: JSON.stringify(data) }),
   updateAdminAcademicYear: (id: string, data: unknown) =>
     apiFetch<unknown>(`/admin/academic-years/${id}/`, { method: "PATCH", body: JSON.stringify(data) }),
+  deleteAdminAcademicYear: (id: string) =>
+    apiFetch<void>(`/admin/academic-years/${id}/`, { method: "DELETE" }),
   setAdminAcademicYearActive: (id: string) =>
     apiFetch<unknown>(`/admin/academic-years/${id}/set-active/`, { method: "POST" }),
   setAdminAcademicCurrentTerm: (yearId: string, termId: string) =>
@@ -441,6 +445,7 @@ export const api = {
     apiFetch<void>(`/admin/content/news/${id}/`, { method: "DELETE" }),
 
   getTeacherProfile: () => apiFetch<unknown>("/teacher/profile/"),
+  getTeacherSchedules: () => apiList<unknown>("/teacher/schedules/"),
   getTeacherClasses: () => apiList<unknown>("/teacher/classes/"),
   getTeacherClassStudents: (classId: string) =>
     apiList<unknown>(`/teacher/classes/${classId}/`),

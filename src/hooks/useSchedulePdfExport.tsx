@@ -1,9 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { exportSchedulePdf } from "@/lib/exportSchedulePdf";
+import {
+  exportSchedulePdf,
+  exportTeacherSchedulePdf,
+  type SchedulePdfVariant,
+} from "@/lib/exportSchedulePdf";
 import { api } from "@/lib/api";
-import type { Schedule } from "@/types/schedules";
+import type { Schedule, TeacherScheduleRow } from "@/types/schedules";
 
 const DEFAULT_SCHOOL_NAME = "مدرسة غَزتنا";
 
@@ -22,10 +26,15 @@ export function useSchedulePdfExport(onError?: (message: string) => void) {
   }, []);
 
   const requestExport = useCallback(
-    async (schedule: Schedule) => {
+    async (schedule: Schedule, variant?: SchedulePdfVariant) => {
       setExportingId(schedule.id);
       try {
-        await exportSchedulePdf(schedule, { schoolName });
+        await exportSchedulePdf(schedule, {
+          schoolName,
+          variant:
+            variant ??
+            (schedule.scheduleType === "exam" ? "exam" : "full"),
+        });
       } catch {
         onError?.("تعذر تصدير ملف PDF");
       } finally {
@@ -35,5 +44,19 @@ export function useSchedulePdfExport(onError?: (message: string) => void) {
     [onError, schoolName]
   );
 
-  return { exportingId, requestExport };
+  const requestTeacherExport = useCallback(
+    async (rows: TeacherScheduleRow[], title?: string) => {
+      setExportingId("teacher");
+      try {
+        await exportTeacherSchedulePdf(rows, { schoolName, title });
+      } catch {
+        onError?.("تعذر تصدير ملف PDF");
+      } finally {
+        setExportingId(null);
+      }
+    },
+    [onError, schoolName]
+  );
+
+  return { exportingId, requestExport, requestTeacherExport };
 }

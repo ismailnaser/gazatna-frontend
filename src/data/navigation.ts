@@ -46,6 +46,7 @@ const parentNav: NavItem[] = [
 
 const teacherNav: NavItem[] = [
   { href: "/teacher", label: "فصولي", icon: GraduationCap },
+  { href: "/teacher/schedules", label: "جدول حصصي", icon: CalendarDays },
   { href: "/teacher/homework", label: "الواجبات", icon: PenLine },
   { href: "/teacher/quizzes", label: "الاختبارات", icon: ClipboardList },
   { href: "/teacher/grade-schemes", label: "تقسيمة العلامات والتقييمات", icon: Layers },

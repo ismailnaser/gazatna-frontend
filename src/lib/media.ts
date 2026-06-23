@@ -54,8 +54,13 @@ export async function downloadMediaFile(url: string, filename: string): Promise<
 }
 
 export function isImageAttachment(url?: string | null, name?: string | null): boolean {
-  const probe = (name || url || "").toLowerCase();
-  return /\.(jpe?g|png|gif|webp|bmp|svg)$/i.test(probe);
+  const imagePattern = /\.(jpe?g|png|gif|webp|bmp|svg)(\?.*)?$/i;
+  return [name, url].some((value) => value && imagePattern.test(value.toLowerCase()));
+}
+
+export function isPdfAttachment(url?: string | null, name?: string | null): boolean {
+  const pdfPattern = /\.pdf(\?.*)?$/i;
+  return [name, url].some((value) => value && pdfPattern.test(value.toLowerCase()));
 }
 
 export function attachmentLabel(url?: string | null, name?: string | null): string {

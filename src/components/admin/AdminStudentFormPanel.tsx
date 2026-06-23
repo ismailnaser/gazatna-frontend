@@ -11,6 +11,7 @@ import { useAuth } from "@/context/AuthContext";
 import { canManageAdminClasses, isAdminRole } from "@/lib/adminRoles";
 import type { AdminStudent } from "@/types";
 import type { Grade, SchoolClass } from "@/types/teacher";
+import { nationalIdInputProps, validateStudentNationalId } from "@/lib/nationalId";
 import { FileText, Plus, X } from "lucide-react";
 
 function FormSection({
@@ -41,6 +42,7 @@ type AdminStudentFormPanelProps = {
   classes: SchoolClass[];
   grades?: Grade[];
   editingClassId?: string;
+  existingStudents?: AdminStudent[];
   docRows: DocRow[];
   onDocRowsChange: (rows: DocRow[]) => void;
   error?: string;
@@ -55,6 +57,7 @@ export function AdminStudentFormPanel({
   classes,
   grades,
   editingClassId = "",
+  existingStudents = [],
   docRows,
   onDocRowsChange,
   error,
@@ -68,10 +71,27 @@ export function AdminStudentFormPanel({
   const [selectedClassIds, setSelectedClassIds] = useState<string[]>(
     editingClassId ? [editingClassId] : []
   );
+  const [formError, setFormError] = useState("");
 
   useEffect(() => {
     setSelectedClassIds(editingClassId ? [editingClassId] : []);
   }, [editingClassId, mode]);
+
+  function handleFormSubmit(e: React.FormEvent<HTMLFormElement>) {
+    const form = new FormData(e.currentTarget);
+    const nationalIdError = validateStudentNationalId(String(form.get("nationalId") ?? ""), {
+      required: true,
+      existingStudents,
+      excludeStudentId: editing?.id,
+    });
+    if (nationalIdError) {
+      e.preventDefault();
+      setFormError(nationalIdError);
+      return;
+    }
+    setFormError("");
+    onSubmit(e);
+  }
 
   return (
     <article className="overflow-hidden rounded-2xl border border-brand-blue/20 bg-white shadow-sm">
@@ -100,9 +120,9 @@ export function AdminStudentFormPanel({
       </header>
 
       <div className="space-y-4 p-4 sm:p-5">
-        {error ? <Alert variant="error">{error}</Alert> : null}
+        {error || formError ? <Alert variant="error">{error || formError}</Alert> : null}
 
-        <form onSubmit={onSubmit} className="space-y-4">
+        <form onSubmit={handleFormSubmit} className="space-y-4">
           <FormSection
             title="البيانات الأساسية"
             description="اسم الطالب والفصل الدراسي المسجّل فيه."
@@ -118,8 +138,9 @@ export function AdminStudentFormPanel({
                 label="رقم الهوية"
                 name="nationalId"
                 defaultValue={editing?.nationalId ?? ""}
-                placeholder="رقم هوية الطالب"
-                dir="ltr"
+                placeholder="9 أرقام"
+                required
+                {...nationalIdInputProps}
               />
 
               {classes.length === 0 ? (
@@ -130,7 +151,7 @@ export function AdminStudentFormPanel({
                       أضف الفصول أولاً
                     </Link>
                   ) : (
-                    <span>تواصل مع إدارة الفصول لإضافتها.</span>
+                    <span>تواصل مع الإدارة الكلية لإضافة المراحل والفصول.</span>
                   )}
                 </div>
               ) : (

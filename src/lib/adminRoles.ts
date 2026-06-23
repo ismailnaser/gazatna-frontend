@@ -52,7 +52,7 @@ export const adminRoleLabels: Record<AdminRole, string> = {
 export const adminRoleDescriptions: Record<AdminRole, string> = {
   admin: "صلاحية كاملة — جميع أقسام الإدارة: المستخدمون، التحليلات، إعدادات الموقع، والتنبيهات.",
   admin_students: "إدارة الطلاب وطلبات التسجيل.",
-  admin_academics: "إدارة الفصول والمواد وتحليلات نسب النجاح.",
+  admin_academics: "إدارة المواد والجداول والسنوات الدراسية وتحليلات نسب النجاح.",
   admin_finance: "إدارة المالية، تحليلات التحصيل، والتنبيهات (رسوم متأخرة).",
   admin_content: "إدارة محتوى الموقع، الأخبار، ورسائل التواصل.",
   admin_staff: "إدارة الكادر التعليمي وملفات المعلمين.",
@@ -64,7 +64,7 @@ const allAdminNav: NavItem[] = [
   { href: "/admin/notifications", label: "التنبيهات", icon: Bell },
   { href: "/admin/students", label: "الطلاب", icon: Users },
   { href: "/admin/admissions", label: "طلبات التسجيل", icon: ClipboardList },
-  { href: "/admin/classes", label: "الفصول", icon: Layers },
+  { href: "/admin/classes", label: "المراحل الدراسية", icon: Layers },
   { href: "/admin/academic-years", label: "السنوات الدراسية", icon: CalendarRange },
   { href: "/admin/schedules", label: "الجداول", icon: CalendarDays },
   { href: "/admin/subjects", label: "المواد", icon: BookMarked },
@@ -84,7 +84,7 @@ const roleNavPaths: Record<AdminRole, string[]> = {
     "/admin/admissions",
     "/admin/schedules",
   ],
-  admin_academics: ["/admin", "/admin/classes", "/admin/academic-years", "/admin/subjects", "/admin/schedules", "/admin/analytics"],
+  admin_academics: ["/admin", "/admin/academic-years", "/admin/subjects", "/admin/schedules", "/admin/analytics"],
   admin_finance: ["/admin", "/admin/finance", "/admin/notifications", "/admin/analytics"],
   admin_content: ["/admin", "/admin/content", "/admin/messages"],
   admin_staff: ["/admin", "/admin/teachers"],
@@ -108,7 +108,7 @@ export function isSuperAdmin(role: string): role is typeof SUPER_ADMIN_ROLE {
 }
 
 export function canManageAdminClasses(role: AdminRole): boolean {
-  return role === SUPER_ADMIN_ROLE || role === "admin_academics";
+  return role === SUPER_ADMIN_ROLE;
 }
 
 export function getAdminNav(role: AdminRole): NavItem[] {

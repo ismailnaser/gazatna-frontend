@@ -1,34 +1,24 @@
 "use client";
 
 import Link from "next/link";
-import { Badge } from "@/components/atoms/Badge";
 import { Button } from "@/components/atoms/Button";
-import { formatClassLabel, PAYMENT_STATUS_LABELS } from "@/lib/adminStudents";
+import { formatClassLabel } from "@/lib/adminStudents";
 import { cn } from "@/lib/utils";
 import type { AdminStudent } from "@/types";
-import { FileText, KeyRound, Pencil, Unlock } from "lucide-react";
+import { FileText, KeyRound, Pencil, Trash2 } from "lucide-react";
 
-const STUDENTS_TABLE = "w-full min-w-[960px] border-collapse border border-neutral-200 text-sm";
+const STUDENTS_TABLE = "w-full min-w-[880px] border-collapse border border-neutral-200 text-sm";
 const STUDENTS_TH =
   "border-b border-e border-neutral-200 bg-neutral-50 px-3 py-3 text-start text-xs font-bold text-p-black/55 last:border-e-0 sm:px-4";
 const STUDENTS_TD =
   "border-b border-e border-neutral-200 px-3 py-3 align-top last:border-e-0 sm:px-4";
-
-function paymentBadgeVariant(
-  status: AdminStudent["paymentStatus"]
-): "default" | "success" | "warning" | "danger" {
-  if (status === "approved") return "success";
-  if (status === "pending") return "warning";
-  if (status === "rejected") return "danger";
-  return "default";
-}
 
 type AdminStudentsTableProps = {
   students: AdminStudent[];
   hasActiveFilters: boolean;
   onEdit: (student: AdminStudent) => void;
   onResetPassword: (student: AdminStudent) => void;
-  onGrantAccess: (student: AdminStudent) => void;
+  onDelete: (student: AdminStudent) => void;
 };
 
 export function AdminStudentsTable({
@@ -36,7 +26,7 @@ export function AdminStudentsTable({
   hasActiveFilters,
   onEdit,
   onResetPassword,
-  onGrantAccess,
+  onDelete,
 }: AdminStudentsTableProps) {
   if (students.length === 0) {
     return (
@@ -50,19 +40,19 @@ export function AdminStudentsTable({
     <div className="-mx-3 overflow-x-auto sm:mx-0">
       <table className={STUDENTS_TABLE}>
         <colgroup>
-          <col className="w-[20%]" />
-          <col className="w-[13%]" />
+          <col className="w-[11%]" />
+          <col className="w-[22%]" />
           <col className="w-[14%]" />
-          <col className="w-[12%]" />
-          <col className="w-[12%]" />
-          <col className="w-[29%]" />
+          <col className="w-[16%]" />
+          <col className="w-[13%]" />
+          <col className="w-[24%]" />
         </colgroup>
         <thead>
           <tr>
-            <th className={STUDENTS_TH}>الطالب</th>
+            <th className={STUDENTS_TH}>رقم الطالب</th>
+            <th className={STUDENTS_TH}>اسم الطالب</th>
+            <th className={STUDENTS_TH}>رقم هوية الطالب</th>
             <th className={STUDENTS_TH}>الفصل</th>
-            <th className={STUDENTS_TH}>الرسوم</th>
-            <th className={STUDENTS_TH}>حالة الدفع</th>
             <th className={STUDENTS_TH}>الوثائق</th>
             <th className={STUDENTS_TH}>إجراءات</th>
           </tr>
@@ -70,42 +60,17 @@ export function AdminStudentsTable({
         <tbody>
           {students.map((student, index) => (
             <tr key={student.id} className={cn(index % 2 === 1 && "bg-neutral-50/50")}>
-              <td className={STUDENTS_TD}>
-                <div className="space-y-1">
-                  <p className="font-semibold leading-snug text-p-black">{student.name}</p>
-                  <p className="text-xs text-p-black/50" dir="ltr">
-                    {student.studentNumber ? `#${student.studentNumber}` : "—"}
-                    {student.nationalId ? ` · ${student.nationalId}` : ""}
-                  </p>
-                  {student.username ? (
-                    <p className="text-[11px] text-p-black/40" dir="ltr">
-                      @{student.username}
-                    </p>
-                  ) : null}
-                </div>
+              <td className={cn(STUDENTS_TD, "font-medium text-p-black")} dir="ltr">
+                {student.studentNumber ? `#${student.studentNumber}` : "—"}
+              </td>
+              <td className={cn(STUDENTS_TD, "font-semibold leading-snug text-p-black")}>
+                {student.name}
+              </td>
+              <td className={cn(STUDENTS_TD, "text-p-black/75")} dir="ltr">
+                {student.nationalId || "—"}
               </td>
               <td className={cn(STUDENTS_TD, "font-medium leading-snug text-p-black/75")}>
                 {formatClassLabel(student.grade, student.section)}
-              </td>
-              <td className={STUDENTS_TD}>
-                {student.balance && (student.balance.total > 0 || student.balance.paid > 0) ? (
-                  <div className="space-y-1">
-                    <p className="font-bold text-p-green" dir="ltr">
-                      {student.balance.paid} ₪
-                    </p>
-                    <p className="text-xs text-p-black/50">مدفوع</p>
-                    <p className="text-xs text-p-black/45" dir="ltr">
-                      متبقي {Math.max(0, student.balance.remaining)} ₪
-                    </p>
-                  </div>
-                ) : (
-                  <span className="text-p-black/40">—</span>
-                )}
-              </td>
-              <td className={STUDENTS_TD}>
-                <Badge variant={paymentBadgeVariant(student.paymentStatus)}>
-                  {PAYMENT_STATUS_LABELS[student.paymentStatus]}
-                </Badge>
               </td>
               <td className={STUDENTS_TD}>
                 <Link
@@ -129,20 +94,20 @@ export function AdminStudentsTable({
                     تعديل
                   </Button>
                   <Button
-                    variant="outline"
-                    className="w-full justify-center gap-1.5 px-2 py-1.5 text-xs"
-                    onClick={() => onGrantAccess(student)}
-                  >
-                    <Unlock className="h-3.5 w-3.5 shrink-0" />
-                    فتح مؤقت
-                  </Button>
-                  <Button
                     variant="ghost"
                     className="w-full justify-center gap-1.5 px-2 py-1.5 text-xs"
                     onClick={() => onResetPassword(student)}
                   >
                     <KeyRound className="h-3.5 w-3.5 shrink-0" />
                     كلمة المرور
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-center gap-1.5 px-2 py-1.5 text-xs text-p-red hover:text-p-red"
+                    onClick={() => onDelete(student)}
+                  >
+                    <Trash2 className="h-3.5 w-3.5 shrink-0" />
+                    حذف
                   </Button>
                 </div>
               </td>

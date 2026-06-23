@@ -1,9 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { Button } from "@/components/atoms/Button";
+import { forwardRef, useEffect, useImperativeHandle, useMemo, useState } from "react";
 import { Input } from "@/components/atoms/Input";
-import { Select } from "@/components/atoms/Select";
 import {
   buildSelectOptions,
   subjectsForClasses,
@@ -13,16 +11,20 @@ import { formatScheduleTime12, getClassLessonEndTime } from "@/lib/scheduleTime"
 import type { ClassScheduleEntry } from "@/types/schedules";
 import {
   CLASS_DURATION_OPTIONS,
-  CLASS_PERIOD_SUGGESTIONS,
-  emptyClassEntry,
-  getClassLessonConflict,
+  classScheduleCellKey,
+  emptyClassScheduleGridCell,
+  parseClassScheduleGrid,
   parseClassDurationMinutes,
-  sortClassScheduleEntries,
+  reconcileClassScheduleColumns,
+  resizeClassScheduleGrid,
+  serializeClassScheduleGrid,
+  getClassLessonMinStartTime,
+  type ClassScheduleGridState,
   WEEK_DAYS,
 } from "@/types/schedules";
 import type { Subject, TeacherProfile } from "@/types/teacher";
 import { cn } from "@/lib/utils";
-import { ChevronDown, ChevronUp, Plus, Trash2 } from "lucide-react";
+import { Clock3 } from "lucide-react";
 
 type ClassScheduleEntryEditorProps = {
   entries: ClassScheduleEntry[];
@@ -32,154 +34,262 @@ type ClassScheduleEntryEditorProps = {
   teachers: TeacherProfile[];
 };
 
-function entryKey(entry: ClassScheduleEntry, index: number) {
-  return `${entry.day}-${index}-${entry.period}-${entry.time}`;
+export type ClassScheduleEntryEditorHandle = {
+  getGridState: () => ClassScheduleGridState;
+  getEntries: () => ClassScheduleEntry[];
+};
+
+function pushGridChange(
+  state: ClassScheduleGridState,
+  onChange: (entries: ClassScheduleEntry[]) => void
+) {
+  onChange(serializeClassScheduleGrid(state));
 }
 
-export function ClassScheduleEntryEditor({
-  entries,
+function clampCount(value: number, min: number, max: number) {
+  if (!Number.isFinite(value)) return min;
+  return Math.min(max, Math.max(min, value));
+}
+
+function isNumericDraft(value: string) {
+  return value === "" || /^\d+$/.test(value);
+}
+
+function commitNumericDraft(
+  draft: string | null,
+  current: number,
+  min: number,
+  max: number,
+  onCommit: (value: number) => void
+) {
+  if (draft === null) return;
+  if (draft === "") {
+    onCommit(current);
+    return;
+  }
+  const parsed = Number(draft);
+  if (!Number.isFinite(parsed)) {
+    onCommit(current);
+    return;
+  }
+  onCommit(clampCount(parsed, min, max));
+}
+
+function CompactSelect({
+  value,
   onChange,
-  classIds,
-  subjects,
-  teachers,
-}: ClassScheduleEntryEditorProps) {
-  const [openDays, setOpenDays] = useState<Record<string, boolean>>(() =>
-    Object.fromEntries(WEEK_DAYS.map((day, index) => [day, index === 0]))
+  options,
+  disabled,
+  className,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  options: Array<{ value: string; label: string }>;
+  disabled?: boolean;
+  className?: string;
+}) {
+  return (
+    <select
+      value={value}
+      disabled={disabled}
+      onChange={(event) => onChange(event.target.value)}
+      className={cn(
+        "w-full rounded-lg border border-neutral-200 bg-white px-2 py-1.5 text-xs text-p-black",
+        "focus:border-brand-blue focus:outline-none focus:ring-2 focus:ring-brand-blue/15",
+        "disabled:cursor-not-allowed disabled:bg-neutral-100 disabled:text-p-black/45",
+        className
+      )}
+    >
+      {options.map((option) => (
+        <option key={`${option.value}-${option.label}`} value={option.value}>
+          {option.label}
+        </option>
+      ))}
+    </select>
   );
-  const [lessonErrors, setLessonErrors] = useState<
-    Record<string, { period?: string; time?: string; duration?: string }>
-  >({});
+}
+
+export const ClassScheduleEntryEditor = forwardRef<
+  ClassScheduleEntryEditorHandle,
+  ClassScheduleEntryEditorProps
+>(function ClassScheduleEntryEditor(
+  { entries, onChange, classIds, subjects, teachers },
+  ref
+) {
+  const [grid, setGrid] = useState<ClassScheduleGridState>(() => {
+    const parsed = parseClassScheduleGrid(entries);
+    return {
+      ...parsed,
+      columns: reconcileClassScheduleColumns(parsed.columns, 0),
+    };
+  });
+  const [lessonsDraft, setLessonsDraft] = useState<string | null>(null);
+  const [daysDraft, setDaysDraft] = useState<string | null>(null);
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      getGridState: () => grid,
+      getEntries: () => serializeClassScheduleGrid(grid),
+    }),
+    [grid]
+  );
 
   const availableSubjects = useMemo(
     () => subjectsForClasses(subjects, classIds),
     [subjects, classIds]
   );
 
-  const entriesByDay = useMemo(() => {
-    const grouped: Record<string, ClassScheduleEntry[]> = Object.fromEntries(
-      WEEK_DAYS.map((day) => [day, [] as ClassScheduleEntry[]])
-    );
-    for (const entry of entries) {
-      if (grouped[entry.day]) {
-        grouped[entry.day].push(entry);
-      } else if (entry.day) {
-        grouped[entry.day] = [entry];
-      }
-    }
-    for (const day of WEEK_DAYS) {
-      grouped[day] = sortClassScheduleEntries(grouped[day]);
-    }
-    return grouped;
-  }, [entries]);
-
-  function setDayEntries(day: string, dayEntries: ClassScheduleEntry[]) {
-    const otherDays = entries.filter((entry) => entry.day !== day);
-    onChange(sortClassScheduleEntries([...otherDays, ...dayEntries]));
-  }
-
-  function addLesson(day: string) {
+  useEffect(() => {
     if (classIds.length === 0) return;
-    setOpenDays((prev) => ({ ...prev, [day]: true }));
-    onChange(sortClassScheduleEntries([...entries, emptyClassEntry(day)]));
+    const subjectNames = new Set(availableSubjects.map((subject) => subject.name));
+    setGrid((prev) => {
+      let changed = false;
+      const cells = { ...prev.cells };
+      for (const [key, cell] of Object.entries(cells)) {
+        let nextCell = cell;
+        if (cell.subject && !subjectNames.has(cell.subject)) {
+          nextCell = { ...nextCell, subject: "", teacher: "" };
+          changed = true;
+        } else if (cell.subject && cell.teacher) {
+          const validTeachers = teachersForClassesAndSubject(
+            teachers,
+            subjects,
+            classIds,
+            cell.subject
+          );
+          if (!validTeachers.some((teacher) => teacher.name === cell.teacher)) {
+            nextCell = { ...nextCell, teacher: "" };
+            changed = true;
+          }
+        }
+        if (nextCell !== cell) {
+          cells[key] = nextCell;
+        }
+      }
+      if (!changed) return prev;
+      const next = { ...prev, cells };
+      pushGridChange(next, onChange);
+      return next;
+    });
+  }, [classIds, availableSubjects, subjects, teachers]);
+
+  const activeDays = useMemo(
+    () => WEEK_DAYS.slice(0, grid.daysPerWeek),
+    [grid.daysPerWeek]
+  );
+
+  const classesSelected = classIds.length > 0;
+
+  function updateGrid(next: ClassScheduleGridState) {
+    setGrid(next);
+    pushGridChange(next, onChange);
   }
 
-  function lessonErrorKey(day: string, lessonIndex: number) {
-    return `${day}-${lessonIndex}`;
-  }
-
-  function clearLessonError(
-    day: string,
-    lessonIndex: number,
-    field?: "period" | "time" | "duration"
-  ) {
-    const key = lessonErrorKey(day, lessonIndex);
-    setLessonErrors((prev) => {
-      const current = prev[key];
-      if (!current) return prev;
-      if (!field) {
-        const next = { ...prev };
-        delete next[key];
-        return next;
-      }
-      const nextEntry = { ...current };
-      delete nextEntry[field];
-      if (field === "time" || field === "duration") {
-        delete nextEntry.time;
-        delete nextEntry.duration;
-      }
-      if (!nextEntry.period && !nextEntry.time && !nextEntry.duration) {
-        const next = { ...prev };
-        delete next[key];
-        return next;
-      }
-      return { ...prev, [key]: nextEntry };
+  function setLessonsPerDay(value: number) {
+    setGrid((prev) => {
+      const resized = resizeClassScheduleGrid(prev, clampCount(value, 1, 8), prev.daysPerWeek);
+      return {
+        ...resized,
+        columns: reconcileClassScheduleColumns(resized.columns, 0),
+      };
     });
   }
 
-  function tryUpdateLesson(
-    day: string,
-    lessonIndex: number,
-    patch: Partial<ClassScheduleEntry>,
-    field: "period" | "time" | "duration" | "other"
-  ) {
-    const dayEntries = entriesByDay[day];
-    const conflict = getClassLessonConflict(dayEntries, lessonIndex, patch);
-    const key = lessonErrorKey(day, lessonIndex);
-
-    if (conflict && field !== "other") {
-      if (field === "period") {
-        setLessonErrors((prev) => ({
-          ...prev,
-          [key]: { ...prev[key], period: conflict },
-        }));
-      } else {
-        setLessonErrors((prev) => ({
-          ...prev,
-          [key]: { ...prev[key], time: conflict, duration: conflict },
-        }));
-      }
-      return;
-    }
-
-    clearLessonError(day, lessonIndex, field === "other" ? undefined : field);
-    updateLesson(day, lessonIndex, patch);
+  function setDaysPerWeek(value: number) {
+    setGrid((prev) => {
+      const resized = resizeClassScheduleGrid(prev, prev.lessonsPerDay, clampCount(value, 1, 7));
+      return {
+        ...resized,
+        columns: reconcileClassScheduleColumns(resized.columns, 0),
+      };
+    });
   }
 
-  function updateLesson(day: string, lessonIndex: number, patch: Partial<ClassScheduleEntry>) {
-    const dayEntries = [...entriesByDay[day]];
-    dayEntries[lessonIndex] = { ...dayEntries[lessonIndex], ...patch, day };
-    setDayEntries(day, dayEntries);
+  function updateColumn(lessonIndex: number, patch: Partial<ClassScheduleGridState["columns"][number]>) {
+    const columns = grid.columns.map((column, index) =>
+      index === lessonIndex ? { ...column, ...patch } : column
+    );
+    const reconciled = reconcileClassScheduleColumns(columns, lessonIndex);
+    updateGrid({ ...grid, columns: reconciled });
+  }
+
+  function updateCell(
+    day: string,
+    lessonIndex: number,
+    patch: Partial<ClassScheduleGridState["cells"][string]>
+  ) {
+    const key = classScheduleCellKey(day, lessonIndex);
+    const cells = {
+      ...grid.cells,
+      [key]: { ...(grid.cells[key] ?? emptyClassScheduleGridCell()), ...patch },
+    };
+    updateGrid({ ...grid, cells });
   }
 
   function handleSubjectChange(day: string, lessonIndex: number, subject: string) {
-    const entry = entriesByDay[day][lessonIndex];
-    const validTeachers = teachersForClassesAndSubject(teachers, subjects, classIds, subject);
-    const teacher = validTeachers.some((item) => item.name === entry.teacher) ? entry.teacher : "";
-    updateLesson(day, lessonIndex, { subject, teacher });
+    const key = classScheduleCellKey(day, lessonIndex);
+    const current = grid.cells[key] ?? emptyClassScheduleGridCell();
+    const validTeachers = subject
+      ? teachersForClassesAndSubject(teachers, subjects, classIds, subject)
+      : [];
+    const teacher = validTeachers.some((item) => item.name === current.teacher)
+      ? current.teacher
+      : "";
+    updateCell(day, lessonIndex, { subject, teacher });
   }
 
-  function removeLesson(day: string, lessonIndex: number) {
-    clearLessonError(day, lessonIndex);
-    setDayEntries(
-      day,
-      entriesByDay[day].filter((_, index) => index !== lessonIndex)
-    );
-  }
-
-  function toggleDay(day: string) {
-    setOpenDays((prev) => ({ ...prev, [day]: !prev[day] }));
-  }
-
-  const totalLessons = entries.length;
-  const classesSelected = classIds.length > 0;
+  const filledCells = useMemo(() => {
+    return Object.values(grid.cells).filter((cell) => cell.subject.trim()).length;
+  }, [grid.cells]);
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between gap-2">
-        <p className="text-sm font-semibold text-p-black">حصص الأسبوع</p>
-        <p className="text-xs text-p-black/50">
-          {totalLessons > 0 ? `${totalLessons} حصة` : "ابدأ بإضافة حصص لكل يوم"}
+    <div className="min-w-0 space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-brand-blue/15 bg-brand-blue/[0.04] px-3 py-2.5">
+        <div>
+          <p className="text-sm font-semibold text-p-black">جدول الحصص الأسبوعي</p>
+          <p className="mt-0.5 text-xs text-p-black/50">
+            {grid.daysPerWeek} أيام × {grid.lessonsPerDay} حصص يومياً
+          </p>
+        </div>
+        <p className="text-xs font-medium text-brand-blue">
+          {filledCells > 0 ? `${filledCells} حصة مُدخلة` : "ابدأ بتحديد الأوقات ثم المواد"}
         </p>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Input
+          label="عدد الحصص اليومية"
+          type="text"
+          inputMode="numeric"
+          pattern="[0-9]*"
+          value={lessonsDraft ?? String(grid.lessonsPerDay)}
+          onChange={(event) => {
+            const raw = event.target.value;
+            if (isNumericDraft(raw)) setLessonsDraft(raw);
+          }}
+          onBlur={() => {
+            commitNumericDraft(lessonsDraft, grid.lessonsPerDay, 1, 8, setLessonsPerDay);
+            setLessonsDraft(null);
+          }}
+          required
+        />
+        <Input
+          label="عدد أيام الأسبوع"
+          type="text"
+          inputMode="numeric"
+          pattern="[0-9]*"
+          value={daysDraft ?? String(grid.daysPerWeek)}
+          onChange={(event) => {
+            const raw = event.target.value;
+            if (isNumericDraft(raw)) setDaysDraft(raw);
+          }}
+          onBlur={() => {
+            commitNumericDraft(daysDraft, grid.daysPerWeek, 1, 7, setDaysPerWeek);
+            setDaysDraft(null);
+          }}
+          required
+        />
       </div>
 
       {!classesSelected ? (
@@ -190,204 +300,188 @@ export function ClassScheduleEntryEditor({
         <p className="rounded-xl border border-dashed border-neutral-200 px-4 py-4 text-center text-sm text-neutral-500">
           لا توجد مواد مرتبطة بالفصول المختارة. اربط المواد بالفصول من صفحة المواد أولاً.
         </p>
-      ) : null}
+      ) : (
+        <div className="min-w-0 space-y-3">
+          <div>
+            <p className="mb-2 text-xs font-semibold text-p-black/70">أوقات الحصص (تنطبق على كل الأيام)</p>
+            <div className="min-w-0 overflow-x-auto overscroll-x-contain rounded-xl border border-neutral-200 bg-neutral-50/60 p-2">
+              <div className="flex min-w-max gap-2">
+                {Array.from({ length: grid.lessonsPerDay }, (_, lessonIndex) => {
+                  const column = grid.columns[lessonIndex];
+                  const endTime = column.time
+                    ? getClassLessonEndTime(column.time, parseClassDurationMinutes(column.duration))
+                    : null;
+                  const minStartTime = getClassLessonMinStartTime(grid.columns, lessonIndex);
 
-      <div className="space-y-2">
-        {WEEK_DAYS.map((day) => {
-          const dayEntries = entriesByDay[day];
-          const isOpen = openDays[day] ?? false;
-          const lessonCount = dayEntries.length;
+                  return (
+                    <div
+                      key={lessonIndex}
+                      className="w-44 shrink-0 rounded-xl border border-neutral-200 bg-white p-2.5 shadow-sm"
+                    >
+                      <div className="mb-2 flex items-center gap-2">
+                        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-brand-blue text-[11px] font-bold text-white">
+                          {lessonIndex + 1}
+                        </span>
+                        <p className="text-xs font-bold text-p-black">
+                          {column.period || `الحصة ${lessonIndex + 1}`}
+                        </p>
+                      </div>
+                      <div className="space-y-2">
+                        <Input
+                          type="time"
+                          value={column.time}
+                          min={minStartTime ?? undefined}
+                          onChange={(event) =>
+                            updateColumn(lessonIndex, { time: event.target.value })
+                          }
+                          className="px-2 py-1.5 text-xs"
+                        />
+                        {minStartTime ? (
+                          <p className="text-[10px] leading-snug text-p-black/45">
+                            لا يمكن أن يبدأ قبل {formatScheduleTime12(minStartTime)}
+                          </p>
+                        ) : null}
+                        <CompactSelect
+                          value={column.duration || "60"}
+                          onChange={(value) => updateColumn(lessonIndex, { duration: value })}
+                          options={CLASS_DURATION_OPTIONS.map((option) => ({
+                            value: option.value,
+                            label: option.label,
+                          }))}
+                        />
+                        {endTime ? (
+                          <p className="flex items-center gap-1 text-[11px] text-p-black/50">
+                            <Clock3 className="h-3 w-3" />
+                            {formatScheduleTime12(column.time)} – {formatScheduleTime12(endTime)}
+                          </p>
+                        ) : null}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
 
-          return (
-            <section
-              key={day}
-              className="overflow-hidden rounded-xl border border-neutral-200 bg-white"
-            >
-              <header className="flex items-center gap-2 border-b border-neutral-100 bg-neutral-50/80 px-3 py-2.5">
-                <button
-                  type="button"
-                  onClick={() => toggleDay(day)}
-                  className="flex min-w-0 flex-1 items-center gap-2 text-start"
-                >
-                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand-blue/10 text-brand-blue">
-                    {isOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-sm font-bold text-p-black">{day}</span>
-                    <span className="mt-0.5 block text-[11px] text-p-black/50">
-                      {lessonCount > 0 ? `${lessonCount} حصة` : "لا توجد حصص بعد"}
-                    </span>
-                  </span>
-                </button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="shrink-0 gap-1.5 px-3 py-1.5 text-xs"
-                  onClick={() => addLesson(day)}
-                  disabled={!classesSelected || availableSubjects.length === 0}
-                >
-                  <Plus className="h-3.5 w-3.5" />
-                  إضافة حصة
-                </Button>
-              </header>
+          <div className="min-w-0 overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-sm">
+            <div className="max-h-[min(58vh,560px)] overflow-auto overscroll-contain">
+              <table className="w-full min-w-[640px] border-collapse text-sm">
+                <thead className="sticky top-0 z-20 bg-white shadow-[0_1px_0_#e5e5e5]">
+                  <tr>
+                    <th className="sticky start-0 z-30 min-w-[76px] border-b border-neutral-200 bg-neutral-50 px-3 py-2.5 text-start text-xs font-bold text-p-black shadow-[inset_-1px_0_0_#e5e5e5]">
+                      اليوم
+                    </th>
+                    {Array.from({ length: grid.lessonsPerDay }, (_, lessonIndex) => (
+                      <th
+                        key={lessonIndex}
+                        className="min-w-[148px] border-b border-neutral-200 bg-neutral-50 px-2 py-2.5 text-center text-xs font-bold text-p-black"
+                      >
+                        {grid.columns[lessonIndex]?.period || `حصة ${lessonIndex + 1}`}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {activeDays.map((day, rowIndex) => (
+                    <tr
+                      key={day}
+                      className={cn(rowIndex % 2 === 1 ? "bg-neutral-50/70" : "bg-white")}
+                    >
+                      <td
+                        className={cn(
+                          "sticky start-0 z-10 border-b border-neutral-200 px-3 py-2 font-bold text-p-black shadow-[inset_-1px_0_0_#e5e5e5]",
+                          rowIndex % 2 === 1 ? "bg-neutral-50" : "bg-white"
+                        )}
+                      >
+                        <span className="text-xs sm:text-sm">{day}</span>
+                      </td>
+                      {Array.from({ length: grid.lessonsPerDay }, (_, lessonIndex) => {
+                        const cell =
+                          grid.cells[classScheduleCellKey(day, lessonIndex)] ??
+                          emptyClassScheduleGridCell();
+                        const teacherOptions = cell.subject
+                          ? teachersForClassesAndSubject(
+                              teachers,
+                              subjects,
+                              classIds,
+                              cell.subject
+                            )
+                          : [];
+                        const isFilled = Boolean(cell.subject.trim());
 
-              {isOpen ? (
-                <div className="space-y-3 p-3">
-                  {lessonCount === 0 ? (
-                    <p className="rounded-xl border border-dashed border-neutral-200 px-4 py-5 text-center text-sm text-neutral-500">
-                      لم تُضف حصص ليوم {day} بعد. اضغط «إضافة حصة» لبدء التعبئة.
-                    </p>
-                  ) : (
-                    dayEntries.map((entry, lessonIndex) => {
-                      const teacherOptions = entry.subject
-                        ? teachersForClassesAndSubject(teachers, subjects, classIds, entry.subject)
-                        : [];
-                      const errorKey = lessonErrorKey(day, lessonIndex);
-                      const rowErrors = lessonErrors[errorKey];
-                      const usedPeriods = new Set(
-                        dayEntries
-                          .filter((_, index) => index !== lessonIndex)
-                          .map((item) => item.period.trim())
-                          .filter(Boolean)
-                      );
-                      const periodSuggestions = CLASS_PERIOD_SUGGESTIONS.filter(
-                        (option) => !usedPeriods.has(option)
-                      );
-                      const durationMinutes = parseClassDurationMinutes(entry.duration);
-                      const lessonEndTime = entry.time
-                        ? getClassLessonEndTime(entry.time, durationMinutes)
-                        : null;
-
-                      return (
-                        <div
-                          key={entryKey(entry, lessonIndex)}
-                          className="rounded-xl border border-neutral-100 bg-neutral-50/80 p-3"
-                        >
-                          <div className="mb-3 flex items-center justify-between gap-2">
-                            <p className="text-xs font-bold text-p-black/55">حصة {lessonIndex + 1}</p>
-                            <button
-                              type="button"
-                              onClick={() => removeLesson(day, lessonIndex)}
-                              className="inline-flex items-center gap-1 text-xs font-semibold text-p-red hover:underline"
+                        return (
+                          <td
+                            key={lessonIndex}
+                            className="border-b border-neutral-200 px-2 py-2 align-top"
+                          >
+                            <div
+                              className={cn(
+                                "space-y-1.5 rounded-lg border p-2 transition-colors",
+                                isFilled
+                                  ? "border-brand-blue/25 bg-brand-blue/[0.04]"
+                                  : "border-neutral-100 bg-neutral-50/40"
+                              )}
                             >
-                              <Trash2 className="h-3.5 w-3.5" />
-                              حذف
-                            </button>
-                          </div>
+                              <CompactSelect
+                                value={cell.subject}
+                                onChange={(value) => handleSubjectChange(day, lessonIndex, value)}
+                                options={buildSelectOptions(
+                                  availableSubjects.map((subject) => ({
+                                    value: subject.name,
+                                    label: subject.name,
+                                  })),
+                                  cell.subject,
+                                  "المادة"
+                                )}
+                              />
+                              <CompactSelect
+                                value={cell.teacher}
+                                onChange={(value) =>
+                                  updateCell(day, lessonIndex, { teacher: value })
+                                }
+                                disabled={!cell.subject || teacherOptions.length === 0}
+                                options={buildSelectOptions(
+                                  teacherOptions.map((teacher) => ({
+                                    value: teacher.name,
+                                    label: teacher.name,
+                                  })),
+                                  cell.teacher,
+                                  !cell.subject
+                                    ? "المعلم"
+                                    : teacherOptions.length === 0
+                                      ? "لا يوجد معلم"
+                                      : "المعلم"
+                                )}
+                              />
+                              <input
+                                value={cell.room}
+                                onChange={(event) =>
+                                  updateCell(day, lessonIndex, { room: event.target.value })
+                                }
+                                placeholder="القاعة"
+                                className="w-full rounded-lg border border-neutral-200 bg-white px-2 py-1.5 text-xs text-p-black placeholder:text-neutral-400 focus:border-brand-blue focus:outline-none focus:ring-2 focus:ring-brand-blue/15"
+                              />
+                            </div>
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
 
-                          <div className="grid gap-3 sm:grid-cols-2">
-                            <Input
-                              label="رقم الحصة"
-                              list={`period-suggestions-${day}-${lessonIndex}`}
-                              placeholder="مثال: الحصة الأولى"
-                              value={entry.period}
-                              onChange={(e) =>
-                                tryUpdateLesson(day, lessonIndex, { period: e.target.value }, "period")
-                              }
-                              error={rowErrors?.period}
-                              required
-                            />
-                            <datalist id={`period-suggestions-${day}-${lessonIndex}`}>
-                              {periodSuggestions.map((option) => (
-                                <option key={option} value={option} />
-                              ))}
-                            </datalist>
-                            <Input
-                              label="موعد الحصة"
-                              type="time"
-                              value={entry.time}
-                              onChange={(e) =>
-                                tryUpdateLesson(day, lessonIndex, { time: e.target.value }, "time")
-                              }
-                              error={rowErrors?.time}
-                              required
-                            />
-                            <Select
-                              id={`duration-${day}-${lessonIndex}`}
-                              label="مدة الحصة"
-                              value={entry.duration || "60"}
-                              onChange={(e) =>
-                                tryUpdateLesson(day, lessonIndex, { duration: e.target.value }, "duration")
-                              }
-                              error={rowErrors?.duration}
-                              options={CLASS_DURATION_OPTIONS.map((option) => ({
-                                value: option.value,
-                                label: option.label,
-                              }))}
-                              required
-                            />
-                            {lessonEndTime ? (
-                              <p className="text-xs text-p-black/55 sm:col-span-2">
-                                من {formatScheduleTime12(entry.time)} إلى {formatScheduleTime12(lessonEndTime)}
-                              </p>
-                            ) : null}
-                            <Select
-                              id={`subject-${day}-${lessonIndex}`}
-                              label="المادة"
-                              value={entry.subject}
-                              onChange={(e) => handleSubjectChange(day, lessonIndex, e.target.value)}
-                              options={buildSelectOptions(
-                                availableSubjects.map((subject) => ({
-                                  value: subject.name,
-                                  label: subject.name,
-                                })),
-                                entry.subject,
-                                "اختر المادة"
-                              )}
-                            />
-                            <Select
-                              id={`teacher-${day}-${lessonIndex}`}
-                              label="المعلم"
-                              value={entry.teacher}
-                              onChange={(e) => updateLesson(day, lessonIndex, { teacher: e.target.value })}
-                              disabled={!entry.subject || teacherOptions.length === 0}
-                              options={buildSelectOptions(
-                                teacherOptions.map((teacher) => ({
-                                  value: teacher.name,
-                                  label: teacher.name,
-                                })),
-                                entry.teacher,
-                                !entry.subject
-                                  ? "اختر المادة أولاً"
-                                  : teacherOptions.length === 0
-                                    ? "لا يوجد معلم لهذه المادة"
-                                    : "اختر المعلم"
-                              )}
-                            />
-                            <Input
-                              label="القاعة"
-                              value={entry.room}
-                              onChange={(e) => updateLesson(day, lessonIndex, { room: e.target.value })}
-                            />
-                            <Input
-                              label="ملاحظات"
-                              className="sm:col-span-2"
-                              value={entry.notes}
-                              onChange={(e) =>
-                                tryUpdateLesson(day, lessonIndex, { notes: e.target.value }, "other")
-                              }
-                            />
-                          </div>
-                        </div>
-                      );
-                    })
-                  )}
-                </div>
-              ) : null}
-            </section>
-          );
-        })}
-      </div>
+          <p className="text-[11px] text-p-black/45">
+            مرّر الجدول أفقياً أو عمودياً داخل الإطار. عمود «اليوم» ورأس الجدول يبقيان ثابتين أثناء
+            التمرير.
+          </p>
+        </div>
+      )}
 
-      {totalLessons === 0 ? (
-        <p
-          className={cn(
-            "rounded-xl border border-dashed border-neutral-200 px-4 py-5 text-center text-sm text-neutral-500"
-          )}
-        >
-          اختر يوماً من الأسبوع (يبدأ من السبت) ثم أضف الحصص مع رقم الحصة وموعدها.
-        </p>
-      ) : null}
+      <p className="text-xs text-p-black/45">
+        الصفوف تمثل أيام الأسبوع من السبت، والأعمدة تمثل الحصص اليومية.
+      </p>
     </div>
   );
-}
+});

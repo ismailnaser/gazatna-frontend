@@ -12,7 +12,9 @@ import { ConfirmDialog } from "@/components/molecules/ConfirmDialog";
 import { PageHeader } from "@/components/molecules/PageHeader";
 import { GradeSectionClassPicker } from "@/components/shared/GradeSectionClassPicker";
 import { useSchool } from "@/context/SchoolContext";
+import { useAuth } from "@/context/AuthContext";
 import { api } from "@/lib/api";
+import { canManageAdminClasses, isAdminRole } from "@/lib/adminRoles";
 import { mapGrades, mapSchoolClasses } from "@/lib/mapSchoolClass";
 import { teacherCountLabel, teachersAvailableForSubject, teachersForSubject } from "@/lib/adminSubjects";
 import { cn } from "@/lib/utils";
@@ -54,6 +56,9 @@ function StatChip({
 }
 
 export default function AdminSubjectsPage() {
+  const { user } = useAuth();
+  const canManageClasses =
+    user && isAdminRole(user.role) && canManageAdminClasses(user.role);
   const {
     subjects,
     teachers,
@@ -403,9 +408,13 @@ export default function AdminSubjectsPage() {
               {modalClasses.length === 0 ? (
                 <p className="text-sm text-p-black/60">
                   لا توجد فصول مسجّلة.{" "}
-                  <Link href="/admin/classes" className="font-semibold text-brand-blue hover:underline">
-                    أضف فصولاً أولاً
-                  </Link>
+                  {canManageClasses ? (
+                    <Link href="/admin/classes" className="font-semibold text-brand-blue hover:underline">
+                      أضف فصولاً أولاً
+                    </Link>
+                  ) : (
+                    <span>تواصل مع الإدارة الكلية لإضافة المراحل والفصول.</span>
+                  )}
                 </p>
               ) : (
                 <>

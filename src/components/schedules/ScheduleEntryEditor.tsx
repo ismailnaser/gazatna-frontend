@@ -1,8 +1,12 @@
 "use client";
 
+import { useRef } from "react";
 import { Button } from "@/components/atoms/Button";
 import { Input } from "@/components/atoms/Input";
-import { ClassScheduleEntryEditor } from "@/components/schedules/ClassScheduleEntryEditor";
+import {
+  ClassScheduleEntryEditor,
+  type ClassScheduleEntryEditorHandle,
+} from "@/components/schedules/ClassScheduleEntryEditor";
 import type {
   ClassScheduleEntry,
   ExamScheduleEntry,
@@ -19,6 +23,8 @@ type ScheduleEntryEditorProps = {
   classIds?: string[];
   subjects?: Subject[];
   teachers?: TeacherProfile[];
+  editorKey?: string;
+  classGridRef?: React.RefObject<ClassScheduleEntryEditorHandle | null>;
 };
 
 export function ScheduleEntryEditor({
@@ -28,6 +34,8 @@ export function ScheduleEntryEditor({
   classIds = [],
   subjects = [],
   teachers = [],
+  editorKey,
+  classGridRef,
 }: ScheduleEntryEditorProps) {
   const isExam = scheduleType === "exam";
 
@@ -46,6 +54,8 @@ export function ScheduleEntryEditor({
   if (!isExam) {
     return (
       <ClassScheduleEntryEditor
+        key={editorKey}
+        ref={classGridRef}
         entries={entries as ClassScheduleEntry[]}
         onChange={onChange as (entries: ClassScheduleEntry[]) => void}
         classIds={classIds}

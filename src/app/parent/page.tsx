@@ -5,6 +5,12 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Card } from "@/components/atoms/Card";
 import { PageHeader } from "@/components/molecules/PageHeader";
+import {
+  isParentFeeRestricted,
+  ParentAccessBlockedCard,
+  ParentNoStudentCard,
+  type ParentStudentResponse,
+} from "@/components/parent/ParentAccessCards";
 import { InstallmentNotifications } from "@/components/parent/InstallmentPanel";
 import { useAuth } from "@/context/AuthContext";
 import { formatClassLabel } from "@/lib/adminStudents";
@@ -103,10 +109,19 @@ export default function ParentDashboard() {
   }
 
   if (!student) {
+    return <ParentNoStudentCard />;
+  }
+
+  const studentAccess = student as Student & ParentStudentResponse;
+  if (isParentFeeRestricted(studentAccess)) {
     return (
-      <Card className="text-center text-neutral-500">
-        لا يوجد طالب مرتبط بحسابك. تواصل مع الإدارة.
-      </Card>
+      <ParentAccessBlockedCard
+        message={
+          studentAccess.accessRestrictionMessage ||
+          "تم إيقاف الوصول إلى حساب الطالب بسبب الرسوم المستحقة. يرجى مراجعة صفحة المالية."
+        }
+        studentName={student.name}
+      />
     );
   }
 

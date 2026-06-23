@@ -9,8 +9,10 @@ import { Input } from "@/components/atoms/Input";
 import { NumberFieldWithKeypad } from "@/components/teacher/NumberFieldWithKeypad";
 import { Select } from "@/components/atoms/Select";
 import { PageHeader } from "@/components/molecules/PageHeader";
+import { useAuth } from "@/context/AuthContext";
 import { useSchool } from "@/context/SchoolContext";
 import { api } from "@/lib/api";
+import { isSuperAdmin } from "@/lib/adminRoles";
 import { mapGrades, mapSchoolClasses } from "@/lib/mapSchoolClass";
 import type { Grade, SchoolClass } from "@/types/teacher";
 import { GripVertical, Plus, Save, Trash2 } from "lucide-react";
@@ -33,6 +35,7 @@ function mapStudent(s: Record<string, unknown>): AdminStudent {
 }
 
 export default function AdminClassesPage() {
+  const { user } = useAuth();
   const { refresh } = useSchool();
   const [pageClasses, setPageClasses] = useState<SchoolClass[]>([]);
   const [classError, setClassError] = useState("");
@@ -330,6 +333,12 @@ export default function AdminClassesPage() {
   }, [gradeToDelete, classesByGradeName]);
 
   const studentsInClassToDelete = classToDelete?.studentCount ?? 0;
+
+  if (user && !isSuperAdmin(user.role)) {
+    return (
+      <p className="text-sm text-neutral-500">إدارة المراحل الدراسية متاحة للإدارة الكلية فقط.</p>
+    );
+  }
 
   return (
     <div>

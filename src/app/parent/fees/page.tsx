@@ -8,6 +8,7 @@ import { Input } from "@/components/atoms/Input";
 import { NumberFieldWithKeypad } from "@/components/teacher/NumberFieldWithKeypad";
 import { Textarea } from "@/components/atoms/Textarea";
 import { PageHeader } from "@/components/molecules/PageHeader";
+import { ParentNoStudentCard } from "@/components/parent/ParentAccessCards";
 import { FileUploadField } from "@/components/molecules/FileUploadField";
 import { StatusBadge } from "@/components/molecules/StatusBadge";
 import { InstallmentNotifications, InstallmentSchedule } from "@/components/parent/InstallmentPanel";
@@ -87,11 +88,7 @@ export default function ParentFeesPage() {
   }
 
   if (!student) {
-    return (
-      <Card className="text-center text-neutral-500">
-        لا يوجد طالب مرتبط بحسابك.
-      </Card>
-    );
+    return <ParentNoStudentCard />;
   }
 
   return (

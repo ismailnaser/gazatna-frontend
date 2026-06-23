@@ -34,6 +34,8 @@ export function Input({ label, error, className, id, type, ...props }: InputProp
           className={cn(
             "w-full rounded-xl border border-neutral-200 bg-white px-4 py-2.5 text-sm text-p-black",
             "placeholder:text-neutral-400 focus:border-p-green focus:outline-none focus:ring-2 focus:ring-p-green/20",
+            type === "number" &&
+              "[appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none",
             isDateField && "date-time-input ps-10",
             error && "border-p-red focus:border-p-red focus:ring-p-red/20",
             className

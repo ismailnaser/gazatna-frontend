@@ -5,6 +5,12 @@ import { Alert } from "@/components/atoms/Alert";
 import { Button } from "@/components/atoms/Button";
 import { Card } from "@/components/atoms/Card";
 import { PageHeader } from "@/components/molecules/PageHeader";
+import {
+  isParentFeeRestricted,
+  ParentAccessBlockedCard,
+  ParentNoStudentCard,
+  type ParentStudentResponse,
+} from "@/components/parent/ParentAccessCards";
 import { useGradesCertificateExport } from "@/hooks/useGradesCertificateExport";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
@@ -146,10 +152,22 @@ export default function ParentGradesPage() {
   }
 
   if (!student) {
+    return <ParentNoStudentCard />;
+  }
+
+  const studentAccess = student as Student & ParentStudentResponse;
+  if (isParentFeeRestricted(studentAccess)) {
     return (
-      <Card className="text-center text-neutral-500">
-        لا يوجد طالب مرتبط بحسابك.
-      </Card>
+      <div>
+        <PageHeader title="العلامات" description="تقسيمة العلامات ونتيجة الطالب" />
+        <ParentAccessBlockedCard
+          message={
+            studentAccess.accessRestrictionMessage ||
+            "تم إيقاف الوصول إلى حساب الطالب بسبب الرسوم المستحقة."
+          }
+          studentName={student.name}
+        />
+      </div>
     );
   }
 

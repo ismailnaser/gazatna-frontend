@@ -8,6 +8,7 @@ import { Select } from "@/components/atoms/Select";
 import { Textarea } from "@/components/atoms/Textarea";
 import { PublicPage } from "@/components/molecules/PublicPage";
 import { api } from "@/lib/api";
+import { nationalIdInputProps, validateNationalId } from "@/lib/nationalId";
 
 type RegSettings = {
   showNotes: boolean;
@@ -40,11 +41,18 @@ export default function RegisterPage() {
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError("");
-    setLoading(true);
     const form = new FormData(e.currentTarget);
+    const nationalIdError = validateNationalId(String(form.get("nationalId") ?? ""), {
+      required: true,
+    });
+    if (nationalIdError) {
+      setError(nationalIdError);
+      return;
+    }
+    setLoading(true);
     const payload = {
       studentName: String(form.get("studentName") ?? ""),
-      nationalId: String(form.get("nationalId") ?? ""),
+      nationalId: String(form.get("nationalId") ?? "").trim(),
       birthDate: String(form.get("birthDate") ?? ""),
       grade: String(form.get("grade") ?? ""),
       parentName: String(form.get("parentName") ?? ""),
@@ -81,7 +89,13 @@ export default function RegisterPage() {
       >
         {error && <Alert variant="error">{error}</Alert>}
         <Input label="اسم الطالب" name="studentName" required />
-        <Input label="رقم هوية الطالب" name="nationalId" dir="ltr" placeholder="رقم الهوية الوطنية" />
+        <Input
+          label="رقم هوية الطالب"
+          name="nationalId"
+          required
+          placeholder="9 أرقام"
+          {...nationalIdInputProps}
+        />
         {reg.showBirthDate && (
           <Input label="تاريخ الميلاد" name="birthDate" type="date" required />
         )}

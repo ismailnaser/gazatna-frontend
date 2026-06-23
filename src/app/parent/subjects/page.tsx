@@ -4,6 +4,12 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Card } from "@/components/atoms/Card";
 import { PageHeader } from "@/components/molecules/PageHeader";
+import {
+  isParentFeeRestricted,
+  ParentAccessBlockedCard,
+  ParentNoStudentCard,
+  type ParentStudentResponse,
+} from "@/components/parent/ParentAccessCards";
 import { api } from "@/lib/api";
 import { formatClassLabel } from "@/lib/adminStudents";
 import type { ParentSubjectSummary, Student } from "@/types";
@@ -35,9 +41,15 @@ export default function ParentSubjectsPage() {
       {loading ? (
         <p className="text-neutral-500">جاري التحميل...</p>
       ) : !student ? (
-        <Card className="text-center text-neutral-500">
-          لا يوجد طالب مرتبط بحسابك. تواصل مع الإدارة.
-        </Card>
+        <ParentNoStudentCard />
+      ) : isParentFeeRestricted(student as Student & ParentStudentResponse) ? (
+        <ParentAccessBlockedCard
+          message={
+            (student as Student & ParentStudentResponse).accessRestrictionMessage ||
+            "تم إيقاف الوصول إلى حساب الطالب بسبب الرسوم المستحقة."
+          }
+          studentName={student.name}
+        />
       ) : subjects.length === 0 ? (
         <Card className="space-y-2 text-center text-neutral-500">
           <p>لا توجد مواد مسندة لفصل الطالب حالياً.</p>

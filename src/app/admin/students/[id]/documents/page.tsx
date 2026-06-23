@@ -9,8 +9,9 @@ import { Card } from "@/components/atoms/Card";
 import { Input } from "@/components/atoms/Input";
 import { PageHeader } from "@/components/molecules/PageHeader";
 import { FileUploadField } from "@/components/molecules/FileUploadField";
+import { ImagePreviewModal } from "@/components/molecules/ImagePreviewModal";
 import { api } from "@/lib/api";
-import { FileText, Pencil, Plus, Trash2, X } from "lucide-react";
+import { Eye, FileText, Pencil, Plus, Trash2, X } from "lucide-react";
 
 type Doc = { id?: string | null; name: string; url?: string | null };
 
@@ -43,6 +44,7 @@ export default function AdminStudentDocumentsPage() {
 
   const [confirmDeleteDoc, setConfirmDeleteDoc] = useState<Doc | null>(null);
   const [deletingDoc, setDeletingDoc] = useState(false);
+  const [previewDoc, setPreviewDoc] = useState<Doc | null>(null);
 
   async function load() {
     setLoading(true);
@@ -263,14 +265,15 @@ export default function AdminStudentDocumentsPage() {
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   {d.url ? (
-                    <a
-                      href={d.url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-xs text-brand-blue hover:underline"
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="px-2 py-1 text-xs"
+                      onClick={() => setPreviewDoc(d)}
                     >
+                      <Eye className="h-3.5 w-3.5" />
                       فتح
-                    </a>
+                    </Button>
                   ) : (
                     <span className="text-xs text-neutral-400">بدون ملف</span>
                   )}
@@ -373,6 +376,14 @@ export default function AdminStudentDocumentsPage() {
           </div>
         </div>
       )}
+
+      <ImagePreviewModal
+        open={Boolean(previewDoc?.url)}
+        src={previewDoc?.url ?? null}
+        title={previewDoc?.name}
+        fileName={previewDoc?.name}
+        onClose={() => setPreviewDoc(null)}
+      />
     </div>
   );
 }

@@ -207,18 +207,7 @@ export default function AdminSitePage() {
           </div>
 
           <div>
-            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-              <p className="text-sm font-semibold text-p-black">المراحل الدراسية المتاحة في الفورم</p>
-              <Link
-                href="/admin/classes"
-                className="text-xs font-semibold text-p-green hover:underline"
-              >
-                إدارة الصفوف والمراحل
-              </Link>
-            </div>
-            <p className="mb-3 text-xs text-p-black/50">
-              تُجلب المراحل تلقائياً من الصفوف المُضافة في النظام.
-            </p>
+            <p className="mb-3 text-sm font-semibold text-p-black">المراحل الدراسية المتاحة في الفورم</p>
             <div className="space-y-2">
               {grades.length === 0 ? (
                 <p className="text-sm text-neutral-500">

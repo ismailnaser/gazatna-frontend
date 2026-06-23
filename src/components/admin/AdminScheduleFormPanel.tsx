@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Alert } from "@/components/atoms/Alert";
 import { Button } from "@/components/atoms/Button";
 import { Input } from "@/components/atoms/Input";
 import { GradeSectionClassPicker } from "@/components/shared/GradeSectionClassPicker";
 import { ScheduleEntryEditor } from "@/components/schedules/ScheduleEntryEditor";
+import type { ClassScheduleEntryEditorHandle } from "@/components/schedules/ClassScheduleEntryEditor";
 import { ScheduleTable } from "@/components/schedules/ScheduleTable";
 import {
   subjectsForClasses,
@@ -15,7 +16,8 @@ import {
 import type { ClassScheduleEntry, Schedule, ScheduleEntry, ScheduleType } from "@/types/schedules";
 import {
   sortClassScheduleEntries,
-  validateClassScheduleEntries,
+  validateClassScheduleGrid,
+  parseClassScheduleGrid,
 } from "@/types/schedules";
 import type { Grade, SchoolClass, Subject, TeacherProfile } from "@/types/teacher";
 import { Eye, Save, X } from "lucide-react";
@@ -35,7 +37,7 @@ function FormSection({
         <h3 className="text-sm font-bold text-p-black">{title}</h3>
         {description ? <p className="mt-0.5 text-xs text-p-black/50">{description}</p> : null}
       </header>
-      <div className="space-y-3 p-3 sm:space-y-4 sm:p-4">{children}</div>
+      <div className="space-y-3 p-3 sm:space-y-4 sm:p-4 min-w-0">{children}</div>
     </section>
   );
 }
@@ -81,6 +83,7 @@ export function AdminScheduleFormPanel({
   );
   const [isPublished, setIsPublished] = useState(editing?.isPublished ?? true);
   const [showPreview, setShowPreview] = useState(false);
+  const classGridRef = useRef<ClassScheduleEntryEditorHandle>(null);
 
   const availableSubjects = useMemo(
     () => subjectsForClasses(subjects, classIds),
@@ -120,6 +123,11 @@ export function AdminScheduleFormPanel({
     });
   }, [scheduleType, classIds, availableSubjects, subjects, teachers]);
 
+  const resolvedClassEntries = useMemo(() => {
+    if (scheduleType !== "class") return entries;
+    return classGridRef.current?.getEntries() ?? (entries as ClassScheduleEntry[]);
+  }, [scheduleType, entries, showPreview]);
+
   const previewSchedule = useMemo<Schedule>(
     () => ({
       id: editing?.id ?? "preview",
@@ -133,18 +141,25 @@ export function AdminScheduleFormPanel({
           return match.section ? `${match.gradeLevel} - ${match.section}` : match.name;
         })
         .filter(Boolean),
-      entries,
+      entries: scheduleType === "class" ? resolvedClassEntries : entries,
       isPublished,
       createdAt: editing?.createdAt ?? "",
       updatedAt: editing?.updatedAt ?? "",
     }),
-    [name, scheduleType, classIds, classes, entries, isPublished, editing]
+    [name, scheduleType, classIds, classes, entries, resolvedClassEntries, isPublished, editing]
   );
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    const classEntries =
+      scheduleType === "class"
+        ? classGridRef.current?.getEntries() ?? (entries as ClassScheduleEntry[])
+        : entries;
+
     if (scheduleType === "class") {
-      const validationError = validateClassScheduleEntries(entries as ClassScheduleEntry[]);
+      const gridState =
+        classGridRef.current?.getGridState() ?? parseClassScheduleGrid(classEntries as ClassScheduleEntry[]);
+      const validationError = validateClassScheduleGrid(gridState);
       if (validationError) {
         alert(validationError);
         return;
@@ -152,7 +167,7 @@ export function AdminScheduleFormPanel({
     }
     const normalizedEntries =
       scheduleType === "class"
-        ? sortClassScheduleEntries(entries as ClassScheduleEntry[])
+        ? sortClassScheduleEntries(classEntries as ClassScheduleEntry[])
         : entries;
     onSubmit({
       name: name.trim(),
@@ -188,7 +203,7 @@ export function AdminScheduleFormPanel({
         </button>
       </header>
 
-      <div className="space-y-4 p-4 sm:p-5">
+      <div className="space-y-4 p-4 sm:p-5 min-w-0">
         {error ? <Alert variant="error">{error}</Alert> : null}
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -235,7 +250,7 @@ export function AdminScheduleFormPanel({
             description={
               scheduleType === "exam"
                 ? "أضف مواد الاختبار مع التاريخ والوقت."
-                : "أضف حصص كل يوم من السبت إلى الجمعة."
+                : "عبّئ جدول الحصص: الصفوف أيام الأسبوع (من السبت) والأعمدة الحصص اليومية."
             }
           >
             <ScheduleEntryEditor
@@ -245,6 +260,8 @@ export function AdminScheduleFormPanel({
               classIds={classIds}
               subjects={subjects}
               teachers={teachers}
+              editorKey={editing?.id ?? "create"}
+              classGridRef={classGridRef}
             />
           </FormSection>
 
@@ -262,7 +279,7 @@ export function AdminScheduleFormPanel({
               <Button type="button" variant="outline" onClick={onClose}>
                 إلغاء
               </Button>
-              <Button type="submit" disabled={submitting || classIds.length === 0 || entries.length === 0}>
+              <Button type="submit" disabled={submitting || classIds.length === 0}>
                 <Save className="h-4 w-4" />
                 {submitting ? "جاري الحفظ..." : isCreate ? "إنشاء الجدول" : "حفظ التعديلات"}
               </Button>

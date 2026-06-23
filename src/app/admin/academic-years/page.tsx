@@ -9,6 +9,8 @@ import { Input } from "@/components/atoms/Input";
 import { Select } from "@/components/atoms/Select";
 import { Textarea } from "@/components/atoms/Textarea";
 import { PageHeader } from "@/components/molecules/PageHeader";
+import { ConfirmDialog } from "@/components/molecules/ConfirmDialog";
+import { FormDialog } from "@/components/molecules/FormDialog";
 import { SaveFeedback } from "@/components/molecules/SaveFeedback";
 import { CertificatePreviewDialog } from "@/components/admin/CertificatePreviewDialog";
 import { exportPromotionPreviewPdf } from "@/lib/exportPromotionPreviewPdf";
@@ -130,6 +132,16 @@ function nextYearName(years: AcademicYear[]) {
   return candidate;
 }
 
+function suggestNewYearForm(years: AcademicYear[]) {
+  const dashed = nextYearName(years);
+  const startYear = Number(dashed.split("-")[0]);
+  return {
+    name: dashed.replace("-", "/"),
+    startDate: `${startYear}-09-01`,
+    endDate: `${startYear + 1}-06-30`,
+  };
+}
+
 function resolveStudentDecision(
   row: PromotionPreview["students"][number],
   decisions: Record<string, PromotionStudentAction>
@@ -154,6 +166,16 @@ export default function AdminAcademicYearsPage() {
   const [savingPolicyGradeId, setSavingPolicyGradeId] = useState("");
   const [savedPolicyGradeId, setSavedPolicyGradeId] = useState("");
   const [creatingYear, setCreatingYear] = useState(false);
+  const [createYearOpen, setCreateYearOpen] = useState(false);
+  const [createYearForm, setCreateYearForm] = useState({
+    name: "",
+    startDate: "",
+    endDate: "",
+  });
+  const [deleteYearTarget, setDeleteYearTarget] = useState<AcademicYear | null>(null);
+  const [deletingYearId, setDeletingYearId] = useState("");
+  const [deleteYearError, setDeleteYearError] = useState("");
+  const [deleteTermTarget, setDeleteTermTarget] = useState<AcademicTermStatus | null>(null);
   const [activatingYearId, setActivatingYearId] = useState("");
   const [settingTermId, setSettingTermId] = useState("");
   const [preview, setPreview] = useState<PromotionPreview | null>(null);
@@ -528,26 +550,70 @@ export default function AdminAcademicYearsPage() {
     }
   }
 
-  async function handleCreateYear() {
+  function openCreateYearDialog() {
+    setCreateYearForm(suggestNewYearForm(years));
+    setError("");
+    setCreateYearOpen(true);
+  }
+
+  async function handleCreateYearSubmit() {
+    const name = createYearForm.name.trim();
+    if (!name) {
+      setError("أدخل اسم السنة الدراسية");
+      return;
+    }
+    if (!createYearForm.startDate) {
+      setError("أدخل تاريخ بداية السنة الدراسية");
+      return;
+    }
+    if (!createYearForm.endDate) {
+      setError("أدخل تاريخ نهاية السنة الدراسية");
+      return;
+    }
+    if (createYearForm.endDate < createYearForm.startDate) {
+      setError("تاريخ النهاية يجب أن يكون بعد تاريخ البداية");
+      return;
+    }
+
     setCreatingYear(true);
     setError("");
     try {
-      const name = nextYearName(years);
-      const startYear = Number(name.split("-")[0]);
       const created = await api.createAdminAcademicYear({
         name,
-        startDate: `${startYear}-09-01`,
-        endDate: `${startYear + 1}-06-30`,
+        startDate: createYearForm.startDate,
+        endDate: createYearForm.endDate,
         status: "draft",
         isActive: false,
       });
       const mapped = mapAcademicYear(created as Record<string, unknown>);
       setYears((prev) => [mapped, ...prev]);
       setSelectedYearId(mapped.id);
+      setCreateYearOpen(false);
     } catch {
       setError("تعذر إنشاء سنة دراسية جديدة");
     } finally {
       setCreatingYear(false);
+    }
+  }
+
+  async function handleDeleteYear() {
+    if (!deleteYearTarget) return;
+
+    setDeletingYearId(deleteYearTarget.id);
+    setDeleteYearError("");
+    try {
+      await api.deleteAdminAcademicYear(deleteYearTarget.id);
+      const remaining = years.filter((year) => year.id !== deleteYearTarget.id);
+      setYears(remaining);
+      if (selectedYearId === deleteYearTarget.id) {
+        setSelectedYearId(remaining[0]?.id ?? "");
+      }
+      setDeleteYearTarget(null);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "تعذر حذف السنة الدراسية";
+      setDeleteYearError(message);
+    } finally {
+      setDeletingYearId("");
     }
   }
 
@@ -867,11 +933,141 @@ export default function AdminAcademicYearsPage() {
       ) : null}
 
       <div className="mb-6 flex flex-wrap gap-3">
-        <Button onClick={handleCreateYear} disabled={creatingYear}>
+        <Button onClick={openCreateYearDialog} disabled={creatingYear}>
           <Plus className="h-4 w-4" />
-          {creatingYear ? "جاري الإنشاء..." : "سنة دراسية جديدة"}
+          سنة دراسية جديدة
         </Button>
       </div>
+
+      <FormDialog
+        open={createYearOpen}
+        title="إنشاء سنة دراسية جديدة"
+        description="أدخل بيانات السنة الدراسية قبل الحفظ"
+        onClose={() => {
+          if (!creatingYear) setCreateYearOpen(false);
+        }}
+        maxWidthClass="max-w-lg"
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="mb-1.5 block text-sm font-semibold text-p-black">
+              السنة الدراسية
+            </label>
+            <Input
+              value={createYearForm.name}
+              onChange={(event) =>
+                setCreateYearForm((prev) => ({ ...prev, name: event.target.value }))
+              }
+              placeholder="مثال: 2025/2026"
+            />
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label className="mb-1.5 block text-sm font-semibold text-p-black">
+                تاريخ البدء
+              </label>
+              <Input
+                type="date"
+                value={createYearForm.startDate}
+                onChange={(event) =>
+                  setCreateYearForm((prev) => ({ ...prev, startDate: event.target.value }))
+                }
+              />
+            </div>
+            <div>
+              <label className="mb-1.5 block text-sm font-semibold text-p-black">
+                تاريخ الانتهاء
+              </label>
+              <Input
+                type="date"
+                value={createYearForm.endDate}
+                onChange={(event) =>
+                  setCreateYearForm((prev) => ({ ...prev, endDate: event.target.value }))
+                }
+              />
+            </div>
+          </div>
+          <div className="flex flex-wrap justify-end gap-3 pt-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setCreateYearOpen(false)}
+              disabled={creatingYear}
+            >
+              إلغاء
+            </Button>
+            <Button type="button" onClick={handleCreateYearSubmit} disabled={creatingYear}>
+              {creatingYear ? "جاري الإنشاء..." : "إنشاء السنة"}
+            </Button>
+          </div>
+        </div>
+      </FormDialog>
+
+      <ConfirmDialog
+        open={Boolean(deleteYearTarget)}
+        title="تأكيد حذف السنة الدراسية"
+        description={
+          deleteYearTarget ? (
+            <>
+              هل أنت متأكد من حذف السنة «{deleteYearTarget.name}»؟
+              <br />
+              سيتم حذف فصولها وإعداداتها المرتبطة ولا يمكن التراجع.
+              {deleteYearTarget.isActive ? (
+                <>
+                  <br />
+                  <span className="font-semibold text-p-red">
+                    تنبيه: هذه السنة نشطة حالياً وسيتم إزالتها من المنصة.
+                  </span>
+                </>
+              ) : null}
+            </>
+          ) : (
+            ""
+          )
+        }
+        confirmLabel="نعم، احذف السنة"
+        loading={Boolean(deletingYearId)}
+        loadingLabel="جاري الحذف..."
+        error={deleteYearError}
+        onConfirm={handleDeleteYear}
+        onCancel={() => {
+          if (!deletingYearId) {
+            setDeleteYearTarget(null);
+            setDeleteYearError("");
+          }
+        }}
+      />
+
+      <ConfirmDialog
+        open={Boolean(deleteTermTarget)}
+        title="تأكيد حذف الفصل الدراسي"
+        description={
+          deleteTermTarget ? (
+            <>
+              هل أنت متأكد من حذف «{deleteTermTarget.name || "هذا الفصل"}»؟
+              <br />
+              لن يُحذف نهائياً من النظام إلا بعد حفظ الفصول.
+              {deleteTermTarget.isCurrent ? (
+                <>
+                  <br />
+                  <span className="font-semibold text-p-red">
+                    تنبيه: هذا هو الفصل الحالي وسيُعيَّن الفصل الأول كفصل حالي بدلاً منه.
+                  </span>
+                </>
+              ) : null}
+            </>
+          ) : (
+            ""
+          )
+        }
+        confirmLabel="نعم، احذف الفصل"
+        onConfirm={() => {
+          if (!deleteTermTarget) return;
+          handleRemoveTerm(deleteTermTarget.id);
+          setDeleteTermTarget(null);
+        }}
+        onCancel={() => setDeleteTermTarget(null)}
+      />
 
       <div className="grid min-w-0 gap-4 lg:grid-cols-[320px_minmax(0,1fr)]">
         <Card className="space-y-3 p-4">
@@ -880,25 +1076,40 @@ export default function AdminAcademicYearsPage() {
             <p className="text-sm text-neutral-500">لا توجد سنوات بعد.</p>
           ) : (
             years.map((year) => (
-              <button
+              <div
                 key={year.id}
-                type="button"
-                onClick={() => setSelectedYearId(year.id)}
                 className={cn(
-                  "w-full rounded-xl border px-3 py-3 text-start transition",
+                  "flex items-start gap-2 rounded-xl border px-3 py-3 transition",
                   selectedYearId === year.id
                     ? "border-p-green bg-p-green/5"
                     : "border-neutral-200 hover:border-neutral-300"
                 )}
               >
-                <div className="flex items-center justify-between gap-2">
-                  <span className="font-semibold text-p-black">{year.name}</span>
-                  {year.isActive ? <Badge variant="success">نشطة</Badge> : null}
-                </div>
-                <p className="mt-1 text-xs text-p-black/55">
-                  {year.startDate} — {year.endDate}
-                </p>
-              </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedYearId(year.id)}
+                  className="min-w-0 flex-1 text-start"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-semibold text-p-black">{year.name}</span>
+                    {year.isActive ? <Badge variant="success">نشطة</Badge> : null}
+                  </div>
+                  <p className="mt-1 text-xs text-p-black/55">
+                    {year.startDate} — {year.endDate}
+                  </p>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDeleteYearError("");
+                    setDeleteYearTarget(year);
+                  }}
+                  className="rounded-lg p-2 text-p-red/70 transition hover:bg-p-red/5 hover:text-p-red"
+                  aria-label={`حذف ${year.name}`}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </div>
             ))
           )}
         </Card>
@@ -913,16 +1124,29 @@ export default function AdminAcademicYearsPage() {
                     {selectedYear.startDate} — {selectedYear.endDate}
                   </p>
                 </div>
-                {!selectedYear.isActive ? (
+                <div className="flex flex-wrap items-center gap-2">
+                  {!selectedYear.isActive ? (
+                    <Button
+                      onClick={() => handleSetActive(selectedYear.id)}
+                      disabled={activatingYearId === selectedYear.id}
+                    >
+                      {activatingYearId === selectedYear.id ? "جاري التفعيل..." : "تفعيل السنة"}
+                    </Button>
+                  ) : (
+                    <Badge variant="success">السنة النشطة</Badge>
+                  )}
                   <Button
-                    onClick={() => handleSetActive(selectedYear.id)}
-                    disabled={activatingYearId === selectedYear.id}
+                    variant="outline"
+                    className="text-p-red hover:bg-p-red/5"
+                    onClick={() => {
+                      setDeleteYearError("");
+                      setDeleteYearTarget(selectedYear);
+                    }}
                   >
-                    {activatingYearId === selectedYear.id ? "جاري التفعيل..." : "تفعيل السنة"}
+                    <Trash2 className="h-4 w-4" />
+                    حذف السنة
                   </Button>
-                ) : (
-                  <Badge variant="success">السنة النشطة</Badge>
-                )}
+                </div>
               </div>
             </Card>
 
@@ -960,7 +1184,7 @@ export default function AdminAcademicYearsPage() {
                           variant="outline"
                           className="h-8 px-3 text-xs text-p-red hover:bg-p-red/5"
                           disabled={termsDraft.length <= 1}
-                          onClick={() => handleRemoveTerm(term.id)}
+                          onClick={() => setDeleteTermTarget(term)}
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                           حذف

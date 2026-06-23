@@ -7,13 +7,14 @@ import { Select } from "@/components/atoms/Select";
 import { AdminStudentFormPanel } from "@/components/admin/AdminStudentFormPanel";
 import { AdminStudentsTable } from "@/components/admin/AdminStudentsTable";
 import { GradeSectionClassMultiSelect } from "@/components/shared/GradeSectionClassMultiSelect";
-import { NumberFieldWithKeypad } from "@/components/teacher/NumberFieldWithKeypad";
 import { PageHeader } from "@/components/molecules/PageHeader";
+import { ConfirmDialog } from "@/components/molecules/ConfirmDialog";
 import { useSchool } from "@/context/SchoolContext";
 import { formatClassLabel, mapAdminStudent } from "@/lib/adminStudents";
 import { exportStudentsToExcel } from "@/lib/exportStudentsExcel";
 import { api } from "@/lib/api";
-import type { AccountCredentials, AdminStudent, PaymentStatus } from "@/types";
+import { validateStudentNationalId } from "@/lib/nationalId";
+import type { AccountCredentials, AdminStudent } from "@/types";
 import { Download, Plus, Search, Users } from "lucide-react";
 
 export default function AdminStudentsPage() {
@@ -29,15 +30,13 @@ export default function AdminStudentsPage() {
   const [resetCredentials, setResetCredentials] = useState<AccountCredentials | null>(null);
   const [confirmReset, setConfirmReset] = useState<AdminStudent | null>(null);
   const [resettingPassword, setResettingPassword] = useState(false);
-  const [accessTarget, setAccessTarget] = useState<AdminStudent | null>(null);
-  const [accessDays, setAccessDays] = useState("1");
-  const [grantingAccess, setGrantingAccess] = useState(false);
+  const [confirmDeleteStudent, setConfirmDeleteStudent] = useState<AdminStudent | null>(null);
+  const [deletingStudent, setDeletingStudent] = useState(false);
   const [docRows, setDocRows] = useState<Array<{ name: string; file: File | null }>>([
     { name: "", file: null },
   ]);
   const [search, setSearch] = useState("");
   const [classFilters, setClassFilters] = useState<string[]>([]);
-  const [paymentFilter, setPaymentFilter] = useState("");
   const [documentsFilter, setDocumentsFilter] = useState("");
   const formRef = useRef<HTMLDivElement>(null);
   const pageTopRef = useRef<HTMLDivElement>(null);
@@ -47,23 +46,13 @@ export default function AdminStudentsPage() {
     pageTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
-  const paymentFilterOptions = [
-    { value: "", label: "جميع حالات الدفع" },
-    { value: "unpaid", label: "لم يتم الدفع" },
-    { value: "pending", label: "قيد المراجعة" },
-    { value: "approved", label: "تم القبول" },
-    { value: "rejected", label: "مرفوض" },
-  ];
-
   const documentsFilterOptions = [
     { value: "", label: "جميع الوثائق" },
     { value: "with", label: "لديه وثائق" },
     { value: "without", label: "بدون وثائق" },
   ];
 
-  const hasActiveFilters = Boolean(
-    search.trim() || classFilters.length > 0 || paymentFilter || documentsFilter
-  );
+  const hasActiveFilters = Boolean(search.trim() || classFilters.length > 0 || documentsFilter);
 
   function studentMatchesClassFilter(student: AdminStudent, classFilter: string) {
     if (student.classId) return student.classId === classFilter;
@@ -83,7 +72,6 @@ export default function AdminStudentsPage() {
       ) {
         return false;
       }
-      if (paymentFilter && student.paymentStatus !== paymentFilter) return false;
       if (documentsFilter === "with" && student.documents.length === 0) return false;
       if (documentsFilter === "without" && student.documents.length > 0) return false;
       if (query) {
@@ -101,12 +89,11 @@ export default function AdminStudentsPage() {
       }
       return true;
     });
-  }, [students, search, classFilters, paymentFilter, documentsFilter, classes]);
+  }, [students, search, classFilters, documentsFilter, classes]);
 
   function clearFilters() {
     setSearch("");
     setClassFilters([]);
-    setPaymentFilter("");
     setDocumentsFilter("");
   }
 
@@ -173,22 +160,24 @@ export default function AdminStudentsPage() {
     }
   }
 
-  async function grantTemporaryAccess() {
-    if (!accessTarget) return;
-    setGrantingAccess(true);
+  async function confirmDeleteStudentAction() {
+    if (!confirmDeleteStudent) return;
+    setDeletingStudent(true);
     setError("");
     setSuccess("");
     try {
-      const result = await api.grantStudentFeeAccess(accessTarget.id, Number(accessDays));
-      setSuccess(
-        `تم فتح الوصول للطالب حتى ${new Date(result.accessOverrideUntil).toLocaleString("ar")}`
-      );
-      setAccessTarget(null);
-      setAccessDays("1");
+      await api.deleteAdminStudent(confirmDeleteStudent.id);
+      setStudents((prev) => prev.filter((s) => s.id !== confirmDeleteStudent.id));
+      if (editing?.id === confirmDeleteStudent.id) {
+        closeForm();
+      }
+      setSuccess(`تم حذف الطالب «${confirmDeleteStudent.name}» بنجاح.`);
+      setConfirmDeleteStudent(null);
+      scrollToPageTop();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "تعذر فتح الوصول للطالب");
+      setError(err instanceof Error ? err.message : "تعذر حذف الطالب");
     } finally {
-      setGrantingAccess(false);
+      setDeletingStudent(false);
     }
   }
 
@@ -219,10 +208,19 @@ export default function AdminStudentsPage() {
       return;
     }
     try {
+      const nationalId = String(form.get("nationalId") ?? "").trim();
+      const nationalIdError = validateStudentNationalId(nationalId, {
+        required: true,
+        existingStudents: students,
+      });
+      if (nationalIdError) {
+        setError(nationalIdError);
+        setSubmitting(false);
+        return;
+      }
       const payload = new FormData();
       payload.append("name", String(form.get("name") ?? ""));
-      const nationalId = String(form.get("nationalId") ?? "").trim();
-      if (nationalId) payload.append("nationalId", nationalId);
+      payload.append("nationalId", nationalId);
       payload.append("classId", String(Number(classId)));
       for (const row of docRows) {
         if (!row.file) continue;
@@ -266,9 +264,20 @@ export default function AdminStudentsPage() {
       return;
     }
     try {
+      const nationalId = String(form.get("nationalId") ?? "").trim();
+      const nationalIdError = validateStudentNationalId(nationalId, {
+        required: true,
+        existingStudents: students,
+        excludeStudentId: editing.id,
+      });
+      if (nationalIdError) {
+        setError(nationalIdError);
+        setSubmitting(false);
+        return;
+      }
       const updated = (await api.updateAdminStudent(editing.id, {
         name: form.get("name"),
-        nationalId: String(form.get("nationalId") ?? "").trim(),
+        nationalId,
         classId: Number(classId),
       })) as Record<string, unknown>;
       setStudents((prev) =>
@@ -298,7 +307,7 @@ export default function AdminStudentsPage() {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <PageHeader
           title="إدارة الطلاب"
-          description="الأرشيف الرقمي لسجلات الطلاب — إضافة، تعديل، ومتابعة الرسوم والوثائق."
+          description="الأرشيف الرقمي لسجلات الطلاب — إضافة، تعديل، والوثائق."
         />
         <Button onClick={openCreateForm} className="shrink-0">
           <Plus className="h-4 w-4" />
@@ -341,6 +350,7 @@ export default function AdminStudentsPage() {
             mode="create"
             classes={classes}
             grades={grades}
+            existingStudents={students}
             docRows={docRows}
             onDocRowsChange={setDocRows}
             error={error}
@@ -357,6 +367,7 @@ export default function AdminStudentsPage() {
             classes={classes}
             grades={grades}
             editingClassId={editingClassId}
+            existingStudents={students}
             docRows={docRows}
             onDocRowsChange={setDocRows}
             error={error}
@@ -413,7 +424,7 @@ export default function AdminStudentsPage() {
               className="w-full rounded-xl border border-neutral-200 bg-white py-2.5 pe-4 ps-10 text-sm focus:border-p-green focus:outline-none focus:ring-2 focus:ring-p-green/20"
             />
           </div>
-          <div className="grid gap-3 sm:grid-cols-3">
+          <div className="grid gap-3 sm:grid-cols-2">
             <GradeSectionClassMultiSelect
               label="الفصل والشعبة"
               classes={classes}
@@ -421,13 +432,6 @@ export default function AdminStudentsPage() {
               value={classFilters}
               onChange={setClassFilters}
               placeholder="جميع الفصول"
-            />
-            <Select
-              label="حالة الدفع"
-              name="paymentFilter"
-              options={paymentFilterOptions}
-              value={paymentFilter}
-              onChange={(e) => setPaymentFilter(e.target.value as PaymentStatus | "")}
             />
             <Select
               label="الوثائق"
@@ -455,11 +459,9 @@ export default function AdminStudentsPage() {
               hasActiveFilters={hasActiveFilters}
               onEdit={openEditForm}
               onResetPassword={setConfirmReset}
-              onGrantAccess={(student) => {
-                setAccessTarget(student);
-                setAccessDays("1");
+              onDelete={(student) => {
                 setError("");
-                setSuccess("");
+                setConfirmDeleteStudent(student);
               }}
             />
           )}
@@ -496,50 +498,39 @@ export default function AdminStudentsPage() {
         </div>
       ) : null}
 
-      {accessTarget ? (
-        <div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 sm:items-center"
-          role="dialog"
-          aria-modal="true"
-          onClick={() => setAccessTarget(null)}
-        >
-          <div className="w-full max-w-lg rounded-2xl border border-neutral-100 bg-white p-5 shadow-lg sm:p-6">
-            <p className="text-base font-bold text-p-black">فتح الوصول مؤقتاً</p>
-            <div className="mt-3 rounded-xl border border-neutral-100 bg-neutral-50 px-3 py-2.5 text-sm">
-              <p className="font-semibold text-p-black">{accessTarget.name}</p>
-              {accessTarget.studentNumber ? (
-                <p className="mt-1 text-xs text-p-black/50" dir="ltr">
-                  #{accessTarget.studentNumber}
-                </p>
+      <ConfirmDialog
+        open={Boolean(confirmDeleteStudent)}
+        title="تأكيد حذف الطالب"
+        description={
+          confirmDeleteStudent ? (
+            <>
+              هل أنت متأكد من حذف الطالب{" "}
+              <span className="font-semibold">{confirmDeleteStudent.name}</span>؟
+              {confirmDeleteStudent.studentNumber ? (
+                <>
+                  {" "}
+                  (<span dir="ltr">#{confirmDeleteStudent.studentNumber}</span>)
+                </>
               ) : null}
-            </div>
-            <div className="mt-4">
-                <NumberFieldWithKeypad
-                  fieldId="accessDays"
-                  label="مدة الفتح (بالأيام)"
-                  value={accessDays}
-                  onChange={setAccessDays}
-                  min={1}
-                  max={30}
-                  required
-                />
-            </div>
-            <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setAccessTarget(null)}
-                disabled={grantingAccess}
-              >
-                إلغاء
-              </Button>
-              <Button type="button" onClick={grantTemporaryAccess} disabled={grantingAccess}>
-                {grantingAccess ? "جاري التفعيل..." : "فتح الوصول"}
-              </Button>
-            </div>
-          </div>
-        </div>
-      ) : null}
+              <br />
+              <span className="mt-2 block text-p-black/60">
+                سيتم حذف سجل الطالب وحساب ولي الأمر المرتبط به. لا يمكن التراجع عن هذا الإجراء.
+              </span>
+            </>
+          ) : (
+            ""
+          )
+        }
+        confirmLabel={deletingStudent ? "جاري الحذف..." : "حذف"}
+        loading={deletingStudent}
+        error={confirmDeleteStudent ? error : undefined}
+        onConfirm={confirmDeleteStudentAction}
+        onCancel={() => {
+          if (deletingStudent) return;
+          setConfirmDeleteStudent(null);
+          setError("");
+        }}
+      />
     </div>
   );
 }
