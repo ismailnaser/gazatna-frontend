@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Alert } from "@/components/atoms/Alert";
 import { Button } from "@/components/atoms/Button";
 import { Card } from "@/components/atoms/Card";
@@ -13,8 +13,12 @@ import {
 } from "@/components/parent/ParentAccessCards";
 import { useGradesCertificateExport } from "@/hooks/useGradesCertificateExport";
 import { api } from "@/lib/api";
+import {
+  collectGradeReportColumns,
+  findGradeComponent,
+} from "@/lib/gradesReportLayout";
 import { cn } from "@/lib/utils";
-import type { Grade, GradeComponent, Student } from "@/types";
+import type { Grade, Student } from "@/types";
 import { mapFeeStatus } from "@/types/finance";
 import { Download, Lock } from "lucide-react";
 
@@ -54,47 +58,52 @@ function ScoreCell({ score, maxScore, passed }: { score: number | null; maxScore
   );
 }
 
-function GradeBreakdownTable({ grade }: { grade: Grade }) {
-  const components = grade.components ?? [];
+function AllGradesTable({ grades }: { grades: Grade[] }) {
+  const componentColumns = useMemo(() => collectGradeReportColumns(grades), [grades]);
 
   return (
     <div className="overflow-x-auto">
-      <table className="w-full text-sm">
+      <table className="w-full min-w-[640px] text-sm">
         <thead>
           <tr className="border-b border-neutral-100 bg-p-cream/60 text-p-black/60">
-            <th className="px-4 py-2.5 text-start font-semibold">التقسيم</th>
-            <th className="px-4 py-2.5 text-start font-semibold">العلامة</th>
-            <th className="px-4 py-2.5 text-start font-semibold">علامة النجاح</th>
-            <th className="px-4 py-2.5 text-start font-semibold">الحالة</th>
+            <th className="px-4 py-2.5 text-start font-semibold">المادة</th>
+            {componentColumns.map((column) => (
+              <th key={column.key} className="px-3 py-2.5 text-center font-semibold">
+                {column.name}
+              </th>
+            ))}
+            <th className="px-4 py-2.5 text-center font-semibold">المجموع</th>
+            <th className="px-4 py-2.5 text-center font-semibold">الحالة</th>
           </tr>
         </thead>
         <tbody>
-          {components.map((component: GradeComponent) => (
-            <tr key={component.id} className="border-b border-neutral-50">
-              <td className="px-4 py-2.5 font-medium text-p-black">{component.name}</td>
-              <td className="px-4 py-2.5">
-                <ScoreCell
-                  score={component.score}
-                  maxScore={component.maxScore}
-                  passed={component.passed}
-                />
+          {grades.map((grade) => (
+            <tr key={grade.id} className="border-b border-neutral-50 last:border-0">
+              <td className="px-4 py-2.5 font-medium text-p-black">{grade.subject}</td>
+              {componentColumns.map((column) => {
+                const component = findGradeComponent(grade, column.key);
+                return (
+                  <td key={column.key} className="px-3 py-2.5 text-center">
+                    {component ? (
+                      <ScoreCell
+                        score={component.score}
+                        maxScore={component.maxScore}
+                        passed={component.passed}
+                      />
+                    ) : (
+                      <span className="text-p-black/45">—</span>
+                    )}
+                  </td>
+                );
+              })}
+              <td className="px-4 py-2.5 text-center">
+                <ScoreCell score={grade.score} maxScore={grade.maxScore} passed={grade.passed} />
               </td>
-              <td className="px-4 py-2.5 text-p-black/55">{component.passScore}</td>
-              <td className="px-4 py-2.5">
-                <PassFailBadge passed={component.passed} />
+              <td className="px-4 py-2.5 text-center">
+                <PassFailBadge passed={grade.passed} />
               </td>
             </tr>
           ))}
-          <tr className="bg-neutral-50/80">
-            <td className="px-4 py-3 font-bold text-p-black">المجموع</td>
-            <td className="px-4 py-3">
-              <ScoreCell score={grade.score} maxScore={grade.maxScore} passed={grade.passed} />
-            </td>
-            <td className="px-4 py-3 font-medium text-p-black/70">{grade.passScore}</td>
-            <td className="px-4 py-3">
-              <PassFailBadge passed={grade.passed} />
-            </td>
-          </tr>
         </tbody>
       </table>
     </div>
@@ -113,6 +122,11 @@ export default function ParentGradesPage() {
   const [blockMessage, setBlockMessage] = useState("");
   const { exporting, requestExport } = useGradesCertificateExport(
     useCallback((message: string) => setExportError(message), [])
+  );
+
+  const gradesWithNotes = useMemo(
+    () => grades.filter((grade) => grade.note?.trim()),
+    [grades]
   );
 
   useEffect(() => {
@@ -159,7 +173,7 @@ export default function ParentGradesPage() {
   if (isParentFeeRestricted(studentAccess)) {
     return (
       <div>
-        <PageHeader title="العلامات" description="تقسيمة العلامات ونتيجة الطالب" />
+        <PageHeader title="العلامات" description="كشف علامات الطالب لجميع المواد" />
         <ParentAccessBlockedCard
           message={
             studentAccess.accessRestrictionMessage ||
@@ -174,7 +188,7 @@ export default function ParentGradesPage() {
   if (blocked) {
     return (
       <div>
-        <PageHeader title="العلامات" description="تقسيمة العلامات ونتيجة الطالب" />
+        <PageHeader title="العلامات" description="كشف علامات الطالب لجميع المواد" />
         <Alert variant="warning">
           <div className="flex items-center gap-2">
             <Lock className="h-5 w-5" />
@@ -192,8 +206,8 @@ export default function ParentGradesPage() {
           title="العلامات"
           description={
             academicContextLabel
-              ? `علامات ${academicContextLabel} — تقسيمة العلامات ونتيجة الطالب للفصل الحالي`
-              : "تقسيمة العلامات ونتيجة الطالب للفصل الحالي"
+              ? `كشف علامات ${academicContextLabel} — جميع المواد في جدول واحد`
+              : "كشف علامات الطالب لجميع المواد"
           }
         />
         <Button
@@ -215,51 +229,20 @@ export default function ParentGradesPage() {
       {grades.length === 0 ? (
         <Card className="text-center text-neutral-500">لا توجد علامات مسجّلة بعد.</Card>
       ) : (
-        <div className="space-y-4">
-          {grades.map((grade) => (
-            <Card key={grade.id} className="overflow-hidden p-0">
-              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-neutral-100 px-4 py-3">
-                <div>
-                  <h2 className="text-base font-bold text-p-black">{grade.subject}</h2>
-                  <p className="mt-0.5 text-xs text-p-black/50">
-                    العلامة الكاملة: {grade.maxScore} — علامة النجاح: {grade.passScore}
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <ScoreCell score={grade.score} maxScore={grade.maxScore} passed={grade.passed} />
-                  <PassFailBadge passed={grade.passed} />
-                </div>
-              </div>
+        <Card className="overflow-hidden p-0">
+          <AllGradesTable grades={grades} />
 
-              {grade.components && grade.components.length > 0 ? (
-                <GradeBreakdownTable grade={grade} />
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <tbody>
-                      <tr className="bg-neutral-50/80">
-                        <td className="px-4 py-3 font-bold text-p-black">المجموع</td>
-                        <td className="px-4 py-3">
-                          <ScoreCell score={grade.score} maxScore={grade.maxScore} passed={grade.passed} />
-                        </td>
-                        <td className="px-4 py-3 font-medium text-p-black/70">{grade.passScore}</td>
-                        <td className="px-4 py-3">
-                          <PassFailBadge passed={grade.passed} />
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              )}
-
-              {grade.note ? (
-                <p className="border-t border-neutral-100 px-4 py-2.5 text-xs text-p-black/55">
-                  ملاحظات المعلم: {grade.note}
+          {gradesWithNotes.length > 0 ? (
+            <div className="space-y-2 border-t border-neutral-100 px-4 py-3">
+              {gradesWithNotes.map((grade) => (
+                <p key={grade.id} className="text-xs text-p-black/55">
+                  <span className="font-semibold text-p-black/70">{grade.subject}:</span>{" "}
+                  {grade.note}
                 </p>
-              ) : null}
-            </Card>
-          ))}
-        </div>
+              ))}
+            </div>
+          ) : null}
+        </Card>
       )}
     </div>
   );

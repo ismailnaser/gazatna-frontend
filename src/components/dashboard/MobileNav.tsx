@@ -4,12 +4,14 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { getDashboardNav } from "@/data/navigation";
+import { useParentGradesNotification } from "@/hooks/useParentGradesNotification";
 import { cn } from "@/lib/utils";
 import type { UserRole } from "@/types";
 import { LayoutGrid, MoreHorizontal, X } from "lucide-react";
 
 export function MobileNav({ role }: { role: UserRole }) {
   const pathname = usePathname();
+  const newGradesCount = useParentGradesNotification(role, pathname);
   const items = getDashboardNav(role).filter(
     (item, index, arr) => arr.findIndex((i) => i.href === item.href) === index
   );
@@ -73,16 +75,25 @@ export function MobileNav({ role }: { role: UserRole }) {
         {mainItems.map((item) => {
           const active = pathname === item.href || pathname.startsWith(item.href + "/");
           const Icon = item.icon;
+          const showParentGradesBadge =
+            role === "parent" && item.href === "/parent/grades" && newGradesCount > 0;
           return (
             <Link
               key={item.href + item.label}
               href={item.href}
               className={cn(
-                "flex min-h-[56px] flex-1 flex-col items-center justify-center gap-0.5 px-1 py-2 text-[11px] font-medium leading-tight",
+                "relative flex min-h-[56px] flex-1 flex-col items-center justify-center gap-0.5 px-1 py-2 text-[11px] font-medium leading-tight",
                 active ? "text-p-green" : "text-p-black/50"
               )}
             >
-              <Icon className="h-5 w-5 shrink-0" />
+              <span className="relative">
+                <Icon className="h-5 w-5 shrink-0" />
+                {showParentGradesBadge && (
+                  <span className="absolute -top-1.5 -start-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-amber-500 px-1 text-[10px] font-bold text-white">
+                    {newGradesCount > 9 ? "9+" : newGradesCount}
+                  </span>
+                )}
+              </span>
               <span className="max-w-full truncate">{item.label}</span>
             </Link>
           );
@@ -148,19 +159,28 @@ export function MobileNav({ role }: { role: UserRole }) {
                 {overflowItems.map((item) => {
                   const active = pathname === item.href || pathname.startsWith(item.href + "/");
                   const Icon = item.icon;
+                  const showParentGradesBadge =
+                    role === "parent" && item.href === "/parent/grades" && newGradesCount > 0;
                   return (
                     <Link
                       key={item.href + item.label}
                       href={item.href}
                       onClick={() => setMoreOpen(false)}
                       className={cn(
-                        "flex min-h-[92px] flex-col items-center justify-center gap-2 rounded-2xl border px-3 py-4 text-center text-sm font-semibold transition-colors",
+                        "relative flex min-h-[92px] flex-col items-center justify-center gap-2 rounded-2xl border px-3 py-4 text-center text-sm font-semibold transition-colors",
                         active
                           ? "border-p-green/30 bg-p-green/10 text-p-green"
                           : "border-neutral-100 bg-neutral-50 text-p-black/75 active:bg-neutral-100"
                       )}
                     >
-                      <Icon className="h-6 w-6 shrink-0" />
+                      <span className="relative">
+                        <Icon className="h-6 w-6 shrink-0" />
+                        {showParentGradesBadge && (
+                          <span className="absolute -top-1.5 -start-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-amber-500 px-1 text-[10px] font-bold text-white">
+                            {newGradesCount > 9 ? "9+" : newGradesCount}
+                          </span>
+                        )}
+                      </span>
                       <span className="leading-snug">{item.label}</span>
                     </Link>
                   );

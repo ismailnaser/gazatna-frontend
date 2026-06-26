@@ -32,6 +32,7 @@ export default function AdminStudentsPage() {
   const [resettingPassword, setResettingPassword] = useState(false);
   const [confirmDeleteStudent, setConfirmDeleteStudent] = useState<AdminStudent | null>(null);
   const [deletingStudent, setDeletingStudent] = useState(false);
+  const [exportingExcel, setExportingExcel] = useState(false);
   const [docRows, setDocRows] = useState<Array<{ name: string; file: File | null }>>([
     { name: "", file: null },
   ]);
@@ -97,9 +98,21 @@ export default function AdminStudentsPage() {
     setDocumentsFilter("");
   }
 
-  function handleExportExcel() {
-    if (filteredStudents.length === 0) return;
-    exportStudentsToExcel(filteredStudents);
+  async function handleExportExcel() {
+    if (filteredStudents.length === 0 || exportingExcel) return;
+    setExportingExcel(true);
+    setError("");
+    setSuccess("");
+    try {
+      await exportStudentsToExcel(filteredStudents);
+      setSuccess(`تم تصدير ${filteredStudents.length} طالب/طالبة إلى ملف Excel.`);
+      scrollToPageTop();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "تعذّر تصدير ملف Excel");
+      scrollToPageTop();
+    } finally {
+      setExportingExcel(false);
+    }
   }
 
   useEffect(() => {
@@ -408,10 +421,10 @@ export default function AdminStudentsPage() {
               variant="outline"
               className="gap-1.5 px-3 py-1.5 text-xs"
               onClick={handleExportExcel}
-              disabled={loading || filteredStudents.length === 0}
+              disabled={loading || exportingExcel || filteredStudents.length === 0}
             >
               <Download className="h-3.5 w-3.5" />
-              تصدير Excel ({filteredStudents.length})
+              {exportingExcel ? "جاري التصدير..." : `تصدير Excel (${filteredStudents.length})`}
             </Button>
           </div>
           <div className="relative">

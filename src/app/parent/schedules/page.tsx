@@ -9,12 +9,10 @@ import { ScheduleTable } from "@/components/schedules/ScheduleTable";
 import { StudentScheduleGrid } from "@/components/schedules/StudentScheduleGrid";
 import { useSchedulePdfExport } from "@/hooks/useSchedulePdfExport";
 import { api } from "@/lib/api";
-import { buildStudentSchedulePrintHtml } from "@/lib/exportSchedulePdf";
-import { printHtmlDocument } from "@/lib/printSchedule";
 import { cn } from "@/lib/utils";
 import type { Schedule, ScheduleType } from "@/types/schedules";
 import { mapSchedule, SCHEDULE_TYPE_LABELS } from "@/types/schedules";
-import { CalendarDays, ClipboardList, Download, Printer } from "lucide-react";
+import { CalendarDays, ClipboardList, Download } from "lucide-react";
 
 type TabId = ScheduleType;
 
@@ -29,8 +27,9 @@ export default function ParentSchedulesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [printingId, setPrintingId] = useState<string | null>(null);
-  const { exportingId, requestExport } = useSchedulePdfExport(useCallback((message: string) => setError(message), []));
+  const { exportingId, requestExport } = useSchedulePdfExport(
+    useCallback((message: string) => setError(message), [])
+  );
 
   useEffect(() => {
     setLoading(true);
@@ -47,32 +46,7 @@ export default function ParentSchedulesPage() {
 
   function handleExportPdf(schedule: Schedule) {
     setError("");
-    requestExport(
-      schedule,
-      schedule.scheduleType === "class" ? "student" : "exam"
-    );
-  }
-
-  async function handlePrint(schedule: Schedule) {
-    setError("");
-    setPrintingId(schedule.id);
-    try {
-      if (schedule.scheduleType === "class") {
-        const { title, bodyHtml } = buildStudentSchedulePrintHtml(schedule);
-        await printHtmlDocument(title, bodyHtml);
-        return;
-      }
-      const container = document.getElementById(`schedule-print-${schedule.id}`);
-      if (!container) {
-        setError("افتح الجدول أولاً ثم أعد محاولة الطباعة");
-        return;
-      }
-      await printHtmlDocument(schedule.name, container.innerHTML);
-    } catch {
-      setError("تعذر طباعة الجدول");
-    } finally {
-      setPrintingId(null);
-    }
+    requestExport(schedule, schedule.scheduleType === "class" ? "student" : "exam");
   }
 
   return (
@@ -146,16 +120,6 @@ export default function ParentSchedulesPage() {
                     </Button>
                     <Button
                       type="button"
-                      variant="outline"
-                      className="gap-1.5 px-3 py-1.5 text-xs"
-                      onClick={() => handlePrint(schedule)}
-                      disabled={printingId === schedule.id}
-                    >
-                      <Printer className="h-3.5 w-3.5" />
-                      {printingId === schedule.id ? "جاري التحضير..." : "طباعة"}
-                    </Button>
-                    <Button
-                      type="button"
                       className="gap-1.5 px-3 py-1.5 text-xs"
                       onClick={() => handleExportPdf(schedule)}
                       disabled={exportingId === schedule.id}
@@ -170,9 +134,7 @@ export default function ParentSchedulesPage() {
                     {isClassSchedule ? (
                       <StudentScheduleGrid schedule={schedule} />
                     ) : (
-                      <div id={`schedule-print-${schedule.id}`}>
-                        <ScheduleTable schedule={schedule} />
-                      </div>
+                      <ScheduleTable schedule={schedule} />
                     )}
                   </div>
                 ) : null}

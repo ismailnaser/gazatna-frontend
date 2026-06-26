@@ -7,6 +7,10 @@ import {
   loadSchoolLogoDataUrl,
   mountPdfElement,
 } from "@/lib/pdfExport";
+import {
+  collectGradeReportColumns,
+  findGradeComponent,
+} from "@/lib/gradesReportLayout";
 import type { Grade, Student } from "@/types";
 
 export type GradesCertificateInput = {
@@ -31,66 +35,61 @@ function statusBadge(passed: boolean | null | undefined) {
 }
 
 function formatScore(score: number | null, maxScore: number) {
-  return score == null ? "—" : String(score);
+  return score == null ? "—" : `${score}/${maxScore}`;
 }
 
-function buildGradeSection(grade: Grade) {
+function buildGradesTable(grades: Grade[]) {
   const thStyle =
-    "border:1px solid #d4d4d4;background:#f5f5f5;padding:8px 10px;text-align:right;font-size:11px;font-weight:700;color:#111;";
+    "border:1px solid #d4d4d4;background:#f5f5f5;padding:8px 10px;text-align:center;font-size:11px;font-weight:700;color:#111;";
   const tdStyle =
-    "border:1px solid #d4d4d4;padding:8px 10px;font-size:12px;color:#111;vertical-align:middle;text-align:right;";
+    "border:1px solid #d4d4d4;padding:8px 10px;font-size:12px;color:#111;vertical-align:middle;text-align:center;";
+  const subjectTdStyle = `${tdStyle}text-align:right;font-weight:600;`;
 
-  const components = grade.components ?? [];
-  const rows =
-    components.length > 0
-      ? components
-          .map((component) => {
-            return `<tr>
-              <td style="${tdStyle}font-weight:600;">${escapeHtml(component.name)}</td>
-              <td style="${tdStyle}${scoreStyle(component.passed)}">${formatScore(component.score, component.maxScore)}/${component.maxScore}</td>
-              <td style="${tdStyle}color:#666;">${component.passScore}</td>
-              <td style="${tdStyle}">${statusBadge(component.passed)}</td>
-            </tr>`;
-          })
-          .join("")
-      : "";
+  const componentColumns = collectGradeReportColumns(grades);
+  const headerCells = [
+    `<th style="${thStyle}text-align:right;">المادة</th>`,
+    ...componentColumns.map(
+      (column) => `<th style="${thStyle}">${escapeHtml(column.name)}</th>`
+    ),
+    `<th style="${thStyle}">المجموع</th>`,
+    `<th style="${thStyle}">الحالة</th>`,
+  ].join("");
 
-  const totalRow = `<tr style="background:#fafafa;">
-    <td style="${tdStyle}font-weight:700;">المجموع</td>
-    <td style="${tdStyle}${scoreStyle(grade.passed)}">${formatScore(grade.score, grade.maxScore)}/${grade.maxScore}</td>
-    <td style="${tdStyle}font-weight:600;color:#444;">${grade.passScore}</td>
-    <td style="${tdStyle}">${statusBadge(grade.passed)}</td>
-  </tr>`;
+  const bodyRows = grades
+    .map((grade) => {
+      const componentCells = componentColumns
+        .map((column) => {
+          const component = findGradeComponent(grade, column.key);
+          if (!component) {
+            return `<td style="${tdStyle}color:#888;">—</td>`;
+          }
+          return `<td style="${tdStyle}${scoreStyle(component.passed)}">${formatScore(component.score, component.maxScore)}</td>`;
+        })
+        .join("");
 
-  const noteLine = grade.note
-    ? `<p style="margin:8px 0 0;font-size:11px;color:#666;">ملاحظات المعلم: ${escapeHtml(grade.note)}</p>`
-    : "";
+      return `<tr>
+        <td style="${subjectTdStyle}">${escapeHtml(grade.subject)}</td>
+        ${componentCells}
+        <td style="${tdStyle}${scoreStyle(grade.passed)}">${formatScore(grade.score, grade.maxScore)}</td>
+        <td style="${tdStyle}">${statusBadge(grade.passed)}</td>
+      </tr>`;
+    })
+    .join("");
+
+  const notes = grades
+    .filter((grade) => grade.note?.trim())
+    .map(
+      (grade) =>
+        `<p style="margin:6px 0 0;font-size:11px;color:#666;"><strong style="color:#444;">${escapeHtml(grade.subject)}:</strong> ${escapeHtml(grade.note ?? "")}</p>`
+    )
+    .join("");
 
   return `
-    <section style="margin-bottom:22px;page-break-inside:avoid;">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:10px;">
-        <div>
-          <h2 style="margin:0;font-size:15px;font-weight:700;color:#111;">${escapeHtml(grade.subject)}</h2>
-          <p style="margin:4px 0 0;font-size:11px;color:#666;">العلامة الكاملة: ${grade.maxScore} — علامة النجاح: ${grade.passScore}</p>
-        </div>
-        <div style="text-align:left;white-space:nowrap;">
-          <span style="${scoreStyle(grade.passed)}font-size:14px;">${formatScore(grade.score, grade.maxScore)}/${grade.maxScore}</span>
-          <span style="margin-right:8px;">${statusBadge(grade.passed)}</span>
-        </div>
-      </div>
-      <table style="width:100%;border-collapse:collapse;table-layout:fixed;">
-        <thead>
-          <tr>
-            <th style="${thStyle}">التقسيم</th>
-            <th style="${thStyle}">العلامة</th>
-            <th style="${thStyle}">علامة النجاح</th>
-            <th style="${thStyle}">الحالة</th>
-          </tr>
-        </thead>
-        <tbody>${rows}${totalRow}</tbody>
-      </table>
-      ${noteLine}
-    </section>
+    <table style="width:100%;border-collapse:collapse;">
+      <thead><tr>${headerCells}</tr></thead>
+      <tbody>${bodyRows}</tbody>
+    </table>
+    ${notes}
   `;
 }
 
@@ -100,7 +99,7 @@ async function buildGradesCertificateElement({
   schoolName = "مدرسة غَزتنا",
 }: GradesCertificateInput) {
   const logoDataUrl = await loadSchoolLogoDataUrl();
-  const sections = grades.map(buildGradeSection).join("");
+  const tableHtml = grades.length > 0 ? buildGradesTable(grades) : '<p style="text-align:center;color:#666;font-size:13px;">لا توجد علامات مسجّلة.</p>';
   const exportDate = formatExportDate();
 
   return mountPdfElement(`
@@ -119,7 +118,7 @@ async function buildGradesCertificateElement({
         <div><span style="font-size:11px;color:#666;">الشعبة</span><p style="margin:2px 0 0;font-size:14px;font-weight:700;">${escapeHtml(student.section || "—")}</p></div>
       </div>
 
-      ${sections || '<p style="text-align:center;color:#666;font-size:13px;">لا توجد علامات مسجّلة.</p>'}
+      ${tableHtml}
 
       ${buildPdfBrandedFooterHtml(schoolName)}
     </div>

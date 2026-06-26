@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useMemo } from "react";
 import { Card } from "@/components/atoms/Card";
 import { TeacherSubmissionAlerts } from "@/components/teacher/TeacherSubmissionAlerts";
@@ -10,7 +9,6 @@ import { useSchool } from "@/context/SchoolContext";
 import { useTeacherAlerts } from "@/hooks/useTeacherAlerts";
 import {
   BookOpen,
-  ChevronLeft,
   ClipboardList,
   GraduationCap,
   Users,
@@ -52,54 +50,28 @@ function DashboardStat({
 function TeacherClassCard({
   name,
   studentCount,
-  homeworkCount,
-  quizCount,
-  href,
 }: {
   name: string;
   studentCount: number;
-  homeworkCount: number;
-  quizCount: number;
-  href: string;
 }) {
   return (
-    <Link href={href} className="block">
-      <article className="overflow-hidden rounded-2xl border border-neutral-100 bg-white shadow-sm transition-all hover:border-brand-teal/25 hover:shadow-md">
-        <div className="h-1 bg-brand-teal/80" />
-        <div className="p-3.5 sm:p-4">
-          <div className="flex items-start justify-between gap-2">
-            <div className="flex min-w-0 items-center gap-3">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-teal/10">
-                <GraduationCap className="h-5 w-5 text-brand-teal" />
-              </span>
-              <div className="min-w-0">
-                <h3 className="truncate text-base font-bold text-p-black sm:text-lg">{name}</h3>
-                <p className="mt-0.5 flex items-center gap-1 text-xs text-p-black/50">
-                  <Users className="h-3.5 w-3.5 shrink-0" />
-                  {studentCount} {studentCount === 1 ? "طالب" : "طلاب"}
-                </p>
-              </div>
-            </div>
-            <ChevronLeft className="mt-1 h-5 w-5 shrink-0 text-p-black/25" />
-          </div>
-
-          <div className="mt-3 grid grid-cols-2 gap-2">
-            <DashboardStat
-              icon={BookOpen}
-              count={homeworkCount}
-              label={homeworkCount === 1 ? "واجب" : "واجبات"}
-              tone="blue"
-            />
-            <DashboardStat
-              icon={ClipboardList}
-              count={quizCount}
-              label={quizCount === 1 ? "اختبار" : "اختبارات"}
-              tone="orange"
-            />
+    <article className="overflow-hidden rounded-2xl border border-neutral-100 bg-white shadow-sm">
+      <div className="h-1 bg-brand-teal/80" />
+      <div className="p-3.5 sm:p-4">
+        <div className="flex min-w-0 items-center gap-3">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-teal/10">
+            <GraduationCap className="h-5 w-5 text-brand-teal" />
+          </span>
+          <div className="min-w-0">
+            <h3 className="truncate text-base font-bold text-p-black sm:text-lg">{name}</h3>
+            <p className="mt-0.5 flex items-center gap-1 text-xs text-p-black/50">
+              <Users className="h-3.5 w-3.5 shrink-0" />
+              {studentCount} {studentCount === 1 ? "طالب" : "طلاب"}
+            </p>
           </div>
         </div>
-      </article>
-    </Link>
+      </div>
+    </article>
   );
 }
 
@@ -189,9 +161,6 @@ export default function TeacherDashboard() {
                 key={cls.id}
                 name={cls.name}
                 studentCount={cls.studentCount ?? 0}
-                homeworkCount={getHomeworkByClass(cls.id).length}
-                quizCount={getQuizzesByClass(cls.id).length}
-                href={`/teacher/classes/${cls.id}`}
               />
             ))}
           </div>

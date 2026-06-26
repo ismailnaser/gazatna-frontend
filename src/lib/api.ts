@@ -328,6 +328,17 @@ export const api = {
       method: "POST",
       body: JSON.stringify(data),
     }),
+  getAdminTermEndPreview: (yearId: string, termId?: string) =>
+    apiFetch<unknown>(
+      termId
+        ? `/admin/academic-years/${yearId}/term-end-preview/?termId=${encodeURIComponent(termId)}`
+        : `/admin/academic-years/${yearId}/term-end-preview/`
+    ),
+  executeAdminTermEnd: (yearId: string, data?: { termId?: string; publishCertificates?: boolean }) =>
+    apiFetch<unknown>(`/admin/academic-years/${yearId}/execute-term-end/`, {
+      method: "POST",
+      body: JSON.stringify(data ?? {}),
+    }),
   getAdminCertificateConfig: (yearId: string) =>
     apiFetch<unknown>(`/admin/academic-years/${yearId}/certificate-config/`),
   updateAdminCertificateConfig: (yearId: string, data: unknown) =>
@@ -560,6 +571,8 @@ export const api = {
   getParentSchedules: (type?: "exam" | "class") =>
     apiList<unknown>(type ? `/parent/schedules/?type=${type}` : "/parent/schedules/"),
   getParentGrades: () => apiList<unknown>("/parent/grades/"),
+  getParentGradesNotification: () =>
+    apiFetch<{ hasNew: boolean; count: number }>("/parent/grades/notification/"),
   getParentCertificates: () => apiFetch<unknown>("/parent/certificates/"),
   getParentAssessments: () => apiList<unknown>("/parent/assessments/"),
   getParentFees: () =>

@@ -6,6 +6,8 @@ export type AcademicTermStatus = {
   startDate: string;
   endDate: string;
   isCurrent: boolean;
+  isClosed: boolean;
+  closedAt: string | null;
 };
 
 export type PromotionPolicy = {
@@ -52,6 +54,8 @@ export function mapAcademicTerm(raw: Record<string, unknown>): AcademicTermStatu
     startDate: String(raw.startDate),
     endDate: String(raw.endDate),
     isCurrent: Boolean(raw.isCurrent),
+    isClosed: Boolean(raw.isClosed),
+    closedAt: raw.closedAt ? String(raw.closedAt) : null,
   };
 }
 
@@ -156,8 +160,13 @@ export type PromotionPreviewStudent = {
 };
 
 export type PromotionPreview = {
+  scope?: "term" | "year";
   academicYearId: string;
   academicYearName: string;
+  termId?: string | null;
+  termName?: string | null;
+  nextTermId?: string | null;
+  nextTermName?: string | null;
   summary: {
     promote: number;
     repeat: number;
@@ -172,8 +181,13 @@ export type PromotionPreview = {
 export function mapPromotionPreview(raw: Record<string, unknown>): PromotionPreview {
   const summary = (raw.summary as Record<string, unknown>) ?? {};
   return {
+    scope: (raw.scope as PromotionPreview["scope"]) ?? "year",
     academicYearId: String(raw.academicYearId ?? ""),
     academicYearName: String(raw.academicYearName ?? ""),
+    termId: raw.termId ? String(raw.termId) : null,
+    termName: raw.termName ? String(raw.termName) : null,
+    nextTermId: raw.nextTermId ? String(raw.nextTermId) : null,
+    nextTermName: raw.nextTermName ? String(raw.nextTermName) : null,
     summary: {
       promote: Number(summary.promote ?? 0),
       repeat: Number(summary.repeat ?? 0),

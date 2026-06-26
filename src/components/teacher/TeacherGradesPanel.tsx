@@ -19,7 +19,7 @@ import type {
 } from "@/types/gradeSchemes";
 import { groupClassesByGrade } from "@/lib/groupClassesByGrade";
 import Link from "next/link";
-import { Plus, Save, Search, Trash2, Users, BookOpen } from "lucide-react";
+import { BookOpen, ChevronDown, ChevronUp, Plus, Save, Search, Trash2, Users } from "lucide-react";
 
 const DEFAULT_COMPONENTS: Array<{ name: string; maxScore: number }> = [
   { name: "النشاط", maxScore: 10 },
@@ -359,6 +359,18 @@ export function TeacherGradesPanel({ mode = "entry" }: { mode?: "scheme" | "entr
     clearFeedback();
   }
 
+  function moveComponent(index: number, direction: -1 | 1) {
+    setComponents((prev) => {
+      const next = index + direction;
+      if (next < 0 || next >= prev.length) return prev;
+      const copy = [...prev];
+      [copy[index], copy[next]] = [copy[next], copy[index]];
+      return copy;
+    });
+    setSchemeSaved(false);
+    clearFeedback();
+  }
+
   function updateEntryScore(studentId: string, componentId: string, value: string) {
     setEntries((prev) =>
       prev.map((entry) => {
@@ -543,7 +555,8 @@ export function TeacherGradesPanel({ mode = "entry" }: { mode?: "scheme" | "entr
               <div>
                 <h2 className="text-sm font-bold text-p-black">تقسيمة العلامات</h2>
                 <p className="mt-1 text-xs text-p-black/50">
-                  حدّد العلامة الكاملة ثم قسّمها. تُطبَّق على{" "}
+                  حدّد العلامة الكاملة ثم قسّمها. رتّب العناصر بالأسهم لتحديد ما يظهر أولاً في
+                  جدول العلامات. تُطبَّق على{" "}
                   {hasMultipleSubjects ? `${subjects.length} مواد` : subjects[0]}
                   {hasMultipleClasses ? ` في ${selectedClassIds.length} شعب` : ""}.
                 </p>
@@ -586,11 +599,17 @@ export function TeacherGradesPanel({ mode = "entry" }: { mode?: "scheme" | "entr
                   key={component.id}
                   className="grid gap-2 rounded-xl border border-neutral-100 bg-neutral-50/60 p-3 sm:grid-cols-[1fr_120px_auto]"
                 >
-                  <Input
-                    value={component.name}
-                    onChange={(e) => updateComponent(index, "name", e.target.value)}
-                    placeholder="اسم العنصر (مثال: النشاط)"
-                  />
+                  <div className="flex items-center gap-2">
+                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white text-xs font-bold text-p-black/45 ring-1 ring-neutral-200">
+                      {index + 1}
+                    </span>
+                    <Input
+                      className="min-w-0 flex-1"
+                      value={component.name}
+                      onChange={(e) => updateComponent(index, "name", e.target.value)}
+                      placeholder="اسم العنصر (مثال: النشاط)"
+                    />
+                  </div>
                   <NumberFieldWithKeypad
                     compact
                     fieldId={`component-max-${component.id}`}
@@ -601,16 +620,41 @@ export function TeacherGradesPanel({ mode = "entry" }: { mode?: "scheme" | "entr
                     allowDecimal
                     maxDecimalPlaces={2}
                   />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="self-end text-p-red hover:bg-p-red/5"
-                    onClick={() => removeComponent(index)}
-                    disabled={components.length <= 1}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  <div className="flex items-end justify-end gap-0.5 self-end">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="px-2"
+                      disabled={index === 0}
+                      onClick={() => moveComponent(index, -1)}
+                      aria-label="تحريك لأعلى"
+                    >
+                      <ChevronUp className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="px-2"
+                      disabled={index === components.length - 1}
+                      onClick={() => moveComponent(index, 1)}
+                      aria-label="تحريك لأسفل"
+                    >
+                      <ChevronDown className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="px-2 text-p-red hover:bg-p-red/5"
+                      onClick={() => removeComponent(index)}
+                      disabled={components.length <= 1}
+                      aria-label="حذف العنصر"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               ))}
             </div>

@@ -50,6 +50,25 @@ function buildAssignments(teachers: TeacherProfile[]): Record<string, string[]> 
   return map;
 }
 
+function mapTeacherProfile(raw: Record<string, unknown>): TeacherProfile {
+  const teachingClasses = Array.isArray(raw.teachingClasses)
+    ? mapSchoolClasses(raw.teachingClasses as unknown[])
+    : undefined;
+
+  return {
+    ...(raw as TeacherProfile),
+    id: String(raw.id),
+    userId: raw.userId != null ? String(raw.userId) : undefined,
+    classIds: Array.isArray(raw.classIds) ? raw.classIds.map(String) : [],
+    subjectIds: Array.isArray(raw.subjectIds) ? raw.subjectIds.map(String) : [],
+    teachingClasses,
+  };
+}
+
+function mapTeachers(rows: unknown[]): TeacherProfile[] {
+  return rows.map((row) => mapTeacherProfile(row as Record<string, unknown>));
+}
+
 function normalizeSubject(raw: Subject): Subject {
   return {
     ...raw,
@@ -82,7 +101,7 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
     if (!user) {
       try {
         const teachersData = await api.getTeachers();
-        const teachers = teachersData as TeacherProfile[];
+        const teachers = mapTeachers(teachersData);
         setCurrentTeacher(null);
         setState({ teachers, assignments: buildAssignments(teachers) });
       } catch {
@@ -104,7 +123,7 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
           api.getAdminGrades(),
         ]);
         const teachers =
-          teachersResult.status === "fulfilled" ? (teachersResult.value as TeacherProfile[]) : [];
+          teachersResult.status === "fulfilled" ? mapTeachers(teachersResult.value as unknown[]) : [];
         const classesData =
           classesResult.status === "fulfilled"
             ? mapSchoolClasses(classesResult.value as unknown[])
@@ -125,17 +144,23 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
           api.getTeacherClasses(),
           api.getTeacherProfile(),
         ]);
+        const teacher =
+          profileResult.status === "fulfilled"
+            ? mapTeacherProfile(profileResult.value as Record<string, unknown>)
+            : null;
         const classesData =
           classesResult.status === "fulfilled"
             ? mapSchoolClasses(classesResult.value as unknown[])
             : [];
-        const teacher =
-          profileResult.status === "fulfilled" ? (profileResult.value as TeacherProfile) : null;
+        const resolvedTeacher =
+          teacher && !teacher.teachingClasses?.length && classesData.length
+            ? { ...teacher, teachingClasses: classesData }
+            : teacher;
         setClasses(classesData);
-        setCurrentTeacher(teacher);
+        setCurrentTeacher(resolvedTeacher);
         setState(
-          teacher
-            ? { teachers: [teacher], assignments: buildAssignments([teacher]) }
+          resolvedTeacher
+            ? { teachers: [resolvedTeacher], assignments: buildAssignments([resolvedTeacher]) }
             : { teachers: [], assignments: {} }
         );
       } else if (user.role === "parent") {
@@ -146,7 +171,7 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
         setSubjects([]);
       } else {
         const teachersData = await api.getTeachers();
-        const teachers = teachersData as TeacherProfile[];
+        const teachers = mapTeachers(teachersData);
         setCurrentTeacher(null);
         setState({ teachers, assignments: buildAssignments(teachers) });
       }
@@ -168,22 +193,29 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
 
   const getTeacherClasses = useCallback(
     (teacherId: string) => {
+      const teacher = state.teachers.find((t) => t.id === teacherId);
+      if (teacher?.teachingClasses?.length) {
+        return teacher.teachingClasses;
+      }
       const ids = state.assignments[teacherId] ?? [];
       return classes.filter((c) => ids.includes(c.id));
     },
-    [state.assignments, classes]
+    [state.assignments, state.teachers, classes]
   );
 
   const getTeacherClassesByUserId = useCallback(
     (userId: string) => {
       if (user?.role === "teacher") {
+        if (currentTeacher?.teachingClasses?.length) {
+          return currentTeacher.teachingClasses;
+        }
         return classes;
       }
       const teacher = state.teachers.find((t) => String(t.userId) === String(userId));
       if (!teacher) return [];
       return getTeacherClasses(teacher.id);
     },
-    [state.teachers, getTeacherClasses, classes, user]
+    [state.teachers, getTeacherClasses, classes, user, currentTeacher]
   );
 
   const setTeacherClasses = useCallback(async (teacherId: string, classIds: string[]) => {

@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { getDashboardNav } from "@/data/navigation";
 import { api } from "@/lib/api";
 import { countPendingTeacherAlerts } from "@/lib/teacherAlerts";
+import { useParentGradesNotification } from "@/hooks/useParentGradesNotification";
 import { cn } from "@/lib/utils";
 import { isAdminRole } from "@/lib/adminRoles";
 import type { UserRole, TeacherAlert } from "@/types";
@@ -15,6 +16,7 @@ export function DashboardSidebar({ role }: { role: UserRole }) {
   const items = getDashboardNav(role);
   const [pendingPayments, setPendingPayments] = useState(0);
   const [pendingSubmissions, setPendingSubmissions] = useState(0);
+  const newGradesCount = useParentGradesNotification(role, pathname);
 
   const uniqueItems = items.filter(
     (item, index, arr) => arr.findIndex((i) => i.href === item.href) === index
@@ -55,6 +57,8 @@ export function DashboardSidebar({ role }: { role: UserRole }) {
           const showFinanceBadge = isAdminRole(role) && item.href === "/admin/finance" && pendingPayments > 0;
           const showTeacherBadge =
             role === "teacher" && item.href === "/teacher/grade-entry" && pendingSubmissions > 0;
+          const showParentGradesBadge =
+            role === "parent" && item.href === "/parent/grades" && newGradesCount > 0;
           return (
             <Link
               key={item.href + item.label}
@@ -77,6 +81,14 @@ export function DashboardSidebar({ role }: { role: UserRole }) {
                 {showTeacherBadge && (
                   <span className="inline-flex min-w-6 items-center justify-center rounded-full bg-amber-500 px-2 py-0.5 text-xs font-bold text-white">
                     {pendingSubmissions}
+                  </span>
+                )}
+                {showParentGradesBadge && (
+                  <span
+                    className="inline-flex min-w-6 items-center justify-center rounded-full bg-amber-500 px-2 py-0.5 text-xs font-bold text-white"
+                    title="علامات جديدة"
+                  >
+                    {newGradesCount}
                   </span>
                 )}
               </span>

@@ -14,6 +14,7 @@ export type TeacherProfile = {
   imageGradient: string;
   imageUrl?: string | null;
   classIds?: string[];
+  teachingClasses?: SchoolClass[];
   teachableClassIds?: string[];
   subjectClassIds?: Record<string, string[]>;
 };

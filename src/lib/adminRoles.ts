@@ -10,10 +10,15 @@ import {
   Layers,
   LineChart,
   Mail,
+  Medal,
   Newspaper,
+  Play,
+  Scale,
   Settings,
   Settings2,
   Users,
+  Archive,
+  Flag,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -58,6 +63,16 @@ export const adminRoleDescriptions: Record<AdminRole, string> = {
   admin_staff: "إدارة الكادر التعليمي وملفات المعلمين.",
 };
 
+const academicAdminNav: NavItem[] = [
+  { href: "/admin/academic-years", label: "السنوات الدراسية", icon: CalendarRange },
+  { href: "/admin/academic-terms", label: "الفصول الدراسية", icon: CalendarDays },
+  { href: "/admin/promotion-policies", label: "سياسات الترفيع", icon: Scale },
+  { href: "/admin/certificate-settings", label: "إعدادات الشهادات", icon: Medal },
+  { href: "/admin/term-end", label: "نهاية الفصل", icon: Flag },
+  { href: "/admin/year-end", label: "نهاية السنة", icon: Play },
+  { href: "/admin/academic-archive", label: "أرشيف السنوات", icon: Archive },
+];
+
 const allAdminNav: NavItem[] = [
   { href: "/admin", label: "الرئيسية", icon: BarChart3 },
   { href: "/admin/analytics", label: "التحليلات", icon: LineChart },
@@ -65,7 +80,7 @@ const allAdminNav: NavItem[] = [
   { href: "/admin/students", label: "الطلاب", icon: Users },
   { href: "/admin/admissions", label: "طلبات التسجيل", icon: ClipboardList },
   { href: "/admin/classes", label: "المراحل الدراسية", icon: Layers },
-  { href: "/admin/academic-years", label: "السنوات الدراسية", icon: CalendarRange },
+  ...academicAdminNav,
   { href: "/admin/schedules", label: "الجداول", icon: CalendarDays },
   { href: "/admin/subjects", label: "المواد", icon: BookMarked },
   { href: "/admin/finance", label: "المالية", icon: CreditCard },
@@ -84,7 +99,19 @@ const roleNavPaths: Record<AdminRole, string[]> = {
     "/admin/admissions",
     "/admin/schedules",
   ],
-  admin_academics: ["/admin", "/admin/academic-years", "/admin/subjects", "/admin/schedules", "/admin/analytics"],
+  admin_academics: [
+    "/admin",
+    "/admin/academic-years",
+    "/admin/academic-terms",
+    "/admin/promotion-policies",
+    "/admin/certificate-settings",
+    "/admin/term-end",
+    "/admin/year-end",
+    "/admin/academic-archive",
+    "/admin/subjects",
+    "/admin/schedules",
+    "/admin/analytics",
+  ],
   admin_finance: ["/admin", "/admin/finance", "/admin/notifications", "/admin/analytics"],
   admin_content: ["/admin", "/admin/content", "/admin/messages"],
   admin_staff: ["/admin", "/admin/teachers"],

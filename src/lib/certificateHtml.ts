@@ -167,8 +167,8 @@ export async function buildStudentCertificateHtml({
 
   return `
     <div dir="rtl" style="font-family:Tahoma,Arial,sans-serif;background:#ffffff;color:#111111;width:746px;">
-      <div style="border:2px solid #424cf3;border-radius:14px;padding:22px 24px 20px;background:#ffffff;">
-        <table style="width:100%;border-collapse:collapse;margin-bottom:18px;border-bottom:2px solid #424cf3;padding-bottom:16px;">
+      <div style="padding:22px 24px 20px;background:#ffffff;">
+        <table style="width:100%;border-collapse:collapse;margin-bottom:18px;border-bottom:1px solid #e5e7eb;padding-bottom:16px;">
           <tr>
             <td style="width:140px;vertical-align:middle;padding-left:12px;">
               <img

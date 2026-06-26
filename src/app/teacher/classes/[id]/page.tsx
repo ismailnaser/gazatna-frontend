@@ -1,20 +1,5 @@
-import type { ClassTab } from "@/components/teacher/ClassDetailTabs";
-import { ClassDetailClient } from "./ClassDetailClient";
+import { redirect } from "next/navigation";
 
-function parseTab(value: string | undefined): ClassTab {
-  if (value === "homework" || value === "quizzes") return value;
-  return "grades";
-}
-
-export default async function ClassDetailPage({
-  params,
-  searchParams,
-}: {
-  params: Promise<{ id: string }>;
-  searchParams: Promise<{ tab?: string }>;
-}) {
-  const { id } = await params;
-  const { tab } = await searchParams;
-
-  return <ClassDetailClient classId={id} activeTab={parseTab(tab)} />;
+export default async function ClassDetailPage() {
+  redirect("/teacher");
 }
