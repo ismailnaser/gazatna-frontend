@@ -36,6 +36,19 @@ type SchoolContextValue = SchoolState & {
   addSubject: (name: string) => Promise<Subject>;
   updateSubject: (id: string, name: string) => Promise<Subject>;
   setSubjectClasses: (id: string, classIds: string[]) => Promise<Subject>;
+  assignTeacherToSubject: (
+    subjectId: string,
+    teacherId: string,
+    classIds?: string[]
+  ) => Promise<{
+    teacher: TeacherProfile;
+    assignedClassIds: string[];
+    skippedConflicts: string[];
+  }>;
+  syncSubjectSections: (
+    subjectId: string,
+    sections: Array<{ classId: string; teacherId: string | null }>
+  ) => Promise<Subject>;
   removeSubject: (id: string) => Promise<void>;
   refresh: () => Promise<void>;
 };
@@ -61,7 +74,12 @@ function mapTeacherProfile(raw: Record<string, unknown>): TeacherProfile {
     userId: raw.userId != null ? String(raw.userId) : undefined,
     classIds: Array.isArray(raw.classIds) ? raw.classIds.map(String) : [],
     subjectIds: Array.isArray(raw.subjectIds) ? raw.subjectIds.map(String) : [],
+    homeroomClassId:
+      raw.homeroomClassId != null ? String(raw.homeroomClassId) : null,
+    homeroomClassName:
+      raw.homeroomClassName != null ? String(raw.homeroomClassName) : null,
     teachingClasses,
+    status: raw.status === "inactive" ? "inactive" : "active",
   };
 }
 
@@ -271,7 +289,9 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
     if (image) {
       const formData = new FormData();
       formData.append("image", image);
-      updated = (await api.updateAdminTeacher(id, formData)) as TeacherProfile;
+      updated = mapTeacherProfile(
+        (await api.updateAdminTeacher(id, formData)) as Record<string, unknown>
+      );
     } else {
       const payload: Record<string, unknown> = { ...data };
       if (data.subjectIds) {
@@ -282,17 +302,76 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
       if (data.classIds) {
         payload.classIds = data.classIds.map(Number);
       }
-      updated = (await api.updateAdminTeacher(id, payload)) as TeacherProfile;
+      updated = mapTeacherProfile(
+        (await api.updateAdminTeacher(id, payload)) as Record<string, unknown>
+      );
     }
     setState((prev) => ({
       ...prev,
-      teachers: prev.teachers.map((t) => (t.id === id ? { ...t, ...updated } : t)),
+      teachers: prev.teachers.map((t) => (t.id === id ? updated : t)),
       assignments: updated.classIds
         ? { ...prev.assignments, [id]: updated.classIds }
         : prev.assignments,
     }));
     return updated;
   }, []);
+
+  const assignTeacherToSubject = useCallback(async (subjectId: string, teacherId: string, classIds?: string[]) => {
+    const raw = (await api.assignSubjectTeacher(subjectId, teacherId, classIds)) as Record<
+      string,
+      unknown
+    >;
+    const skippedConflicts = Array.isArray(raw.skippedConflicts)
+      ? raw.skippedConflicts.map(String)
+      : [];
+    const assignedClassIds = Array.isArray(raw.assignedClassIds)
+      ? raw.assignedClassIds.map(String)
+      : [];
+    const updated = mapTeacherProfile(raw);
+    setState((prev) => ({
+      ...prev,
+      teachers: prev.teachers.map((teacher) => (teacher.id === teacherId ? updated : teacher)),
+      assignments: updated.classIds
+        ? { ...prev.assignments, [teacherId]: updated.classIds }
+        : prev.assignments,
+    }));
+    return { teacher: updated, assignedClassIds, skippedConflicts };
+  }, []);
+
+  const syncSubjectSections = useCallback(
+    async (
+      subjectId: string,
+      sections: Array<{ classId: string; teacherId: string | null }>
+    ) => {
+      const raw = (await api.syncSubjectSections(subjectId, sections)) as Record<string, unknown>;
+      const updated = raw.subject as Subject;
+      const updatedTeachers = mapTeachers(
+        Array.isArray(raw.teachers) ? raw.teachers : []
+      );
+
+      setSubjects((prev) =>
+        prev.map((subject) => (subject.id === subjectId ? { ...subject, ...updated } : subject))
+      );
+
+      if (updatedTeachers.length > 0) {
+        const byId = new Map(updatedTeachers.map((teacher) => [teacher.id, teacher]));
+        setState((prev) => ({
+          ...prev,
+          teachers: prev.teachers.map((teacher) => byId.get(teacher.id) ?? teacher),
+          assignments: updatedTeachers.reduce(
+            (acc, teacher) => {
+              if (teacher.classIds) acc[teacher.id] = teacher.classIds;
+              return acc;
+            },
+            { ...prev.assignments }
+          ),
+        }));
+      }
+
+      return updated;
+    },
+    []
+  );
 
   const removeTeacher = useCallback(async (id: string) => {
     await api.deleteAdminTeacher(id);
@@ -417,6 +496,8 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
         addSubject,
         updateSubject,
         setSubjectClasses,
+        assignTeacherToSubject,
+        syncSubjectSections,
         removeSubject,
         refresh,
       }}

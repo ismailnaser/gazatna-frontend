@@ -1,3 +1,12 @@
+import {
+  getCacheKey,
+  getCacheTtl,
+  invalidateApiCache,
+  isCacheableGet,
+  readApiCache,
+  writeApiCache,
+} from "@/lib/apiCache";
+
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api";
 
 const TOKEN_KEY = "ghazatna_access";
@@ -51,6 +60,7 @@ export function clearTokens() {
   sessionStorage.removeItem(TOKEN_KEY);
   sessionStorage.removeItem(REFRESH_KEY);
   sessionStorage.removeItem(USER_KEY);
+  invalidateApiCache();
 }
 
 export function getStoredUser<T>(): T | null {
@@ -117,6 +127,20 @@ async function parseFailedResponse(res: Response): Promise<string> {
   return message;
 }
 
+export function formatClientFetchError(err: unknown, fallback: string): string {
+  if (!(err instanceof Error)) return fallback;
+  const message = err.message.toLowerCase();
+  if (
+    message.includes("failed to fetch") ||
+    message.includes("networkerror") ||
+    message.includes("load failed") ||
+    message.includes("aborted")
+  ) {
+    return "تعذر الاتصال بالخادم. تأكد أن الخادم الخلفي يعمل على http://localhost:8000 ثم أعد المحاولة.";
+  }
+  return err.message || fallback;
+}
+
 function rebuildFormData(entries: [string, FormDataEntryValue][]): FormData {
   const body = new FormData();
   for (const [key, value] of entries) {
@@ -129,6 +153,27 @@ export async function apiFetch<T>(
   path: string,
   options: RequestInit = {}
 ): Promise<T> {
+  const method = (options.method ?? "GET").toUpperCase();
+  const cacheKey = getCacheKey(path, method);
+
+  if (isCacheableGet(path, method)) {
+    const cached = readApiCache<T>(cacheKey);
+    if (cached !== null) return cached;
+  } else if (method !== "GET") {
+    if (path.startsWith("/content/") || path.startsWith("/admin/content/")) {
+      invalidateApiCache("/content/");
+    }
+    if (path.startsWith("/admin/site-settings")) {
+      invalidateApiCache("/site-settings");
+    }
+    if (path.startsWith("/admin/academic-years") || path.includes("term-end") || path.includes("rollover")) {
+      invalidateApiCache("/academic-context");
+    }
+    if (path.startsWith("/admin/finance") || path.includes("/fee-access")) {
+      invalidateApiCache("/admin/analytics");
+    }
+  }
+
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     ...(options.headers as Record<string, string>),
@@ -152,7 +197,13 @@ export async function apiFetch<T>(
   }
 
   if (res.status === 204) return undefined as T;
-  return res.json() as Promise<T>;
+  const data = (await res.json()) as T;
+
+  if (isCacheableGet(path, method)) {
+    writeApiCache(cacheKey, data, getCacheTtl(path));
+  }
+
+  return data;
 }
 
 async function apiFormFetch<T>(
@@ -218,10 +269,6 @@ export const api = {
   getNews: () => apiList<unknown>("/content/news/"),
   getNewsItem: (id: string) => apiFetch<unknown>(`/content/news/${id}/`),
   getPrograms: () => apiList<unknown>("/content/programs/"),
-  getActivities: () => apiList<unknown>("/content/activities/"),
-  getAlumni: () => apiList<unknown>("/content/alumni/"),
-  getPolicies: () => apiList<unknown>("/content/policies/"),
-  getAccreditations: () => apiList<unknown>("/content/accreditations/"),
   getSchoolValues: () => apiList<unknown>("/content/values/"),
   getTeachers: () => apiList<unknown>("/staff/teachers/"),
   getStats: () => apiList<unknown>("/content/stats/"),
@@ -378,6 +425,27 @@ export const api = {
     apiFetch<unknown>("/admin/subjects/", { method: "POST", body: JSON.stringify(data) }),
   updateAdminSubject: (id: string, data: { name?: string; classIds?: number[] }) =>
     apiFetch<unknown>(`/admin/subjects/${id}/`, { method: "PATCH", body: JSON.stringify(data) }),
+  assignSubjectTeacher: (subjectId: string, teacherId: string, classIds?: string[]) =>
+    apiFetch<unknown>(`/admin/subjects/${subjectId}/assign-teacher/`, {
+      method: "POST",
+      body: JSON.stringify({
+        teacherId,
+        ...(classIds?.length ? { classIds: classIds.map(Number) } : {}),
+      }),
+    }),
+  syncSubjectSections: (
+    subjectId: string,
+    sections: Array<{ classId: string; teacherId: string | null }>
+  ) =>
+    apiFetch<unknown>(`/admin/subjects/${subjectId}/sync-sections/`, {
+      method: "POST",
+      body: JSON.stringify({
+        sections: sections.map((row) => ({
+          classId: Number(row.classId),
+          teacherId: row.teacherId ? Number(row.teacherId) : null,
+        })),
+      }),
+    }),
   deleteAdminSubject: (id: string) =>
     apiFetch<void>(`/admin/subjects/${id}/`, { method: "DELETE" }),
   getAdminSchedules: (type?: "exam" | "class") =>

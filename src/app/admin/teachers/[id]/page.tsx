@@ -8,6 +8,7 @@ import { Badge } from "@/components/atoms/Badge";
 import { Button } from "@/components/atoms/Button";
 import { Card } from "@/components/atoms/Card";
 import { Input } from "@/components/atoms/Input";
+import { Select } from "@/components/atoms/Select";
 import { Textarea } from "@/components/atoms/Textarea";
 import { TeacherClassPicker } from "@/components/admin/TeacherClassPicker";
 import { cropTeacherImageFile, TeacherCropModal } from "@/components/admin/TeacherCropModal";
@@ -24,6 +25,11 @@ import { cn } from "@/lib/utils";
 import type { AccountCredentials } from "@/types";
 import { BookMarked, KeyRound, Layers, Save, Shield, Trash2, UserRound } from "lucide-react";
 
+const teacherStatusOptions = [
+  { value: "active", label: "نشط" },
+  { value: "inactive", label: "غير نشط" },
+];
+
 export default function AdminTeacherDetailPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
@@ -39,6 +45,7 @@ export default function AdminTeacherDetailPage() {
   const [name, setName] = useState("");
   const [experience, setExperience] = useState("");
   const [bio, setBio] = useState("");
+  const [status, setStatus] = useState<"active" | "inactive">("active");
   const [draftClasses, setDraftClasses] = useState<string[]>([]);
   const [draftSubjects, setDraftSubjects] = useState<string[]>([]);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -74,6 +81,7 @@ export default function AdminTeacherDetailPage() {
     setName(current.name);
     setExperience(current.experience);
     setBio(current.bio);
+    setStatus(current.status === "inactive" ? "inactive" : "active");
     setDraftClasses(assignments[current.id] ?? []);
     setDraftSubjects(current.subjectIds ?? []);
     setImagePreview(current.imageUrl ?? null);
@@ -131,6 +139,7 @@ export default function AdminTeacherDetailPage() {
         name: name.trim(),
         experience: experience.trim(),
         bio: bio.trim(),
+        status,
       });
       setProfileSaved(true);
     } catch (err) {
@@ -184,6 +193,7 @@ export default function AdminTeacherDetailPage() {
       const password = String(data.password ?? "");
       if (username && password) {
         setResetCredentials({ name: current.name, username, password, role: "teacher" });
+        pageTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
       }
     } finally {
       setResettingPassword(false);
@@ -280,6 +290,9 @@ export default function AdminTeacherDetailPage() {
               ) : null}
               <Badge variant="info">{draftSubjects.length} مادة</Badge>
               <Badge variant="success">{draftClasses.length} فصل</Badge>
+              <Badge variant={status === "active" ? "success" : "default"}>
+                {status === "active" ? "نشط" : "غير نشط"}
+              </Badge>
             </div>
           </div>
         </div>
@@ -296,6 +309,13 @@ export default function AdminTeacherDetailPage() {
             <div className="grid gap-4 sm:grid-cols-2">
               <Input label="اسم المعلم" value={name} onChange={(e) => setName(e.target.value)} required />
               <Input label="الخبرة" value={experience} onChange={(e) => setExperience(e.target.value)} required />
+              <Select
+                label="الحالة"
+                name="status"
+                options={teacherStatusOptions}
+                value={status}
+                onChange={(e) => setStatus(e.target.value as "active" | "inactive")}
+              />
             </div>
             <TeacherProfileImageField
               name={name}
@@ -323,7 +343,7 @@ export default function AdminTeacherDetailPage() {
         <TeacherFormSection
           icon={BookMarked}
           title="المواد الدراسية"
-          description="اختر مادة واحدة على الأقل"
+          description="يمكن للمعلم تدريس أكثر من مادة — لكل فصل معلم واحد فقط لكل مادة"
           tone="violet"
         >
           <TeacherSubjectPicker
@@ -337,8 +357,8 @@ export default function AdminTeacherDetailPage() {
 
         <TeacherFormSection
           icon={Layers}
-          title="الفصول المسندة"
-          description="الفصول التي يدرّسها المعلم"
+          title="فصول تدريس المواد"
+          description="الفصول التي يدرّس فيها المعلم مواده — مستقل عن مربي الصف"
           tone="green"
         >
           <TeacherClassPicker

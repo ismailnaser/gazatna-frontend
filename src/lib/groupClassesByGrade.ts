@@ -79,6 +79,15 @@ export function groupClassesWithGrades(
   return groupClassesByGrade(classes);
 }
 
+export function getClassDisplayLabel(cls: SchoolClass): string {
+  if (cls.name.trim()) return cls.name.trim();
+
+  const grade = getGradeLabel(cls);
+  const section = getSectionLabel(cls);
+  if (section && section !== grade) return `${grade} - ${section}`;
+  return grade;
+}
+
 export function countSelectedInGrade(sections: SchoolClass[], selectedIds: string[]): number {
   return sections.filter((section) => selectedIds.includes(section.id)).length;
 }

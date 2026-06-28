@@ -6,7 +6,7 @@ import { ExpandableText } from "@/components/molecules/ExpandableText";
 import { resolveMediaUrl } from "@/lib/media";
 import { cn } from "@/lib/utils";
 import type { SchoolClass, TeacherProfile } from "@/types/teacher";
-import { Layers, Pencil } from "lucide-react";
+import { Layers, Pencil, Power } from "lucide-react";
 
 const TABLE = "w-full min-w-[880px] border-collapse border border-neutral-200 text-sm";
 const TH =
@@ -40,7 +40,9 @@ type AdminTeachersTableProps = {
   assignments: Record<string, string[]>;
   classes: SchoolClass[];
   hasActiveFilters: boolean;
+  togglingId?: string | null;
   onEdit: (id: string) => void;
+  onToggleStatus: (teacher: TeacherProfile) => void;
 };
 
 export function AdminTeachersTable({
@@ -48,7 +50,9 @@ export function AdminTeachersTable({
   assignments,
   classes,
   hasActiveFilters,
+  togglingId,
   onEdit,
+  onToggleStatus,
 }: AdminTeachersTableProps) {
   if (teachers.length === 0) {
     return (
@@ -62,11 +66,12 @@ export function AdminTeachersTable({
     <div className="-mx-3 overflow-x-auto sm:mx-0">
       <table className={TABLE}>
         <colgroup>
-          <col className="w-[24%]" />
-          <col className="w-[24%]" />
           <col className="w-[22%]" />
-          <col className="w-[16%]" />
+          <col className="w-[22%]" />
+          <col className="w-[20%]" />
           <col className="w-[14%]" />
+          <col className="w-[10%]" />
+          <col className="w-[12%]" />
         </colgroup>
         <thead>
           <tr>
@@ -74,6 +79,7 @@ export function AdminTeachersTable({
             <th className={TH}>المواد</th>
             <th className={TH}>الفصول</th>
             <th className={TH}>الخبرة</th>
+            <th className={TH}>الحالة</th>
             <th className={TH}>إجراءات</th>
           </tr>
         </thead>
@@ -82,9 +88,13 @@ export function AdminTeachersTable({
             const subjects = teacherSubjects(teacher);
             const classNames = teacherClasses(teacher.id, assignments, classes);
             const imageSrc = resolveMediaUrl(teacher.imageUrl);
+            const isActive = teacher.status !== "inactive";
 
             return (
-              <tr key={teacher.id} className={cn(index % 2 === 1 && "bg-neutral-50/50")}>
+              <tr
+                key={teacher.id}
+                className={cn(index % 2 === 1 && "bg-neutral-50/50", !isActive && "opacity-70")}
+              >
                 <td className={TD}>
                   <div className="flex items-center gap-3">
                     <span
@@ -143,15 +153,36 @@ export function AdminTeachersTable({
                   </ExpandableText>
                 </td>
                 <td className={TD}>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="h-9 w-full text-xs"
-                    onClick={() => onEdit(teacher.id)}
-                  >
-                    <Pencil className="h-3.5 w-3.5" />
-                    تعديل
-                  </Button>
+                  <Badge variant={isActive ? "success" : "default"}>
+                    {isActive ? "نشط" : "غير نشط"}
+                  </Badge>
+                </td>
+                <td className={TD}>
+                  <div className="flex flex-col gap-1.5">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="h-9 w-full text-xs"
+                      onClick={() => onEdit(teacher.id)}
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                      تعديل
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      className="h-9 w-full text-xs"
+                      onClick={() => onToggleStatus(teacher)}
+                      disabled={togglingId === teacher.id}
+                    >
+                      <Power className="h-3.5 w-3.5" />
+                      {togglingId === teacher.id
+                        ? "جاري..."
+                        : isActive
+                          ? "تعطيل"
+                          : "تفعيل"}
+                    </Button>
+                  </div>
                 </td>
               </tr>
             );

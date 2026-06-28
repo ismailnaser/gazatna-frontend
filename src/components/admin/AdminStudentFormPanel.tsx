@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { Alert } from "@/components/atoms/Alert";
 import { Button } from "@/components/atoms/Button";
 import { Input } from "@/components/atoms/Input";
+import { Select } from "@/components/atoms/Select";
 import { FileUploadField } from "@/components/molecules/FileUploadField";
 import { GradeSectionClassPicker } from "@/components/shared/GradeSectionClassPicker";
 import { useAuth } from "@/context/AuthContext";
@@ -13,6 +14,11 @@ import type { AdminStudent } from "@/types";
 import type { Grade, SchoolClass } from "@/types/teacher";
 import { nationalIdInputProps, validateStudentNationalId } from "@/lib/nationalId";
 import { FileText, Plus, X } from "lucide-react";
+
+const studentStatusOptions = [
+  { value: "true", label: "نشط" },
+  { value: "false", label: "غير نشط" },
+];
 
 function FormSection({
   title,
@@ -176,6 +182,14 @@ export function AdminStudentFormPanel({
                   defaultValue={editing.studentNumber}
                   readOnly
                   className="bg-neutral-50 sm:col-span-2"
+                />
+              ) : null}
+              {!isCreate ? (
+                <Select
+                  label="الحالة"
+                  name="isActive"
+                  options={studentStatusOptions}
+                  defaultValue={editing?.isActive !== false ? "true" : "false"}
                 />
               ) : null}
             </div>

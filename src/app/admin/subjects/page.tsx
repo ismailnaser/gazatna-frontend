@@ -6,20 +6,19 @@ import { Alert } from "@/components/atoms/Alert";
 import { Button } from "@/components/atoms/Button";
 import { Card } from "@/components/atoms/Card";
 import { Input } from "@/components/atoms/Input";
-import { Select } from "@/components/atoms/Select";
 import { AdminSubjectsGrid } from "@/components/admin/AdminSubjectsGrid";
 import { ConfirmDialog } from "@/components/molecules/ConfirmDialog";
 import { PageHeader } from "@/components/molecules/PageHeader";
-import { GradeSectionClassPicker } from "@/components/shared/GradeSectionClassPicker";
+import { SubjectSectionTeacherAssigner, buildSubjectSectionDrafts, sectionDraftsToPayload, type SubjectSectionDraft } from "@/components/admin/SubjectSectionTeacherAssigner";
 import { useSchool } from "@/context/SchoolContext";
 import { useAuth } from "@/context/AuthContext";
 import { api } from "@/lib/api";
 import { canManageAdminClasses, isAdminRole } from "@/lib/adminRoles";
 import { mapGrades, mapSchoolClasses } from "@/lib/mapSchoolClass";
-import { teacherCountLabel, teachersAvailableForSubject, teachersForSubject } from "@/lib/adminSubjects";
+import { teacherCountLabel } from "@/lib/adminSubjects";
 import { cn } from "@/lib/utils";
 import type { Grade, SchoolClass, Subject } from "@/types/teacher";
-import { BookMarked, BookOpen, ChevronLeft, GraduationCap, Plus, Save, Search, UserPlus, Users, X } from "lucide-react";
+import { BookMarked, BookOpen, GraduationCap, Plus, Save, Search, Users, X } from "lucide-react";
 
 function StatChip({
   icon: Icon,
@@ -68,9 +67,8 @@ export default function AdminSubjectsPage() {
     refresh,
     addSubject,
     updateSubject,
-    setSubjectClasses,
+    syncSubjectSections,
     removeSubject,
-    updateTeacher,
   } = useSchool();
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -81,10 +79,8 @@ export default function AdminSubjectsPage() {
   const [deletingSubject, setDeletingSubject] = useState(false);
   const [editingSubject, setEditingSubject] = useState<Subject | null>(null);
   const [viewSubject, setViewSubject] = useState<Subject | null>(null);
-  const [assignTeacherId, setAssignTeacherId] = useState("");
-  const [assigningTeacher, setAssigningTeacher] = useState(false);
-  const [assignClassIds, setAssignClassIds] = useState<string[]>([]);
-  const [savingClasses, setSavingClasses] = useState(false);
+  const [sectionDrafts, setSectionDrafts] = useState<Record<string, SubjectSectionDraft>>({});
+  const [savingSections, setSavingSections] = useState(false);
   const [editName, setEditName] = useState("");
   const [savingEdit, setSavingEdit] = useState(false);
   const [modalClasses, setModalClasses] = useState<SchoolClass[]>([]);
@@ -120,13 +116,16 @@ export default function AdminSubjectsPage() {
   );
 
   const viewSubjectTeachers = useMemo(
-    () => (viewSubject ? teachersForSubject(teachers, viewSubject.id) : []),
+    () =>
+      viewSubject
+        ? teachers.filter((teacher) => teacher.subjectIds?.includes(viewSubject.id))
+        : [],
     [teachers, viewSubject]
   );
 
-  const availableTeachersForView = useMemo(
-    () => (viewSubject ? teachersAvailableForSubject(teachers, viewSubject.id) : []),
-    [teachers, viewSubject]
+  const enabledSectionCount = useMemo(
+    () => Object.values(sectionDrafts).filter((draft) => draft.enabled).length,
+    [sectionDrafts]
   );
 
   const totalTeachers = useMemo(
@@ -142,52 +141,75 @@ export default function AdminSubjectsPage() {
 
   function openSubjectView(subject: Subject) {
     setViewSubject(subject);
-    setAssignTeacherId("");
-    setAssignClassIds(subject.classIds ?? []);
+    setSectionDrafts(
+      buildSubjectSectionDrafts(
+        classes.length > 0 ? classes : modalClasses,
+        subject.classIds ?? [],
+        teachers,
+        subject.name
+      )
+    );
     setError("");
     setSuccess("");
+  }
+
+  useEffect(() => {
+    if (!viewSubject || modalClasses.length === 0) return;
+    setSectionDrafts((prev) => {
+      const expectedKeys = modalClasses.map((schoolClass) => schoolClass.id);
+      if (
+        expectedKeys.length > 0 &&
+        expectedKeys.every((id) => id in prev) &&
+        Object.keys(prev).length === expectedKeys.length
+      ) {
+        return prev;
+      }
+      return buildSubjectSectionDrafts(
+        modalClasses,
+        viewSubject.classIds ?? [],
+        teachers,
+        viewSubject.name
+      );
+    });
+  }, [viewSubject?.id, viewSubject?.name, viewSubject?.classIds, modalClasses, teachers]);
+
+  function updateSectionDraft(classId: string, patch: Partial<SubjectSectionDraft>) {
+    setSectionDrafts((prev) => ({
+      ...prev,
+      [classId]: { ...(prev[classId] ?? { enabled: false, teacherId: "" }), ...patch },
+    }));
   }
 
   function scrollToPageTop() {
     pageTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
-  async function saveSubjectClasses() {
+  async function saveSubjectSections() {
     if (!viewSubject) return;
 
-    setSavingClasses(true);
+    const payload = sectionDraftsToPayload(sectionDrafts);
+    const missingTeacher = payload.some((row) => !row.teacherId);
+    if (payload.length === 0) {
+      setError("فعّل شعبة واحدة على الأقل.");
+      return;
+    }
+    if (missingTeacher) {
+      setError("اختر معلماً لكل شعبة مفعّلة.");
+      return;
+    }
+
+    setSavingSections(true);
     setError("");
     try {
-      const updated = await setSubjectClasses(viewSubject.id, assignClassIds);
+      const updated = await syncSubjectSections(viewSubject.id, payload);
       setViewSubject(null);
-      setAssignTeacherId("");
-      setSuccess(`تم حفظ إسناد مادة ${updated.name} للفصول بنجاح.`);
+      setSectionDrafts({});
+      setSuccess(`تم حفظ إسناد مادة ${updated.name} للشعب والمعلمين بنجاح.`);
       scrollToPageTop();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "فشل إسناد المادة للفصول");
+      setError(err instanceof Error ? err.message : "فشل حفظ إسناد المادة");
     } finally {
-      setSavingClasses(false);
-    }
-  }
-
-  async function assignTeacherToSubject() {
-    if (!viewSubject || !assignTeacherId) return;
-
-    const teacher = teachers.find((item) => item.id === assignTeacherId);
-    if (!teacher) return;
-
-    const nextSubjectIds = [...(teacher.subjectIds ?? []), viewSubject.id];
-    if (nextSubjectIds.length === (teacher.subjectIds ?? []).length) return;
-
-    setAssigningTeacher(true);
-    setError("");
-    try {
-      await updateTeacher(assignTeacherId, { subjectIds: nextSubjectIds });
-      setAssignTeacherId("");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "فشل إسناد المعلم للمادة");
-    } finally {
-      setAssigningTeacher(false);
+      setSavingSections(false);
     }
   }
 
@@ -264,7 +286,7 @@ export default function AdminSubjectsPage() {
     <div ref={pageTopRef}>
       <PageHeader
         title="إدارة المواد الدراسية"
-        description="أضف المواد، اسندها للفصول مباشرة، ثم اسند المعلمين عند الحاجة"
+        description="أضف المواد واسند كل مادة للشعب مع اختيار المعلم لكل شعبة"
         className="mb-6"
       />
 
@@ -359,8 +381,7 @@ export default function AdminSubjectsPage() {
           aria-modal="true"
           onClick={() => {
             setViewSubject(null);
-            setAssignTeacherId("");
-            setAssignClassIds([]);
+            setSectionDrafts({});
           }}
         >
           <div
@@ -372,15 +393,14 @@ export default function AdminSubjectsPage() {
                 <h3 className="text-lg font-bold text-p-black">إسناد المادة</h3>
                 <p className="mt-1 text-sm font-semibold text-brand-blue">{viewSubject.name}</p>
                 <p className="mt-1 text-xs text-p-black/50">
-                  يمكن إسناد المادة لفصل مباشرة حتى بدون معلم
+                  فعّل الشعب واختر المعلم بجانب كل شعبة، ثم احفظ مرة واحدة.
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => {
                   setViewSubject(null);
-                  setAssignTeacherId("");
-                  setAssignClassIds([]);
+                  setSectionDrafts({});
                 }}
                 aria-label="إغلاق"
                 className="rounded-full p-1 text-p-black/40 hover:bg-neutral-100 hover:text-p-black"
@@ -398,14 +418,14 @@ export default function AdminSubjectsPage() {
             <div className="rounded-xl border border-neutral-100 bg-neutral-50/80 p-4">
               <h4 className="mb-2 flex items-center gap-2 text-sm font-bold text-p-black">
                 <GraduationCap className="h-4 w-4 text-brand-teal" />
-                إسناد المادة للفصول
+                الشعب والمعلمون
               </h4>
               <p className="mb-4 text-xs leading-relaxed text-p-black/55">
-                اختر الفصول التي تُدرَّس فيها هذه المادة. ستظهر للطلاب في بوابة أولياء الأمور حتى
-                قبل إسناد معلم.
+                {teacherCountLabel(viewSubjectTeachers.length)} — {enabledSectionCount}{" "}
+                {enabledSectionCount === 1 ? "شعبة مفعّلة" : "شعب مفعّلة"}
               </p>
 
-              {modalClasses.length === 0 ? (
+              {(modalClasses.length > 0 ? modalClasses : classes).length === 0 ? (
                 <p className="text-sm text-p-black/60">
                   لا توجد فصول مسجّلة.{" "}
                   {canManageClasses ? (
@@ -416,116 +436,35 @@ export default function AdminSubjectsPage() {
                     <span>تواصل مع الإدارة الكلية لإضافة المراحل والفصول.</span>
                   )}
                 </p>
+              ) : teachers.length === 0 ? (
+                <p className="text-sm text-p-black/60">
+                  لا يوجد معلمون في النظام.{" "}
+                  <Link href="/admin/teachers" className="font-semibold text-brand-blue hover:underline">
+                    أضف معلماً أولاً
+                  </Link>
+                </p>
               ) : (
                 <>
-                  <GradeSectionClassPicker
-                    key={viewSubject.id}
-                    classes={modalClasses}
-                    grades={modalGrades}
-                    mode="multiple"
-                    value={assignClassIds}
-                    onChange={setAssignClassIds}
-                    showBulkActions
-                    resetKey={viewSubject.id}
+                  <SubjectSectionTeacherAssigner
+                    classes={modalClasses.length > 0 ? modalClasses : classes}
+                    grades={modalGrades.length > 0 ? modalGrades : grades}
+                    teachers={teachers}
+                    sectionDrafts={sectionDrafts}
+                    onChange={updateSectionDraft}
                   />
                   <div className="mt-4 flex justify-end">
                     <Button
                       type="button"
-                      onClick={saveSubjectClasses}
-                      disabled={savingClasses}
+                      onClick={saveSubjectSections}
+                      disabled={savingSections || enabledSectionCount === 0}
                       className="sm:min-w-[160px]"
                     >
                       <Save className="h-4 w-4" />
-                      {savingClasses ? "جاري الحفظ..." : "حفظ إسناد الفصول"}
+                      {savingSections ? "جاري الحفظ..." : "حفظ الإسناد"}
                     </Button>
                   </div>
                 </>
               )}
-            </div>
-
-            <div className="mt-5 rounded-xl border border-neutral-100 bg-white p-4">
-              <h4 className="mb-1 flex items-center gap-2 text-sm font-bold text-p-black">
-                <Users className="h-4 w-4 text-brand-blue" />
-                المعلمون المسندون
-              </h4>
-              <p className="mb-4 text-xs text-p-black/50">
-                {teacherCountLabel(viewSubjectTeachers.length)}
-              </p>
-
-              {viewSubjectTeachers.length === 0 ? (
-                <div className="rounded-xl border border-dashed border-neutral-200 bg-neutral-50 px-4 py-5 text-center">
-                  <p className="text-sm font-medium text-p-black/70">
-                    لا يوجد معلمون مسندون لهذه المادة بعد.
-                  </p>
-                </div>
-              ) : (
-                <ul className="max-h-48 space-y-2 overflow-y-auto">
-                  {viewSubjectTeachers.map((teacher) => (
-                    <li key={teacher.id}>
-                      <Link
-                        href={`/admin/teachers/${teacher.id}`}
-                        className="flex items-center justify-between gap-3 rounded-xl border border-neutral-100 px-3 py-3 transition-colors hover:border-brand-blue/20 hover:bg-brand-blue/5"
-                        onClick={() => setViewSubject(null)}
-                      >
-                        <div className="min-w-0">
-                          <p className="font-semibold text-p-black">{teacher.name}</p>
-                          {teacher.experience ? (
-                            <p className="mt-0.5 truncate text-xs text-p-black/50">
-                              {teacher.experience}
-                            </p>
-                          ) : null}
-                        </div>
-                        <ChevronLeft className="h-4 w-4 shrink-0 text-p-black/35" />
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              )}
-
-              <div className="mt-4 border-t border-neutral-100 pt-4">
-                <h5 className="mb-3 flex items-center gap-2 text-sm font-bold text-p-black">
-                  <UserPlus className="h-4 w-4 text-brand-blue" />
-                  إسناد معلم للمادة
-                </h5>
-
-                {teachers.length === 0 ? (
-                  <p className="text-sm text-p-black/60">
-                    لا يوجد معلمون في النظام.{" "}
-                    <Link href="/admin/teachers" className="font-semibold text-brand-blue hover:underline">
-                      أضف معلماً أولاً
-                    </Link>
-                  </p>
-                ) : availableTeachersForView.length === 0 ? (
-                  <p className="text-sm text-p-black/60">
-                    جميع المعلمين مسندون لهذه المادة بالفعل.
-                  </p>
-                ) : (
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-                    <Select
-                      label="اختر المعلم"
-                      value={assignTeacherId}
-                      onChange={(e) => setAssignTeacherId(e.target.value)}
-                      className="flex-1"
-                      options={[
-                        { value: "", label: "اختر معلماً..." },
-                        ...availableTeachersForView.map((teacher) => ({
-                          value: teacher.id,
-                          label: teacher.name,
-                        })),
-                      ]}
-                    />
-                    <Button
-                      type="button"
-                      onClick={assignTeacherToSubject}
-                      disabled={!assignTeacherId || assigningTeacher}
-                      className="sm:min-w-[140px]"
-                    >
-                      <UserPlus className="h-4 w-4" />
-                      {assigningTeacher ? "جاري الإسناد..." : "إسناد"}
-                    </Button>
-                  </div>
-                )}
-              </div>
             </div>
 
             <div className="mt-5 flex justify-end">
@@ -534,8 +473,7 @@ export default function AdminSubjectsPage() {
                 variant="outline"
                 onClick={() => {
                   setViewSubject(null);
-                  setAssignTeacherId("");
-                  setAssignClassIds([]);
+                  setSectionDrafts({});
                 }}
               >
                 إغلاق

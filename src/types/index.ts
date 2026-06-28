@@ -344,6 +344,7 @@ export type AdminStudent = {
   paymentStatus: PaymentStatus;
   balance?: { total: number; paid: number; remaining: number };
   documents: Array<{ id?: string | null; name: string; url?: string | null }>;
+  isActive: boolean;
 };
 
 export type AccountCredentials = {

@@ -5,12 +5,19 @@ import { useMemo, useState } from "react";
 import { Button } from "@/components/atoms/Button";
 import { Card } from "@/components/atoms/Card";
 import { MultiSelect } from "@/components/atoms/MultiSelect";
+import { Select } from "@/components/atoms/Select";
 import { AdminTeachersTable } from "@/components/admin/AdminTeachersTable";
 import { GradeSectionClassMultiSelect } from "@/components/shared/GradeSectionClassMultiSelect";
 import { PageHeader } from "@/components/molecules/PageHeader";
 import { useSchool } from "@/context/SchoolContext";
 import { cn } from "@/lib/utils";
 import { BookMarked, GraduationCap, Layers, Plus, Search } from "lucide-react";
+
+const statusFilterOptions = [
+  { value: "", label: "كل الحالات" },
+  { value: "active", label: "نشط" },
+  { value: "inactive", label: "غير نشط" },
+];
 
 function StatChip({
   icon: Icon,
@@ -48,14 +55,17 @@ function StatChip({
 
 export default function AdminTeachersPage() {
   const router = useRouter();
-  const { teachers, classes, grades, subjects, assignments } = useSchool();
+  const { teachers, classes, grades, subjects, assignments, updateTeacher } = useSchool();
 
   const [search, setSearch] = useState("");
   const [subjectFilters, setSubjectFilters] = useState<string[]>([]);
   const [classFilters, setClassFilters] = useState<string[]>([]);
+  const [statusFilter, setStatusFilter] = useState("");
+  const [togglingTeacherId, setTogglingTeacherId] = useState<string | null>(null);
+  const [statusMessage, setStatusMessage] = useState("");
 
   const hasActiveFilters = Boolean(
-    search.trim() || subjectFilters.length > 0 || classFilters.length > 0
+    search.trim() || subjectFilters.length > 0 || classFilters.length > 0 || statusFilter
   );
 
   const stats = useMemo(() => {
@@ -87,15 +97,36 @@ export default function AdminTeachersPage() {
           const teacherClasses = assignments[teacher.id] ?? [];
           if (!classFilters.some((id) => teacherClasses.includes(id))) return false;
         }
+        if (statusFilter === "active" && teacher.status === "inactive") return false;
+        if (statusFilter === "inactive" && teacher.status !== "inactive") return false;
         return true;
       }),
-    [teachers, search, subjectFilters, classFilters, assignments]
+    [teachers, search, subjectFilters, classFilters, statusFilter, assignments]
   );
 
   function clearFilters() {
     setSearch("");
     setSubjectFilters([]);
     setClassFilters([]);
+    setStatusFilter("");
+  }
+
+  async function toggleTeacherStatus(teacher: (typeof teachers)[number]) {
+    const nextStatus = teacher.status === "inactive" ? "active" : "inactive";
+    setTogglingTeacherId(teacher.id);
+    setStatusMessage("");
+    try {
+      await updateTeacher(teacher.id, { status: nextStatus });
+      setStatusMessage(
+        nextStatus === "active"
+          ? `تم تفعيل المعلم «${teacher.name}».`
+          : `تم تعطيل المعلم «${teacher.name}».`
+      );
+    } catch {
+      setStatusMessage("تعذّر تغيير حالة المعلم");
+    } finally {
+      setTogglingTeacherId(null);
+    }
   }
 
   return (
@@ -116,6 +147,12 @@ export default function AdminTeachersPage() {
         <StatChip icon={BookMarked} label="لديهم مواد مسندة" value={stats.withSubjects} tone="success" />
         <StatChip icon={Layers} label="إسنادات الفصول" value={stats.assignmentCount} />
       </div>
+
+      {statusMessage ? (
+        <p className="mb-4 rounded-xl border border-p-green/20 bg-p-green/5 px-4 py-3 text-sm text-p-green">
+          {statusMessage}
+        </p>
+      ) : null}
 
       <Card className="p-4 sm:p-5">
         <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
@@ -139,7 +176,7 @@ export default function AdminTeachersPage() {
           </div>
         </div>
 
-        <div className="mb-4 grid gap-3 sm:grid-cols-2">
+        <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           <MultiSelect
             label="فلترة حسب المادة"
             options={subjects.map((subject) => ({ value: subject.id, label: subject.name }))}
@@ -156,6 +193,13 @@ export default function AdminTeachersPage() {
             onChange={setClassFilters}
             placeholder="كل الفصول"
           />
+          <Select
+            label="الحالة"
+            name="statusFilter"
+            options={statusFilterOptions}
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+          />
         </div>
 
         {hasActiveFilters && (
@@ -171,7 +215,9 @@ export default function AdminTeachersPage() {
           assignments={assignments}
           classes={classes}
           hasActiveFilters={hasActiveFilters}
+          togglingId={togglingTeacherId}
           onEdit={(id) => router.push(`/admin/teachers/${id}`)}
+          onToggleStatus={toggleTeacherStatus}
         />
       </Card>
     </div>

@@ -7,7 +7,7 @@ import { Input } from "@/components/atoms/Input";
 import { Select } from "@/components/atoms/Select";
 import { Textarea } from "@/components/atoms/Textarea";
 import { PublicPage } from "@/components/molecules/PublicPage";
-import { api } from "@/lib/api";
+import { api, formatClientFetchError } from "@/lib/api";
 import { nationalIdInputProps, validateNationalId } from "@/lib/nationalId";
 
 type RegSettings = {
@@ -63,7 +63,7 @@ export default function RegisterPage() {
     api
       .submitAdmissionApplication(payload)
       .then(() => setSubmitted(true))
-      .catch((e) => setError(e instanceof Error ? e.message : "تعذر إرسال الطلب"))
+      .catch((e) => setError(formatClientFetchError(e, "تعذر إرسال الطلب")))
       .finally(() => setLoading(false));
   }
 

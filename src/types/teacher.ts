@@ -17,6 +17,9 @@ export type TeacherProfile = {
   teachingClasses?: SchoolClass[];
   teachableClassIds?: string[];
   subjectClassIds?: Record<string, string[]>;
+  homeroomClassId?: string | null;
+  homeroomClassName?: string | null;
+  status?: "active" | "inactive";
 };
 
 export type SchoolClass = {

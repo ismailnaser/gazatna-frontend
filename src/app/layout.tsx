@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import Script from "next/script";
 import { Cairo } from "next/font/google";
 import { AppBootstrap } from "@/components/AppBootstrap";
+import { ClearStaleServiceWorkers } from "@/components/dev/ClearStaleServiceWorkers";
 import { AssignmentsProvider } from "@/context/AssignmentsContext";
 import { AuthProvider } from "@/context/AuthContext";
 import { SchoolProvider } from "@/context/SchoolContext";
@@ -44,7 +45,10 @@ export default function RootLayout({
   return (
     <html lang="ar" dir="rtl" className={`${cairo.variable} h-full`}>
       <body className="min-h-full antialiased">
-        <Script src="/pwa-bootstrap.js" strategy="beforeInteractive" />
+        {process.env.NODE_ENV === "production" && (
+          <Script src="/pwa-bootstrap.js" strategy="beforeInteractive" />
+        )}
+        <ClearStaleServiceWorkers />
         <AuthProvider>
           <SchoolProvider>
             <AssignmentsProvider>

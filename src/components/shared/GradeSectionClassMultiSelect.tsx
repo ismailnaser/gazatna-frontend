@@ -84,9 +84,9 @@ export function GradeSectionClassMultiSelect({
           )}
         >
           <div className="border-b border-neutral-100 bg-neutral-50/80 px-3 py-2.5">
-            <p className="text-sm font-bold text-p-black">اختيار الفصل والشعبة</p>
+            <p className="text-sm font-bold text-p-black">اختيار الشعب</p>
             <p className="mt-0.5 text-xs leading-relaxed text-p-black/55">
-              اختر الفصل أولاً ثم حدّد الشعب المطلوبة
+              اختر مباشرة — مثل: التاسع - أ، الأول - ب
             </p>
           </div>
 

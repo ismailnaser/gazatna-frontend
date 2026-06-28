@@ -39,6 +39,8 @@ export default function AdminStudentsPage() {
   const [search, setSearch] = useState("");
   const [classFilters, setClassFilters] = useState<string[]>([]);
   const [documentsFilter, setDocumentsFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [togglingStudentId, setTogglingStudentId] = useState<string | null>(null);
   const formRef = useRef<HTMLDivElement>(null);
   const pageTopRef = useRef<HTMLDivElement>(null);
   const scrollToFormRef = useRef(false);
@@ -53,7 +55,15 @@ export default function AdminStudentsPage() {
     { value: "without", label: "بدون وثائق" },
   ];
 
-  const hasActiveFilters = Boolean(search.trim() || classFilters.length > 0 || documentsFilter);
+  const statusFilterOptions = [
+    { value: "", label: "كل الحالات" },
+    { value: "active", label: "نشط" },
+    { value: "inactive", label: "غير نشط" },
+  ];
+
+  const hasActiveFilters = Boolean(
+    search.trim() || classFilters.length > 0 || documentsFilter || statusFilter
+  );
 
   function studentMatchesClassFilter(student: AdminStudent, classFilter: string) {
     if (student.classId) return student.classId === classFilter;
@@ -75,6 +85,8 @@ export default function AdminStudentsPage() {
       }
       if (documentsFilter === "with" && student.documents.length === 0) return false;
       if (documentsFilter === "without" && student.documents.length > 0) return false;
+      if (statusFilter === "active" && !student.isActive) return false;
+      if (statusFilter === "inactive" && student.isActive) return false;
       if (query) {
         const haystack = [
           student.name,
@@ -90,12 +102,37 @@ export default function AdminStudentsPage() {
       }
       return true;
     });
-  }, [students, search, classFilters, documentsFilter, classes]);
+  }, [students, search, classFilters, documentsFilter, statusFilter, classes]);
 
   function clearFilters() {
     setSearch("");
     setClassFilters([]);
     setDocumentsFilter("");
+    setStatusFilter("");
+  }
+
+  async function toggleStudentActive(student: AdminStudent) {
+    const nextActive = !student.isActive;
+    setTogglingStudentId(student.id);
+    setError("");
+    setSuccess("");
+    try {
+      const updated = (await api.updateAdminStudent(student.id, {
+        is_active: nextActive,
+      })) as Record<string, unknown>;
+      const mapped = mapAdminStudent(updated);
+      setStudents((prev) => prev.map((s) => (s.id === student.id ? mapped : s)));
+      setSuccess(
+        nextActive
+          ? `تم تفعيل الطالب «${student.name}».`
+          : `تم تعطيل الطالب «${student.name}».`
+      );
+      scrollToPageTop();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "تعذّر تغيير حالة الطالب");
+    } finally {
+      setTogglingStudentId(null);
+    }
   }
 
   async function handleExportExcel() {
@@ -165,6 +202,7 @@ export default function AdminStudentsPage() {
         password: String(data.password ?? ""),
         role: "parent",
       });
+      scrollToPageTop();
     } catch (err) {
       setError(err instanceof Error ? err.message : "فشل إعادة تعيين كلمة المرور");
     } finally {
@@ -292,6 +330,7 @@ export default function AdminStudentsPage() {
         name: form.get("name"),
         nationalId,
         classId: Number(classId),
+        is_active: form.get("isActive") === "true",
       })) as Record<string, unknown>;
       setStudents((prev) =>
         prev.map((s) => (s.id === editing.id ? mapAdminStudent(updated) : s))
@@ -437,7 +476,7 @@ export default function AdminStudentsPage() {
               className="w-full rounded-xl border border-neutral-200 bg-white py-2.5 pe-4 ps-10 text-sm focus:border-p-green focus:outline-none focus:ring-2 focus:ring-p-green/20"
             />
           </div>
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             <GradeSectionClassMultiSelect
               label="الفصل والشعبة"
               classes={classes}
@@ -452,6 +491,13 @@ export default function AdminStudentsPage() {
               options={documentsFilterOptions}
               value={documentsFilter}
               onChange={(e) => setDocumentsFilter(e.target.value)}
+            />
+            <Select
+              label="الحالة"
+              name="statusFilter"
+              options={statusFilterOptions}
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
             />
           </div>
           {hasActiveFilters ? (
@@ -470,8 +516,10 @@ export default function AdminStudentsPage() {
             <AdminStudentsTable
               students={filteredStudents}
               hasActiveFilters={hasActiveFilters}
+              togglingId={togglingStudentId}
               onEdit={openEditForm}
               onResetPassword={setConfirmReset}
+              onToggleActive={toggleStudentActive}
               onDelete={(student) => {
                 setError("");
                 setConfirmDeleteStudent(student);

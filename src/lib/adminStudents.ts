@@ -31,6 +31,7 @@ export function mapAdminStudent(s: Record<string, unknown>): AdminStudent {
           url: d.url ? String(d.url) : null,
         }))
       : [],
+    isActive: s.isActive !== undefined ? Boolean(s.isActive) : s.is_active !== false,
   };
 }
 

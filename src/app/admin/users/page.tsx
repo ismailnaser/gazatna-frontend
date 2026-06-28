@@ -55,7 +55,12 @@ export default function AdminUsersPage() {
   const [resettingPassword, setResettingPassword] = useState(false);
   const [resetCredentials, setResetCredentials] = useState<AccountCredentials | null>(null);
   const formRef = useRef<HTMLDivElement>(null);
+  const pageTopRef = useRef<HTMLDivElement>(null);
   const scrollToFormRef = useRef(false);
+
+  function scrollToPageTop() {
+    pageTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
 
   useEffect(() => {
     if (authLoading) return;
@@ -183,6 +188,7 @@ export default function AdminUsersPage() {
         role: "admin",
       });
       setConfirmResetUser(null);
+      scrollToPageTop();
     } catch (err) {
       setError(err instanceof Error ? err.message : "فشل إعادة تعيين كلمة المرور");
     } finally {
@@ -227,7 +233,7 @@ export default function AdminUsersPage() {
   const editRoleDescription = isAdminRole(editRole) ? adminRoleDescriptions[editRole] : "";
 
   return (
-    <div>
+    <div ref={pageTopRef}>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <PageHeader
           title="إدارة المستخدمين"

@@ -5,6 +5,28 @@ export type OccupiedPair = {
   teacherName: string;
 };
 
+export function buildSubjectClassOccupiedMap(
+  teachers: TeacherProfile[],
+  subjectName: string,
+  excludeTeacherId?: string
+): Map<string, OccupiedPair> {
+  const map = new Map<string, OccupiedPair>();
+
+  for (const teacher of teachers) {
+    if (excludeTeacherId && teacher.id === excludeTeacherId) continue;
+
+    const classIds = teacher.subjectClassIds?.[subjectName] ?? [];
+    for (const classId of classIds) {
+      map.set(classId, {
+        teacherId: teacher.id,
+        teacherName: teacher.name,
+      });
+    }
+  }
+
+  return map;
+}
+
 export function buildOccupiedPairs(
   teachers: TeacherProfile[],
   excludeTeacherId?: string
@@ -60,6 +82,28 @@ export function formatAssignmentConflict(
   teacherName: string
 ): string {
   return `مادة ${subjectName} في فصل ${className} مسندة بالفعل للمعلم ${teacherName}`;
+}
+
+export function findSubjectClassConflicts(
+  teachers: TeacherProfile[],
+  subjectId: string,
+  classIds: string[],
+  excludeTeacherId?: string
+) {
+  const occupied = buildOccupiedPairs(teachers, excludeTeacherId);
+  const availableClassIds: string[] = [];
+  const conflicts: string[] = [];
+
+  for (const classId of classIds) {
+    const hit = occupied.get(`${subjectId}:${classId}`);
+    if (hit) {
+      conflicts.push(`هذا الفصل مسند بالفعل للمعلم ${hit.teacherName}`);
+    } else {
+      availableClassIds.push(classId);
+    }
+  }
+
+  return { availableClassIds, conflicts };
 }
 
 export function findAssignmentConflicts(

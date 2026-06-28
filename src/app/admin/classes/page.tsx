@@ -39,6 +39,8 @@ export default function AdminClassesPage() {
   const { refresh } = useSchool();
   const [pageClasses, setPageClasses] = useState<SchoolClass[]>([]);
   const [classError, setClassError] = useState("");
+  const [classSuccess, setClassSuccess] = useState("");
+  const [confirmSaveHomeroom, setConfirmSaveHomeroom] = useState(false);
   const [addingGrade, setAddingGrade] = useState(false);
   const [grades, setGrades] = useState<Grade[]>([]);
   const [loadingGrades, setLoadingGrades] = useState(true);
@@ -60,7 +62,9 @@ export default function AdminClassesPage() {
   const [classHomeroomTeacherName, setClassHomeroomTeacherName] = useState<string | null>(null);
   const [classHomeroomTeacherId, setClassHomeroomTeacherId] = useState<string>("");
   const [savingHomeroom, setSavingHomeroom] = useState(false);
-  const [teachers, setTeachers] = useState<Array<{ id: string; name: string }>>([]);
+  const [teachers, setTeachers] = useState<
+    Array<{ id: string; name: string; homeroomClassId?: string | null }>
+  >([]);
   const mountedRef = useRef(true);
 
   const sortGrades = (list: Grade[]) =>
@@ -104,6 +108,8 @@ export default function AdminClassesPage() {
         const list = (data as Array<Record<string, unknown>>).map((t) => ({
           id: String(t.id),
           name: String(t.name),
+          homeroomClassId:
+            t.homeroomClassId != null ? String(t.homeroomClassId) : null,
         }));
         setTeachers(list.sort((a, b) => a.name.localeCompare(b.name, "ar")));
       })
@@ -277,6 +283,7 @@ export default function AdminClassesPage() {
     setSelectedClassId(classId);
     setLoadingClassDetail(true);
     setClassError("");
+    setClassSuccess("");
     try {
       const data = (await api.getAdminClassDetail(classId)) as {
         class: Record<string, unknown>;
@@ -301,18 +308,52 @@ export default function AdminClassesPage() {
     if (!selectedClassId) return;
     setSavingHomeroom(true);
     setClassError("");
+    setClassSuccess("");
+    const selectedTeacher = teachers.find((teacher) => teacher.id === classHomeroomTeacherId);
+    const className = pageClasses.find((schoolClass) => schoolClass.id === selectedClassId)?.name ?? "هذه الشعبة";
     try {
       await api.updateAdminClassHomeroom(
         selectedClassId,
         classHomeroomTeacherId ? classHomeroomTeacherId : null
       );
       await loadClassDetail(selectedClassId);
+      setClassSuccess(
+        classHomeroomTeacherId
+          ? `تم تعيين ${selectedTeacher?.name ?? "مربي الصف"} مربياً لـ ${className} بنجاح.`
+          : `تم إزالة مربي الصف من ${className} بنجاح.`
+      );
+      setConfirmSaveHomeroom(false);
+      const teachersData = await api.getAdminTeachers();
+      setTeachers(
+        (teachersData as Array<Record<string, unknown>>)
+          .map((teacher) => ({
+            id: String(teacher.id),
+            name: String(teacher.name),
+            homeroomClassId:
+              teacher.homeroomClassId != null ? String(teacher.homeroomClassId) : null,
+          }))
+          .sort((a, b) => a.name.localeCompare(b.name, "ar"))
+      );
     } catch (err) {
       setClassError(err instanceof Error ? err.message : "فشل حفظ مربي الصف");
     } finally {
       setSavingHomeroom(false);
     }
   }
+
+  const selectedClassName =
+    pageClasses.find((schoolClass) => schoolClass.id === selectedClassId)?.name ?? "هذه الشعبة";
+  const pendingHomeroomTeacherName =
+    teachers.find((teacher) => teacher.id === classHomeroomTeacherId)?.name ?? null;
+
+  const homeroomTeacherOptions = useMemo(() => {
+    return teachers
+      .filter(
+        (teacher) =>
+          !teacher.homeroomClassId || teacher.homeroomClassId === selectedClassId
+      )
+      .map((teacher) => ({ value: teacher.id, label: teacher.name }));
+  }, [teachers, selectedClassId]);
 
   const gradeToDelete = useMemo(
     () => grades.find((g) => g.id === confirmDeleteGradeId) ?? null,
@@ -550,22 +591,30 @@ export default function AdminClassesPage() {
                             </div>
                           </div>
 
-                          <div className="mb-4 flex flex-wrap items-end gap-3">
+                          <div className="mb-2 flex flex-wrap items-end gap-3">
                             <div className="min-w-[260px]">
                               <Select
                                 label="تعيين مربي الصف"
                                 value={classHomeroomTeacherId}
-                                onChange={(e) => setClassHomeroomTeacherId(e.target.value)}
+                                onChange={(e) => {
+                                  setClassHomeroomTeacherId(e.target.value);
+                                  setClassSuccess("");
+                                  setClassError("");
+                                }}
                                 options={[
                                   { value: "", label: "بدون (غير محدد)" },
-                                  ...teachers.map((t) => ({ value: t.id, label: t.name })),
+                                  ...homeroomTeacherOptions,
                                 ]}
                               />
                             </div>
                             <Button
                               type="button"
                               variant="outline"
-                              onClick={saveHomeroomTeacher}
+                              onClick={() => {
+                                setClassError("");
+                                setClassSuccess("");
+                                setConfirmSaveHomeroom(true);
+                              }}
                               disabled={savingHomeroom}
                               className="h-[42px]"
                             >
@@ -573,6 +622,19 @@ export default function AdminClassesPage() {
                               {savingHomeroom ? "جاري الحفظ..." : "حفظ مربي الصف"}
                             </Button>
                           </div>
+                          {classSuccess ? (
+                            <Alert variant="success" className="mb-3">
+                              {classSuccess}
+                            </Alert>
+                          ) : null}
+                          {classError && selectedClassId ? (
+                            <Alert variant="error" className="mb-3">
+                              {classError}
+                            </Alert>
+                          ) : null}
+                          <p className="mb-4 text-xs text-neutral-500">
+                            مربي الصف واحد لكل فصل ولا يُسند لفصل آخر — منفصل عن إسناد المواد.
+                          </p>
 
                           {loadingClassDetail ? (
                             <p className="text-sm text-neutral-500">جاري تحميل الطلاب...</p>
@@ -702,6 +764,59 @@ export default function AdminClassesPage() {
                   className="bg-p-red hover:bg-p-red/90 focus-visible:ring-p-red"
                 >
                   {deletingClass ? "جاري الحذف..." : "حذف"}
+                </Button>
+              </div>
+            </Card>
+          </div>
+        </div>
+      )}
+
+      {confirmSaveHomeroom && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          role="dialog"
+          aria-modal="true"
+          onClick={() => {
+            setConfirmSaveHomeroom(false);
+            setClassError("");
+          }}
+        >
+          <div className="w-full max-w-lg" onClick={(e) => e.stopPropagation()}>
+            <Card className="p-6">
+              <p className="text-base font-bold text-p-black">تأكيد تعيين مربي الصف</p>
+              <p className="mt-2 text-sm text-p-black/70">
+                {classHomeroomTeacherId ? (
+                  <>
+                    هل تريد تعيين{" "}
+                    <span className="font-semibold">{pendingHomeroomTeacherName}</span> مربي صف
+                    لشعبة <span className="font-semibold">{selectedClassName}</span>؟
+                  </>
+                ) : (
+                  <>
+                    هل تريد إزالة مربي الصف من شعبة{" "}
+                    <span className="font-semibold">{selectedClassName}</span>؟
+                  </>
+                )}
+              </p>
+              {classError ? (
+                <Alert variant="error" className="mt-4">
+                  {classError}
+                </Alert>
+              ) : null}
+              <div className="mt-6 flex flex-wrap justify-end gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setConfirmSaveHomeroom(false);
+                    setClassError("");
+                  }}
+                  disabled={savingHomeroom}
+                >
+                  إلغاء
+                </Button>
+                <Button type="button" onClick={saveHomeroomTeacher} disabled={savingHomeroom}>
+                  {savingHomeroom ? "جاري الحفظ..." : "تأكيد"}
                 </Button>
               </div>
             </Card>
