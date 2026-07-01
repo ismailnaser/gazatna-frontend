@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Alert } from "@/components/atoms/Alert";
 import { Button } from "@/components/atoms/Button";
 import { Input } from "@/components/atoms/Input";
@@ -46,6 +46,10 @@ export function AdminTeacherAddForm({ onCancel, onCreated }: AdminTeacherAddForm
   } | null>(null);
   const [cropping, setCropping] = useState(false);
 
+  const formTopRef = useRef<HTMLDivElement>(null);
+  const personalSectionRef = useRef<HTMLDivElement>(null);
+  const subjectsSectionRef = useRef<HTMLDivElement>(null);
+
   const gradient = pickTeacherGradient(teachers.length);
   const occupiedPairs = useMemo(() => buildOccupiedPairs(teachers), [teachers]);
 
@@ -87,16 +91,28 @@ export function AdminTeacherAddForm({ onCancel, onCreated }: AdminTeacherAddForm
     setCropOpen(false);
   }
 
+  function scrollToSection(ref: React.RefObject<HTMLElement | null>) {
+    ref.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!name.trim() || !experience.trim() || subjectIds.length === 0) {
-      setError("يرجى تعبئة جميع الحقول المطلوبة واختيار مادة واحدة على الأقل");
+    if (!name.trim()) {
+      setError("يرجى إدخال اسم المعلم");
+      scrollToSection(personalSectionRef);
+      return;
+    }
+
+    if (subjectIds.length === 0) {
+      setError("يرجى اختيار مادة واحدة على الأقل");
+      scrollToSection(subjectsSectionRef);
       return;
     }
 
     const conflicts = findAssignmentConflicts(teachers, subjects, classes, subjectIds, classIds);
     if (conflicts.length > 0) {
       setError(conflicts[0]);
+      scrollToSection(subjectsSectionRef);
       return;
     }
 
@@ -134,6 +150,7 @@ export function AdminTeacherAddForm({ onCancel, onCreated }: AdminTeacherAddForm
       onCreated(created, credentials);
     } catch (err) {
       setError(err instanceof Error ? err.message : "فشل إضافة المعلم");
+      scrollToSection(formTopRef);
     } finally {
       setSubmitting(false);
     }
@@ -142,64 +159,70 @@ export function AdminTeacherAddForm({ onCancel, onCreated }: AdminTeacherAddForm
   return (
     <>
       <form onSubmit={handleSubmit} className="space-y-5">
-        {error ? <Alert variant="error">{error}</Alert> : null}
+        <div ref={formTopRef} className="scroll-mt-24 space-y-5">
+          {error ? <Alert variant="error">{error}</Alert> : null}
 
-        <TeacherFormSection
-          icon={UserRound}
-          title="البيانات الشخصية"
-          description="الاسم، الصورة، الخبرة، والسيرة الذاتية"
-          tone="blue"
-        >
-          <div className="space-y-4">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Input label="اسم المعلم" value={name} onChange={(e) => setName(e.target.value)} required />
-              <Input
-                label="الخبرة"
-                value={experience}
-                onChange={(e) => setExperience(e.target.value)}
-                placeholder="مثال: 10 سنوات في تدريس الرياضيات"
-                required
-              />
-            </div>
-            <TeacherProfileImageField
-              name={name}
-              imageGradient={gradient}
-              previewUrl={imagePreview}
-              onFileSelect={handleFileSelect}
-            />
-            <Textarea
-              label="نبذة (السيرة الذاتية) (اختياري)"
-              value={bio}
-              onChange={(e) => setBio(e.target.value)}
-              rows={5}
-            />
+          <div ref={personalSectionRef} className="scroll-mt-24">
+            <TeacherFormSection
+              icon={UserRound}
+              title="البيانات الشخصية"
+              description="الاسم، الصورة، الخبرة، والسيرة الذاتية"
+              tone="blue"
+            >
+              <div className="space-y-4">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Input label="اسم المعلم" value={name} onChange={(e) => setName(e.target.value)} />
+                  <Input
+                    label="الخبرة (اختياري)"
+                    value={experience}
+                    onChange={(e) => setExperience(e.target.value)}
+                    placeholder="مثال: 10 سنوات في تدريس الرياضيات"
+                  />
+                </div>
+                <TeacherProfileImageField
+                  name={name}
+                  imageGradient={gradient}
+                  previewUrl={imagePreview}
+                  onFileSelect={handleFileSelect}
+                />
+                <Textarea
+                  label="نبذة (السيرة الذاتية) (اختياري)"
+                  value={bio}
+                  onChange={(e) => setBio(e.target.value)}
+                  rows={5}
+                />
+              </div>
+            </TeacherFormSection>
           </div>
-        </TeacherFormSection>
+        </div>
 
-        <TeacherFormSection
-          icon={BookMarked}
-          title="المواد الدراسية"
-          description="اختر مادة واحدة على الأقل"
-          tone="violet"
-        >
-          <TeacherSubjectPicker
-            subjects={subjects}
-            value={subjectIds}
-            onChange={setSubjectIds}
-            classIds={classIds}
-            occupiedPairs={occupiedPairs}
-          />
-        </TeacherFormSection>
+        <div ref={subjectsSectionRef} className="scroll-mt-24">
+          <TeacherFormSection
+            icon={BookMarked}
+            title="المواد الدراسية"
+            description="اختر مادة واحدة على الأقل"
+            tone="violet"
+          >
+            <TeacherSubjectPicker
+              subjects={subjects}
+              value={subjectIds}
+              onChange={setSubjectIds}
+              classIds={classIds}
+              occupiedPairs={occupiedPairs}
+            />
+          </TeacherFormSection>
+        </div>
 
         <TeacherFormSection
           icon={Layers}
           title="الفصول المسندة"
-          description="اختياري — يمكن تعيين الفصول لاحقاً"
+          description="تظهر فقط الفصول والشعب المسندة للمواد التي اخترتها"
           tone="green"
         >
           <TeacherClassPicker
             classes={classes}
             grades={grades}
+            subjects={subjects}
             value={classIds}
             onChange={setClassIds}
             subjectIds={subjectIds}
@@ -213,7 +236,7 @@ export function AdminTeacherAddForm({ onCancel, onCreated }: AdminTeacherAddForm
           </Button>
           <Button
             type="submit"
-            disabled={submitting || subjects.length === 0 || subjectIds.length === 0}
+            disabled={submitting || subjects.length === 0 || !name.trim() || subjectIds.length === 0}
             className="sm:min-w-[160px]"
           >
             <Save className="h-4 w-4" />

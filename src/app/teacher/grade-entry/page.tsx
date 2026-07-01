@@ -112,7 +112,7 @@ export default function TeacherGradeEntryPage() {
       </Card>
 
       {unit === "grading" ? <TeacherAssessmentsGradingPanel /> : null}
-      {unit === "grades" ? <TeacherGradesPanel mode="entry" /> : null}
+      {unit === "grades" ? <TeacherGradesPanel /> : null}
     </div>
   );
 }

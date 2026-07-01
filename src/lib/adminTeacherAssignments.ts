@@ -108,7 +108,7 @@ export function findSubjectClassConflicts(
 
 export function findAssignmentConflicts(
   teachers: TeacherProfile[],
-  subjects: Array<{ id: string; name: string }>,
+  subjects: Array<{ id: string; name: string; classIds?: string[] }>,
   classes: Array<{ id: string; name: string }>,
   subjectIds: string[],
   classIds: string[],
@@ -129,6 +129,56 @@ export function findAssignmentConflicts(
           classNames[classId] ?? classId,
           hit.teacherName
         )
+      );
+    }
+  }
+
+  const eligibilityMessages = findIneligibleClassMessages(subjects, classes, subjectIds, classIds);
+  return [...messages, ...eligibilityMessages];
+}
+
+export function eligibleClassIdsForSubjects(
+  subjects: Array<{ id: string; classIds?: string[] }>,
+  subjectIds: string[]
+): Set<string> {
+  if (subjectIds.length === 0) return new Set();
+
+  const selectedSubjects = subjects.filter((subject) => subjectIds.includes(subject.id));
+  if (selectedSubjects.length === 0) return new Set();
+
+  let intersection: Set<string> | null = null;
+  for (const subject of selectedSubjects) {
+    const ids = new Set(subject.classIds ?? []);
+    if (intersection === null) {
+      intersection = ids;
+      continue;
+    }
+    intersection = new Set([...intersection].filter((id) => ids.has(id)));
+  }
+
+  return intersection ?? new Set();
+}
+
+export function findIneligibleClassMessages(
+  subjects: Array<{ id: string; name: string; classIds?: string[] }>,
+  classes: Array<{ id: string; name: string }>,
+  subjectIds: string[],
+  classIds: string[]
+): string[] {
+  const eligible = eligibleClassIdsForSubjects(subjects, subjectIds);
+  const classNames = Object.fromEntries(classes.map((schoolClass) => [schoolClass.id, schoolClass.name]));
+  const messages: string[] = [];
+
+  for (const classId of classIds) {
+    if (eligible.has(classId)) continue;
+    const className = classNames[classId] ?? classId;
+    const missingSubjects = subjects
+      .filter((subject) => subjectIds.includes(subject.id))
+      .filter((subject) => !(subject.classIds ?? []).includes(classId))
+      .map((subject) => subject.name);
+    if (missingSubjects.length > 0) {
+      messages.push(
+        `مادة ${missingSubjects.join(" و")} غير مسندة لفصل ${className}. عيّن المادة للفصل من صفحة «المواد الدراسية» أولاً.`
       );
     }
   }

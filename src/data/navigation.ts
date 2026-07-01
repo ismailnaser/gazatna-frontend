@@ -12,8 +12,9 @@ import {
   FolderOpen,
   GraduationCap,
   Home,
-  Layers,
   Medal,
+  Archive,
+  FolderArchive,
   PenLine,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -40,7 +41,9 @@ const parentNav: NavItem[] = [
   { href: "/parent/assessments", label: "التقييمات", icon: BookOpenCheck },
   { href: "/parent/grades", label: "العلامات", icon: BookOpen },
   { href: "/parent/certificates", label: "الشهادات", icon: Medal },
+  { href: "/parent/certificate-archive", label: "أرشيف الشهادات", icon: FolderArchive },
   { href: "/parent/schedules", label: "الجداول", icon: CalendarDays },
+  { href: "/parent/archive", label: "أرشيف السنوات السابقة", icon: Archive },
   { href: "/parent/fees", label: "المالية", icon: CreditCard },
 ];
 
@@ -49,10 +52,10 @@ const teacherNav: NavItem[] = [
   { href: "/teacher/schedules", label: "جدول حصصي", icon: CalendarDays },
   { href: "/teacher/homework", label: "الواجبات", icon: PenLine },
   { href: "/teacher/quizzes", label: "الاختبارات", icon: ClipboardList },
-  { href: "/teacher/grade-schemes", label: "تقسيمة العلامات والتقييمات", icon: Layers },
   { href: "/teacher/grade-entry", label: "إضافة التقييمات والعلامات للطلاب", icon: BookOpenCheck },
   { href: "/teacher/announcements", label: "الإعلانات", icon: Bell },
   { href: "/teacher/materials", label: "مرفقات المواد", icon: FolderOpen },
+  { href: "/teacher/archive", label: "أرشيف السنوات السابقة", icon: Archive },
   { href: "/teacher/profile", label: "سيرتي الذاتية", icon: FileText },
 ];
 

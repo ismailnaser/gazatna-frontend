@@ -57,6 +57,11 @@ export const WEEK_DAYS = [
   "الجمعة",
 ];
 
+/** أيام الدوام المدرسي (من السبت إلى الخميس) */
+export const SCHOOL_WEEK_DAYS = WEEK_DAYS.slice(0, 6);
+
+export const SCHOOL_DAYS_PER_WEEK_MAX = SCHOOL_WEEK_DAYS.length;
+
 export const CLASS_DURATION_OPTIONS = [
   { value: "30", label: "30 دقيقة" },
   { value: "45", label: "45 دقيقة" },
@@ -122,6 +127,7 @@ export type ClassScheduleGridCell = {
 export type ClassScheduleGridState = {
   lessonsPerDay: number;
   daysPerWeek: number;
+  rowDays: string[];
   columns: ClassScheduleGridColumn[];
   cells: Record<string, ClassScheduleGridCell>;
 };
@@ -134,12 +140,28 @@ export function emptyClassScheduleGridCell(): ClassScheduleGridCell {
   return { subject: "", teacher: "", room: "" };
 }
 
+export function defaultRowDays(count: number): string[] {
+  const size = Math.min(SCHOOL_DAYS_PER_WEEK_MAX, Math.max(1, count));
+  return [...SCHOOL_WEEK_DAYS.slice(0, size)];
+}
+
+export function ensureRowDays(rowDays: string[], count: number): string[] {
+  const next = rowDays.filter((day) => SCHOOL_WEEK_DAYS.includes(day)).slice(0, count);
+  while (next.length < count) {
+    const candidate = SCHOOL_WEEK_DAYS.find((day) => !next.includes(day));
+    if (!candidate) break;
+    next.push(candidate);
+  }
+  return next;
+}
+
 export function defaultClassScheduleGridState(): ClassScheduleGridState {
   const lessonsPerDay = 6;
   const daysPerWeek = 5;
   return {
     lessonsPerDay,
     daysPerWeek,
+    rowDays: defaultRowDays(daysPerWeek),
     columns: Array.from({ length: lessonsPerDay }, (_, index) => ({
       period: CLASS_PERIOD_SUGGESTIONS[index] ?? `الحصة ${index + 1}`,
       time: "",
@@ -155,18 +177,26 @@ export function parseClassScheduleGrid(entries: ClassScheduleEntry[]): ClassSche
     return defaultClassScheduleGridState();
   }
 
-  const dayIndices = normalized.map((entry) => WEEK_DAYS.indexOf(entry.day)).filter((index) => index >= 0);
+  const daysWithData = [
+    ...new Set(
+      normalized
+        .map((entry) => entry.day)
+        .filter((day) => SCHOOL_WEEK_DAYS.includes(day))
+    ),
+  ].sort((a, b) => WEEK_DAYS.indexOf(a) - WEEK_DAYS.indexOf(b));
   const daysPerWeek = Math.min(
-    7,
-    Math.max(1, dayIndices.length ? Math.max(...dayIndices) + 1 : 5)
+    SCHOOL_DAYS_PER_WEEK_MAX,
+    Math.max(1, daysWithData.length || 5)
+  );
+  const rowDays = ensureRowDays(
+    daysWithData.length > 0 ? daysWithData : defaultRowDays(daysPerWeek),
+    daysPerWeek
   );
   const lessonsPerDay = Math.min(
     8,
     Math.max(
       1,
-      ...WEEK_DAYS.slice(0, daysPerWeek).map(
-        (day) => normalized.filter((entry) => entry.day === day).length
-      )
+      ...rowDays.map((day) => normalized.filter((entry) => entry.day === day).length)
     )
   );
 
@@ -177,7 +207,7 @@ export function parseClassScheduleGrid(entries: ClassScheduleEntry[]): ClassSche
   }));
   const cells: Record<string, ClassScheduleGridCell> = {};
 
-  for (const day of WEEK_DAYS.slice(0, daysPerWeek)) {
+  for (const day of rowDays) {
     const dayEntries = sortClassScheduleEntries(normalized.filter((entry) => entry.day === day));
     dayEntries.forEach((entry, index) => {
       let lessonIndex = CLASS_PERIOD_SUGGESTIONS.indexOf(entry.period);
@@ -200,9 +230,46 @@ export function parseClassScheduleGrid(entries: ClassScheduleEntry[]): ClassSche
   return {
     lessonsPerDay,
     daysPerWeek,
+    rowDays,
     columns: reconcileClassScheduleColumns(columns, 0),
     cells,
   };
+}
+
+/** يبني هيكل الجدول (مواعيد الحصص والأيام) من جدول مرجعي مع إفراغ المواد أو الإبقاء على الخلايا الحالية. */
+export function createGridWithScheduleTimings(
+  templateEntries: ClassScheduleEntry[],
+  preserveCellsFrom?: ClassScheduleGridState
+): ClassScheduleGridState {
+  const template = parseClassScheduleGrid(templateEntries);
+  const cells: Record<string, ClassScheduleGridCell> = {};
+
+  for (const day of template.rowDays) {
+    for (let index = 0; index < template.lessonsPerDay; index += 1) {
+      const key = classScheduleCellKey(day, index);
+      cells[key] = preserveCellsFrom?.cells[key] ?? emptyClassScheduleGridCell();
+    }
+  }
+
+  return {
+    lessonsPerDay: template.lessonsPerDay,
+    daysPerWeek: template.daysPerWeek,
+    rowDays: [...template.rowDays],
+    columns: reconcileClassScheduleColumns(
+      template.columns.map((column) => ({ ...column })),
+      0
+    ),
+    cells,
+  };
+}
+
+export function formatClassScheduleTemplateLabel(schedule: {
+  name: string;
+  classLabels: string[];
+}): string {
+  const classes =
+    schedule.classLabels.length > 0 ? ` (${schedule.classLabels.join(" · ")})` : "";
+  return `${schedule.name}${classes}`;
 }
 
 export function resizeClassScheduleGrid(
@@ -211,7 +278,8 @@ export function resizeClassScheduleGrid(
   daysPerWeek: number
 ): ClassScheduleGridState {
   const nextLessons = Math.min(8, Math.max(1, lessonsPerDay));
-  const nextDays = Math.min(7, Math.max(1, daysPerWeek));
+  const nextDays = Math.min(SCHOOL_DAYS_PER_WEEK_MAX, Math.max(1, daysPerWeek));
+  const rowDays = ensureRowDays(state.rowDays, nextDays);
   const columns: ClassScheduleGridColumn[] = Array.from({ length: nextLessons }, (_, index) => {
     const existing = state.columns[index];
     return (
@@ -224,7 +292,7 @@ export function resizeClassScheduleGrid(
   });
 
   const cells: Record<string, ClassScheduleGridCell> = {};
-  for (const day of WEEK_DAYS.slice(0, nextDays)) {
+  for (const day of rowDays) {
     for (let index = 0; index < nextLessons; index += 1) {
       const key = classScheduleCellKey(day, index);
       cells[key] = state.cells[key] ?? emptyClassScheduleGridCell();
@@ -234,6 +302,7 @@ export function resizeClassScheduleGrid(
   return {
     lessonsPerDay: nextLessons,
     daysPerWeek: nextDays,
+    rowDays,
     columns: reconcileClassScheduleColumns(columns, 0),
     cells,
   };
@@ -242,7 +311,7 @@ export function resizeClassScheduleGrid(
 export function serializeClassScheduleGrid(state: ClassScheduleGridState): ClassScheduleEntry[] {
   const result: ClassScheduleEntry[] = [];
 
-  for (const day of WEEK_DAYS.slice(0, state.daysPerWeek)) {
+  for (const day of state.rowDays) {
     for (let index = 0; index < state.lessonsPerDay; index += 1) {
       const cell = state.cells[classScheduleCellKey(day, index)] ?? emptyClassScheduleGridCell();
       const column = state.columns[index];
@@ -343,12 +412,15 @@ export function validateClassScheduleColumns(columns: ClassScheduleGridColumn[])
   return null;
 }
 
-export function validateClassScheduleGrid(state: ClassScheduleGridState): string | null {
+export function validateClassScheduleGrid(
+  state: ClassScheduleGridState,
+  options?: { otherClassSchedules?: Schedule[] }
+): string | null {
   const columnError = validateClassScheduleColumns(state.columns);
   if (columnError) return columnError;
   for (let index = 0; index < state.lessonsPerDay; index += 1) {
     const column = state.columns[index];
-    const hasSubject = WEEK_DAYS.slice(0, state.daysPerWeek).some((day) => {
+    const hasSubject = state.rowDays.some((day) => {
       const cell = state.cells[classScheduleCellKey(day, index)];
       return Boolean(cell?.subject.trim());
     });
@@ -357,7 +429,18 @@ export function validateClassScheduleGrid(state: ClassScheduleGridState): string
     }
   }
 
-  return validateClassScheduleEntries(serializeClassScheduleGrid(state));
+  const serialized = serializeClassScheduleGrid(state);
+  if (serialized.length === 0) {
+    return "أضف مادة واحدة على الأقل في الجدول قبل الحفظ";
+  }
+  const entriesError = validateClassScheduleEntries(serialized);
+  if (entriesError) return entriesError;
+
+  if (options?.otherClassSchedules?.length) {
+    return validateTeacherAcrossClassSchedules(serialized, options.otherClassSchedules);
+  }
+
+  return null;
 }
 
 /** يتوافق مع الجداول القديمة التي دمجت الحصة والوقت في حقل واحد */
@@ -378,6 +461,151 @@ export function normalizeClassEntry(entry: ClassScheduleEntry): ClassScheduleEnt
 
 function normalizeScheduleToken(value: string) {
   return value.trim().replace(/\s+/g, " ");
+}
+
+function normalizeTeacherName(value: string) {
+  return value.trim().replace(/\s+/g, " ").toLowerCase();
+}
+
+export type ClassScheduleLessonSlot = {
+  teacher: string;
+  teacherDisplay: string;
+  day: string;
+  time: string;
+  duration: number;
+  subject: string;
+  period: string;
+};
+
+export function collectClassScheduleLessons(
+  entries: ClassScheduleEntry[]
+): ClassScheduleLessonSlot[] {
+  return entries.map(normalizeClassEntry).flatMap((entry) => {
+    const teacherDisplay = entry.teacher.trim();
+    const teacher = normalizeTeacherName(teacherDisplay);
+    const day = entry.day.trim();
+    const time = entry.time.trim();
+    if (!teacher || !day || !time) return [];
+    return [
+      {
+        teacher,
+        teacherDisplay,
+        day,
+        time,
+        duration: parseClassDurationMinutes(entry.duration),
+        subject: entry.subject.trim(),
+        period: entry.period.trim(),
+      },
+    ];
+  });
+}
+
+function lessonPairTeacherConflict(
+  left: ClassScheduleLessonSlot,
+  right: ClassScheduleLessonSlot
+): string | null {
+  if (left.teacher !== right.teacher) return null;
+  if (left.day !== right.day) return null;
+  if (!classLessonRangesOverlap(left.time, left.duration, right.time, right.duration)) {
+    return null;
+  }
+  return `لا يمكن إسناد هذه الحصة — المعلم ${left.teacherDisplay} لديه حصة أخرى في «${left.day}» بنفس الوقت`;
+}
+
+export function findTeacherScheduleConflict(
+  lessonsA: ClassScheduleLessonSlot[],
+  lessonsB: ClassScheduleLessonSlot[]
+): string | null {
+  if (lessonsA === lessonsB) {
+    for (let index = 0; index < lessonsA.length; index += 1) {
+      for (let otherIndex = index + 1; otherIndex < lessonsA.length; otherIndex += 1) {
+        const conflict = lessonPairTeacherConflict(lessonsA[index], lessonsA[otherIndex]);
+        if (conflict) return conflict;
+      }
+    }
+    return null;
+  }
+
+  for (const left of lessonsA) {
+    for (const right of lessonsB) {
+      const conflict = lessonPairTeacherConflict(left, right);
+      if (conflict) return conflict;
+    }
+  }
+  return null;
+}
+
+export function validateTeacherAcrossClassSchedules(
+  entries: ClassScheduleEntry[],
+  otherSchedules: Schedule[]
+): string | null {
+  const lessons = collectClassScheduleLessons(entries);
+  const sameScheduleError = findTeacherScheduleConflict(lessons, lessons);
+  if (sameScheduleError) return sameScheduleError;
+
+  for (const schedule of otherSchedules) {
+    const otherLessons = collectClassScheduleLessons(schedule.entries as ClassScheduleEntry[]);
+    const conflict = findTeacherScheduleConflict(lessons, otherLessons);
+    if (conflict) {
+      return `${conflict} (جدول «${schedule.name}»)`;
+    }
+  }
+  return null;
+}
+
+/** يحدد الخلايا التي فيها تعارض معلم فور إدخال المادة أو الوقت */
+export function getCellTeacherConflicts(
+  grid: ClassScheduleGridState,
+  otherSchedules: Schedule[]
+): Map<string, string> {
+  const conflicts = new Map<string, string>();
+  const serialized = serializeClassScheduleGrid(grid);
+
+  for (let lessonIndex = 0; lessonIndex < grid.lessonsPerDay; lessonIndex += 1) {
+    const column = grid.columns[lessonIndex];
+    if (!column?.time?.trim()) continue;
+
+    for (const day of grid.rowDays) {
+      const key = classScheduleCellKey(day, lessonIndex);
+      const cell = grid.cells[key] ?? emptyClassScheduleGridCell();
+      if (!cell.subject.trim()) continue;
+
+      const entry: ClassScheduleEntry = {
+        day,
+        period: column.period,
+        time: column.time,
+        duration: column.duration,
+        subject: cell.subject,
+        teacher: cell.teacher,
+        room: cell.room,
+        notes: "",
+      };
+      const lessons = collectClassScheduleLessons([entry]);
+      if (lessons.length === 0) continue;
+
+      for (const otherEntry of serialized) {
+        if (otherEntry.day === entry.day && otherEntry.period === entry.period) continue;
+        const otherLessons = collectClassScheduleLessons([otherEntry]);
+        const internalConflict = findTeacherScheduleConflict(lessons, otherLessons);
+        if (internalConflict) {
+          conflicts.set(key, internalConflict);
+          break;
+        }
+      }
+      if (conflicts.has(key)) continue;
+
+      for (const schedule of otherSchedules) {
+        const otherLessons = collectClassScheduleLessons(schedule.entries as ClassScheduleEntry[]);
+        const externalConflict = findTeacherScheduleConflict(lessons, otherLessons);
+        if (externalConflict) {
+          conflicts.set(key, `${externalConflict} (جدول «${schedule.name}»)`);
+          break;
+        }
+      }
+    }
+  }
+
+  return conflicts;
 }
 
 export function getClassLessonConflict(
@@ -412,6 +640,29 @@ export function getClassLessonConflict(
   return null;
 }
 
+export function getTeacherLessonConflict(
+  dayEntries: ClassScheduleEntry[],
+  lessonIndex: number,
+  patch: Partial<ClassScheduleEntry> = {}
+): string | null {
+  const current = { ...dayEntries[lessonIndex], ...patch };
+  const teacher = normalizeTeacherName(current.teacher);
+  const time = normalizeScheduleToken(current.time);
+  const duration = parseClassDurationMinutes(current.duration);
+  if (!teacher || !time) return null;
+
+  for (let i = 0; i < dayEntries.length; i += 1) {
+    if (i === lessonIndex) continue;
+    const other = dayEntries[i];
+    if (normalizeTeacherName(other.teacher) !== teacher) continue;
+    if (!other.time) continue;
+    const otherDuration = parseClassDurationMinutes(other.duration);
+    if (!classLessonRangesOverlap(time, duration, other.time, otherDuration)) continue;
+    return `المعلم ${current.teacher.trim()} لديه أكثر من حصة في «${current.day}» في نفس الوقت`;
+  }
+  return null;
+}
+
 export function sortClassScheduleEntries(entries: ClassScheduleEntry[]): ClassScheduleEntry[] {
   return [...entries].sort((a, b) => {
     const dayDiff = WEEK_DAYS.indexOf(a.day) - WEEK_DAYS.indexOf(b.day);
@@ -429,15 +680,25 @@ export type StudentScheduleLessonColumn = {
   timeLabel: string;
 };
 
+export type ScheduleGridCell = {
+  subject: string;
+  teacher: string;
+  classLabel?: string;
+};
+
 export type StudentScheduleGridRow = {
   day: string;
-  subjects: string[];
+  cells: ScheduleGridCell[];
 };
 
 export type StudentScheduleGridData = {
   lessonColumns: StudentScheduleLessonColumn[];
   rows: StudentScheduleGridRow[];
 };
+
+function emptyScheduleGridCell(): ScheduleGridCell {
+  return { subject: "—", teacher: "" };
+}
 
 export function buildStudentScheduleGrid(entries: ClassScheduleEntry[]): StudentScheduleGridData {
   const normalized = sortClassScheduleEntries(entries.map(normalizeClassEntry));
@@ -485,15 +746,89 @@ export function buildStudentScheduleGrid(entries: ClassScheduleEntry[]): Student
 
   const rows = days.map((day) => ({
     day,
-    subjects: lessonColumns.map((column) => {
+    cells: lessonColumns.map((column) => {
       const match = normalized.find(
         (entry) => entry.day === day && (entry.period.trim() || entry.time.trim()) === column.key
       );
-      return match?.subject?.trim() || "—";
+      if (!match?.subject?.trim()) {
+        return emptyScheduleGridCell();
+      }
+      return {
+        subject: match.subject.trim(),
+        teacher: match.teacher?.trim() || "",
+      };
     }),
   }));
 
   return { lessonColumns, rows };
+}
+
+function lessonColumnKey(period: string, time: string): string {
+  return period.trim() || time.trim();
+}
+
+export function buildTeacherScheduleGrid(rows: TeacherScheduleRow[]): StudentScheduleGridData {
+  const normalized = sortTeacherScheduleRows(rows);
+  if (normalized.length === 0) {
+    return { lessonColumns: [], rows: [] };
+  }
+
+  const lessonMeta = new Map<
+    string,
+    { period: string; time: string; duration: string; order: number }
+  >();
+
+  for (const row of normalized) {
+    const key = lessonColumnKey(row.period, row.time);
+    if (!key) continue;
+    if (!lessonMeta.has(key)) {
+      lessonMeta.set(key, {
+        period: row.period.trim() || key,
+        time: row.time,
+        duration: row.duration,
+        order: CLASS_PERIOD_SUGGESTIONS.indexOf(row.period),
+      });
+    }
+  }
+
+  const lessonColumns = [...lessonMeta.entries()]
+    .sort(([, a], [, b]) => {
+      const orderA = a.order >= 0 ? a.order : 999;
+      const orderB = b.order >= 0 ? b.order : 999;
+      if (orderA !== orderB) return orderA - orderB;
+      return (a.time || "").localeCompare(b.time || "");
+    })
+    .map(([key, column]) => ({
+      key,
+      period: column.period,
+      timeLabel: formatClassLessonTimeRange(
+        column.time,
+        parseClassDurationMinutes(column.duration)
+      ),
+    }));
+
+  const days = [...new Set(normalized.map((row) => row.day).filter(Boolean))].sort(
+    (a, b) => WEEK_DAYS.indexOf(a) - WEEK_DAYS.indexOf(b)
+  );
+
+  const gridRows = days.map((day) => ({
+    day,
+    cells: lessonColumns.map((column) => {
+      const match = normalized.find(
+        (row) => row.day === day && lessonColumnKey(row.period, row.time) === column.key
+      );
+      if (!match?.subject?.trim()) {
+        return emptyScheduleGridCell();
+      }
+      return {
+        subject: match.subject.trim(),
+        teacher: "",
+        classLabel: match.classLabel?.trim() || "",
+      };
+    }),
+  }));
+
+  return { lessonColumns, rows: gridRows };
 }
 
 export type TeacherScheduleRow = {
@@ -501,6 +836,7 @@ export type TeacherScheduleRow = {
   scheduleId: string;
   scheduleName: string;
   day: string;
+  period: string;
   time: string;
   duration: string;
   subject: string;
@@ -513,6 +849,7 @@ export function mapTeacherScheduleRow(raw: Record<string, unknown>): TeacherSche
     scheduleId: String(raw.scheduleId ?? ""),
     scheduleName: String(raw.scheduleName ?? ""),
     day: String(raw.day ?? ""),
+    period: String(raw.period ?? ""),
     time: String(raw.time ?? ""),
     duration: String(raw.duration ?? DEFAULT_CLASS_DURATION),
     subject: String(raw.subject ?? ""),
@@ -552,6 +889,41 @@ export function validateClassScheduleEntries(entries: ClassScheduleEntry[]): str
       if (conflict) {
         return `${day}: ${conflict}`;
       }
+      const teacherConflict = getTeacherLessonConflict(dayEntries, i);
+      if (teacherConflict) {
+        return `${day}: ${teacherConflict}`;
+      }
+    }
+  }
+  return null;
+}
+
+/** شعب لها جدول حصص مسبقاً → اسم الجدول */
+export function getClassIdsWithClassSchedule(
+  schedules: Schedule[],
+  excludeScheduleId?: string
+): Map<string, string> {
+  const occupied = new Map<string, string>();
+  for (const schedule of schedules) {
+    if (schedule.scheduleType !== "class") continue;
+    if (excludeScheduleId && schedule.id === excludeScheduleId) continue;
+    for (const classId of schedule.classIds) {
+      occupied.set(classId, schedule.name);
+    }
+  }
+  return occupied;
+}
+
+export function validateClassScheduleClassTargets(
+  classIds: string[],
+  schedules: Schedule[],
+  excludeScheduleId?: string
+): string | null {
+  const occupied = getClassIdsWithClassSchedule(schedules, excludeScheduleId);
+  for (const classId of classIds) {
+    const scheduleName = occupied.get(classId);
+    if (scheduleName) {
+      return `لا يمكن إنشاء أكثر من جدول حصص لنفس الشعبة. يوجد جدول مسبقاً: «${scheduleName}»`;
     }
   }
   return null;

@@ -37,6 +37,16 @@ export function teachersForClassesAndSubject(
     .sort((a, b) => a.name.localeCompare(b.name, "ar"));
 }
 
+/** يُرجع المعلم المرتبط تلقائياً بالمادة والفصول المختارة (معلم واحد لكل مادة/شعبة). */
+export function resolveTeacherForClassesAndSubject(
+  teachers: TeacherProfile[],
+  subjects: Subject[],
+  classIds: string[],
+  subjectName: string
+): string {
+  return teachersForClassesAndSubject(teachers, subjects, classIds, subjectName)[0]?.name ?? "";
+}
+
 export function buildSelectOptions(
   items: Array<{ value: string; label: string }>,
   currentValue: string,

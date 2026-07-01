@@ -10,6 +10,7 @@ export type CertificateRenderInput = {
   certificate: StudentCertificate;
   config: CertificateConfig;
   schoolName?: string;
+  honorsTitle?: string;
 };
 
 function formatPercent(value: number | null) {
@@ -26,7 +27,9 @@ export async function buildHonorsCertificateHtml({
   certificate,
   config,
   schoolName = "مدرسة غَزتنا",
+  honorsTitle,
 }: CertificateRenderInput) {
+  const title = honorsTitle?.trim() || config.honorsTitle;
   const logoDataUrl = await loadSchoolLogoDataUrl();
   const exportDate = formatExportDate();
   const averageText =
@@ -55,7 +58,7 @@ export async function buildHonorsCertificateHtml({
 
           <div style="margin:0 auto 14px;max-width:420px;padding:12px 20px;background:#b45309;border-radius:10px;text-align:center;">
             <h1 style="margin:0;font-size:28px;font-weight:700;color:#ffffff;line-height:1.45;letter-spacing:0;">
-              ${escapeHtml(config.honorsTitle)}
+              ${escapeHtml(title)}
             </h1>
           </div>
 

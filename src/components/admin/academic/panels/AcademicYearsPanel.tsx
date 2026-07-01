@@ -3,6 +3,7 @@
 import { Badge } from "@/components/atoms/Badge";
 import { Card } from "@/components/atoms/Card";
 import { useAcademicAdmin } from "../AcademicAdminContext";
+import { getTermDisplayName } from "../academicAdminUtils";
 
 export function AcademicYearsPanel() {
   const { selectedYear } = useAcademicAdmin();
@@ -38,7 +39,7 @@ export function AcademicYearsPanel() {
         </div>
         <div className="rounded-xl border border-neutral-200 bg-p-cream/30 px-4 py-3">
           <p className="text-xs text-p-black/55">الفصل الحالي</p>
-          <p className="mt-1 font-semibold text-p-black">{currentTerm?.name ?? "—"}</p>
+          <p className="mt-1 font-semibold text-p-black">{getTermDisplayName(currentTerm)}</p>
         </div>
       </div>
     </Card>

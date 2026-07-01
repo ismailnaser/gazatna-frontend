@@ -2,6 +2,7 @@ export type AcademicTermStatus = {
   id: string;
   academicYearId: string;
   name: string;
+  displayName?: string;
   sortOrder: number;
   startDate: string;
   endDate: string;
@@ -25,6 +26,7 @@ export type PromotionPolicy = {
   passScoreRatio: number;
   passPromotionMode: "automatic" | "manual";
   failHandlingMode: "repeat_auto" | "manual_review";
+  isConfigured?: boolean;
   updatedAt?: string | null;
 };
 
@@ -50,6 +52,7 @@ export function mapAcademicTerm(raw: Record<string, unknown>): AcademicTermStatu
     id: String(raw.id),
     academicYearId: String(raw.academicYearId),
     name: String(raw.name),
+    displayName: raw.displayName ? String(raw.displayName) : undefined,
     sortOrder: Number(raw.sortOrder ?? 1),
     startDate: String(raw.startDate),
     endDate: String(raw.endDate),
@@ -76,6 +79,7 @@ export function mapPromotionPolicy(raw: Record<string, unknown>): PromotionPolic
       (raw.passPromotionMode as PromotionPolicy["passPromotionMode"]) ?? "automatic",
     failHandlingMode:
       (raw.failHandlingMode as PromotionPolicy["failHandlingMode"]) ?? "manual_review",
+    isConfigured: Boolean(raw.isConfigured),
     updatedAt: raw.updatedAt ? String(raw.updatedAt) : null,
   };
 }
@@ -167,6 +171,8 @@ export type PromotionPreview = {
   termName?: string | null;
   nextTermId?: string | null;
   nextTermName?: string | null;
+  nextTermActivatesImmediately?: boolean;
+  nextTermStartDate?: string | null;
   summary: {
     promote: number;
     repeat: number;
@@ -188,6 +194,11 @@ export function mapPromotionPreview(raw: Record<string, unknown>): PromotionPrev
     termName: raw.termName ? String(raw.termName) : null,
     nextTermId: raw.nextTermId ? String(raw.nextTermId) : null,
     nextTermName: raw.nextTermName ? String(raw.nextTermName) : null,
+    nextTermActivatesImmediately:
+      raw.nextTermActivatesImmediately === undefined
+        ? undefined
+        : Boolean(raw.nextTermActivatesImmediately),
+    nextTermStartDate: raw.nextTermStartDate ? String(raw.nextTermStartDate) : null,
     summary: {
       promote: Number(summary.promote ?? 0),
       repeat: Number(summary.repeat ?? 0),
@@ -244,6 +255,10 @@ export type CertificateConfig = {
   issuanceScope: CertificateIssuanceScope;
   isPublished: boolean;
   publishedAt: string | null;
+  isTermPublished?: boolean;
+  termPublishedAt?: string | null;
+  isYearPublished?: boolean;
+  yearPublishedAt?: string | null;
   publishedTermId: string | null;
   honorsEnabled: boolean;
   honorsMinAverage: number;
@@ -251,6 +266,18 @@ export type CertificateConfig = {
   honorsMessage: string;
   certificateTitle: string;
   updatedAt: string | null;
+};
+
+export type PublishedCertificate = {
+  scope: CertificateIssuanceScope;
+  scopeLabel: string;
+  academicYearId?: string;
+  academicYearName?: string;
+  honorsTitle?: string;
+  visibleUntil?: string;
+  archiveAfterGrace?: boolean;
+  config?: CertificateConfig;
+  certificate: StudentCertificate;
 };
 
 export type StudentCertificateSubject = {
@@ -281,6 +308,7 @@ export type ParentCertificatesResponse = {
   message: string;
   config: CertificateConfig | null;
   certificate: StudentCertificate | null;
+  certificates: PublishedCertificate[];
 };
 
 export function mapCertificateConfig(raw: Record<string, unknown>): CertificateConfig {
@@ -289,6 +317,10 @@ export function mapCertificateConfig(raw: Record<string, unknown>): CertificateC
     issuanceScope: (raw.issuanceScope as CertificateIssuanceScope) ?? "term",
     isPublished: Boolean(raw.isPublished),
     publishedAt: raw.publishedAt ? String(raw.publishedAt) : null,
+    isTermPublished: Boolean(raw.isTermPublished),
+    termPublishedAt: raw.termPublishedAt ? String(raw.termPublishedAt) : null,
+    isYearPublished: Boolean(raw.isYearPublished),
+    yearPublishedAt: raw.yearPublishedAt ? String(raw.yearPublishedAt) : null,
     publishedTermId: raw.publishedTermId ? String(raw.publishedTermId) : null,
     honorsEnabled: Boolean(raw.honorsEnabled),
     honorsMinAverage: Number(raw.honorsMinAverage ?? 95),
@@ -328,13 +360,35 @@ export function mapStudentCertificate(raw: Record<string, unknown>): StudentCert
 }
 
 export function mapParentCertificatesResponse(raw: Record<string, unknown>): ParentCertificatesResponse {
+  const certificates = Array.isArray(raw.certificates)
+    ? raw.certificates.map((item) => {
+        const row = item as Record<string, unknown>;
+        return {
+          scope: (row.scope as CertificateIssuanceScope) ?? "term",
+          scopeLabel: String(row.scopeLabel ?? ""),
+          academicYearId: row.academicYearId ? String(row.academicYearId) : undefined,
+          academicYearName: row.academicYearName ? String(row.academicYearName) : undefined,
+          honorsTitle: row.honorsTitle ? String(row.honorsTitle) : undefined,
+          visibleUntil: row.visibleUntil ? String(row.visibleUntil) : undefined,
+          archiveAfterGrace: row.archiveAfterGrace === undefined ? undefined : Boolean(row.archiveAfterGrace),
+          config: row.config
+            ? mapCertificateConfig(row.config as Record<string, unknown>)
+            : undefined,
+          certificate: mapStudentCertificate(row.certificate as Record<string, unknown>),
+        };
+      })
+    : [];
+
+  const fallbackCertificate = raw.certificate
+    ? mapStudentCertificate(raw.certificate as Record<string, unknown>)
+    : null;
+
   return {
     published: Boolean(raw.published),
     message: String(raw.message ?? ""),
     config: raw.config ? mapCertificateConfig(raw.config as Record<string, unknown>) : null,
-    certificate: raw.certificate
-      ? mapStudentCertificate(raw.certificate as Record<string, unknown>)
-      : null,
+    certificate: fallbackCertificate ?? certificates[0]?.certificate ?? null,
+    certificates,
   };
 }
 

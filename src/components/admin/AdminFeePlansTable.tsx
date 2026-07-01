@@ -2,7 +2,7 @@
 
 import { Badge } from "@/components/atoms/Badge";
 import { Button } from "@/components/atoms/Button";
-import { formatMetaDate } from "@/lib/dateDisplay";
+import { formatGregorianDate } from "@/lib/dateDisplay";
 import { installmentsMatchTotal, installmentsTotal } from "@/lib/feePlanForm";
 import { cn } from "@/lib/utils";
 import type { FeePlan } from "@/types/finance";
@@ -18,7 +18,7 @@ type AdminFeePlansTableProps = {
 
 function formatDate(value: string | null | undefined) {
   if (!value) return "—";
-  return formatMetaDate(value).date;
+  return formatGregorianDate(value);
 }
 
 export function AdminFeePlansTable({
@@ -45,7 +45,7 @@ export function AdminFeePlansTable({
 
   return (
     <div className="-mx-3 overflow-x-auto sm:mx-0">
-      <table className="w-full min-w-[920px] text-sm">
+      <table className="w-full min-w-[980px] text-sm">
         <thead>
           <tr className="border-b border-neutral-100 bg-neutral-50 text-p-black/55">
             <th className="px-3 py-2.5 text-start text-xs font-bold sm:px-4 sm:py-3">الخطة</th>
@@ -106,26 +106,38 @@ export function AdminFeePlansTable({
                     <span className="text-p-black/35">—</span>
                   )}
                 </td>
-                <td className="px-3 py-3 sm:px-4">
+                <td className="min-w-[260px] px-3 py-3 sm:px-4">
                   <p className="flex items-center gap-1 text-xs text-p-black/60">
                     <Calendar className="h-3.5 w-3.5 shrink-0" />
                     {scheduledCount}/{plan.installmentsCount} مجدولة
                   </p>
-                  <ul className="mt-2 space-y-1">
-                    {plan.installments.slice(0, 3).map((row) => (
-                      <li key={row.order} className="text-[11px] text-p-black/50">
-                        دفعة {row.order}: {row.amount} ₪
-                        {row.startDate && row.endDate
-                          ? ` — ${formatDate(row.startDate)} → ${formatDate(row.endDate)}`
-                          : " — بدون موعد"}
-                      </li>
-                    ))}
-                    {plan.installments.length > 3 ? (
-                      <li className="text-[11px] text-p-black/40">
-                        +{plan.installments.length - 3} دفعات أخرى
-                      </li>
-                    ) : null}
-                  </ul>
+                  <ol className="mt-2 space-y-2">
+                    {[...plan.installments]
+                      .sort((a, b) => a.order - b.order)
+                      .map((row) => {
+                        const isScheduled = Boolean(row.startDate && row.endDate);
+                        return (
+                          <li
+                            key={row.order}
+                            className="rounded-lg border border-neutral-100 bg-white px-2.5 py-2"
+                          >
+                            <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+                              <span className="font-semibold text-p-black">دفعة {row.order}</span>
+                              <span className="font-medium text-p-black/75">{row.amount} ₪</span>
+                            </div>
+                            {isScheduled ? (
+                              <p className="mt-1 text-[11px] leading-relaxed text-p-black/55">
+                                <span className="text-p-black/45">من</span> {formatDate(row.startDate)}
+                                <span className="mx-1 text-p-black/30">←</span>
+                                <span className="text-p-black/45">إلى</span> {formatDate(row.endDate)}
+                              </p>
+                            ) : (
+                              <p className="mt-1 text-[11px] font-medium text-amber-700">بدون موعد</p>
+                            )}
+                          </li>
+                        );
+                      })}
+                  </ol>
                 </td>
                 <td className="px-3 py-3 sm:px-4">
                   <div className="flex flex-wrap gap-1.5">

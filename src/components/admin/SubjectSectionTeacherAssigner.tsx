@@ -21,6 +21,7 @@ export type SubjectSectionTeacherAssignerProps = {
   onChange: (classId: string, patch: Partial<SubjectSectionDraft>) => void;
   className?: string;
   emptyMessage?: string;
+  teachersOnly?: boolean;
 };
 
 export function buildSubjectSectionDrafts(
@@ -67,6 +68,7 @@ export function SubjectSectionTeacherAssigner({
   onChange,
   className,
   emptyMessage = "لا توجد فصول مسجّلة بعد.",
+  teachersOnly = false,
 }: SubjectSectionTeacherAssignerProps) {
   const groups = useMemo(
     () => groupClassesWithGrades(classes, grades),
@@ -90,7 +92,9 @@ export function SubjectSectionTeacherAssigner({
     <div className={cn("space-y-4", className)}>
       <div className="rounded-lg border border-brand-teal/25 bg-brand-teal/10 px-3 py-2.5">
         <p className="text-xs leading-relaxed text-p-black/60">
-          فعّل الشعب التي تُدرَّس فيها المادة، ثم اختر المعلم من القائمة بجانب كل شعبة.
+          {teachersOnly
+            ? "اختر المعلم المسؤول عن كل شعبة مسندة لهذه المادة."
+            : "فعّل الشعب التي تُدرَّس فيها المادة، ثم اختر المعلم من القائمة بجانب كل شعبة."}
         </p>
       </div>
 
@@ -99,39 +103,49 @@ export function SubjectSectionTeacherAssigner({
           <p className="mb-3 text-sm font-bold text-p-black">{group.grade}</p>
           <div className="space-y-2">
             {group.sections.map((schoolClass) => {
-              const draft = sectionDrafts[schoolClass.id] ?? { enabled: false, teacherId: "" };
+              const draft = sectionDrafts[schoolClass.id] ?? {
+                enabled: teachersOnly,
+                teacherId: "",
+              };
+              const isEnabled = teachersOnly || draft.enabled;
 
               return (
                 <div
                   key={schoolClass.id}
                   className={cn(
                     "flex flex-col gap-2 rounded-xl border px-3 py-2.5 sm:flex-row sm:items-center sm:gap-3",
-                    draft.enabled
+                    isEnabled
                       ? "border-brand-teal/30 bg-brand-teal/5"
                       : "border-neutral-200 bg-neutral-50/50"
                   )}
                 >
-                  <label className="flex min-w-0 flex-1 cursor-pointer items-center gap-3">
-                    <input
-                      type="checkbox"
-                      checked={draft.enabled}
-                      onChange={(event) =>
-                        onChange(schoolClass.id, {
-                          enabled: event.target.checked,
-                          ...(event.target.checked ? {} : { teacherId: "" }),
-                        })
-                      }
-                      className="h-4 w-4 shrink-0 accent-brand-teal"
-                    />
-                    <span className="font-semibold text-p-black">
+                  {teachersOnly ? (
+                    <span className="min-w-0 flex-1 font-semibold text-p-black">
                       {getClassDisplayLabel(schoolClass)}
                     </span>
-                  </label>
+                  ) : (
+                    <label className="flex min-w-0 flex-1 cursor-pointer items-center gap-3">
+                      <input
+                        type="checkbox"
+                        checked={draft.enabled}
+                        onChange={(event) =>
+                          onChange(schoolClass.id, {
+                            enabled: event.target.checked,
+                            ...(event.target.checked ? {} : { teacherId: "" }),
+                          })
+                        }
+                        className="h-4 w-4 shrink-0 accent-brand-teal"
+                      />
+                      <span className="font-semibold text-p-black">
+                        {getClassDisplayLabel(schoolClass)}
+                      </span>
+                    </label>
+                  )}
 
                   <div className="w-full sm:max-w-[14rem] sm:shrink-0">
                     <select
                       value={draft.teacherId}
-                      disabled={!draft.enabled || sortedTeachers.length === 0}
+                      disabled={!isEnabled || sortedTeachers.length === 0}
                       aria-label={`المعلم — ${getClassDisplayLabel(schoolClass)}`}
                       onChange={(event) =>
                         onChange(schoolClass.id, { teacherId: event.target.value })

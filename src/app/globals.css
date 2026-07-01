@@ -169,14 +169,5 @@ a[class*="bg-["] {
 
 .date-time-input::-webkit-calendar-picker-indicator {
   cursor: pointer;
-  margin-inline-start: 0.25rem;
-  opacity: 0.55;
-}
-
-.date-time-input::-webkit-datetime-edit {
-  padding: 0;
-}
-
-.date-time-input::-webkit-datetime-edit-fields-wrapper {
-  padding: 0;
+  opacity: 0.65;
 }

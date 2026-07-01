@@ -13,7 +13,7 @@ import { certificateScopeLabels } from "@/types/academic";
 import type { CertificateConfig } from "@/types/academic";
 import { cn } from "@/lib/utils";
 import { ChevronDown, ChevronUp, Eye, Medal, Save } from "lucide-react";
-import { formatCertificatePercent } from "../academicAdminUtils";
+import { formatCertificatePercent, getTermDisplayName } from "../academicAdminUtils";
 import { useAcademicAdmin } from "../AcademicAdminContext";
 
 export function CertificateSettingsPanel() {
@@ -22,18 +22,17 @@ export function CertificateSettingsPanel() {
     certificateConfig,
     certificateDraft,
     setCertificateDraft,
-    publishTermId,
-    setPublishTermId,
+    activeCertificateTerm,
     loadingCertificate,
     savingCertificate,
     certificateSaved,
+    certificatePublishSuccess,
     publishingCertificates,
     unpublishingCertificates,
     certificatePreview,
     loadingCertificatePreview,
     expandedCertificateStudentIds,
     exportingCertificateStudentId,
-    termSelectOptions,
     handleSaveCertificateConfig,
     handlePublishCertificates,
     handleUnpublishCertificates,
@@ -175,14 +174,20 @@ export function CertificateSettingsPanel() {
               </p>
 
               {certificateDraft.issuanceScope === "term" ? (
-                <div className="mt-3 max-w-sm">
-                  <Select
-                    label="الفصل المراد إصدار شهاداته"
-                    value={publishTermId}
-                    options={termSelectOptions}
-                    onChange={(e) => setPublishTermId(e.target.value)}
-                  />
-                </div>
+                <p className="mt-3 text-sm text-p-black/70">
+                  {activeCertificateTerm ? (
+                    <>
+                      سيتم إصدار الشهادات للفصل النشط حالياً:{" "}
+                      <span className="font-semibold text-p-black">
+                        {getTermDisplayName(activeCertificateTerm)}
+                      </span>
+                    </>
+                  ) : (
+                    <span className="text-p-red">
+                      لا يوجد فصل دراسي نشط. عيّن الفصل الحالي من إعدادات الفصول الدراسية.
+                    </span>
+                  )}
+                </p>
               ) : null}
 
               <div className="mt-4 flex flex-wrap gap-2">
@@ -210,6 +215,8 @@ export function CertificateSettingsPanel() {
                   </Button>
                 ) : null}
               </div>
+
+              <SaveFeedback success={certificatePublishSuccess || null} className="mt-3" />
 
               {certificatePreview ? (
                 <div className="mt-6 space-y-4 border-t border-neutral-200 pt-4">

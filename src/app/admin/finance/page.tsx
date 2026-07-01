@@ -24,10 +24,13 @@ import {
   type ManualPaymentLog,
 } from "@/types/finance";
 import type { Grade } from "@/types/teacher";
+import type { AcademicYear } from "@/types/academic";
+import { mapAcademicYear } from "@/types/academic";
 import {
-  DEFAULT_FEE_PLAN_FORM,
+  createDefaultFeePlanForm,
   feePlanToForm,
   formatPlanPayload,
+  validateFeePlanForm,
   type FeePlanFormState,
 } from "@/lib/feePlanForm";
 import { Check, ClipboardList, Image, Plus, RotateCcw, Unlock, Wallet, X } from "lucide-react";
@@ -39,6 +42,8 @@ export default function AdminFinancePage() {
   const [notices, setNotices] = useState<FinanceNotice[]>([]);
   const [plans, setPlans] = useState<FeePlan[]>([]);
   const [grades, setGrades] = useState<Grade[]>([]);
+  const [academicYears, setAcademicYears] = useState<AcademicYear[]>([]);
+  const [planValidationError, setPlanValidationError] = useState("");
   const [students, setStudents] = useState<
     Array<{ id: string; name: string; grade: string; studentNumber: string; nationalId?: string }>
   >([]);
@@ -56,7 +61,7 @@ export default function AdminFinancePage() {
   } | null>(null);
   const [undoing, setUndoing] = useState(false);
 
-  const [planForm, setPlanForm] = useState<FeePlanFormState>(DEFAULT_FEE_PLAN_FORM);
+  const [planForm, setPlanForm] = useState<FeePlanFormState>(() => createDefaultFeePlanForm([]));
   const [showPlanForm, setShowPlanForm] = useState(false);
   const [savingPlan, setSavingPlan] = useState(false);
   const [deletePlanTarget, setDeletePlanTarget] = useState<FeePlan | null>(null);
@@ -98,6 +103,11 @@ export default function AdminFinancePage() {
         setPlans((data as Array<Record<string, unknown>>).map(mapFeePlan))
       ),
       api.getAdminGrades().then((data) => setGrades(data as Grade[])),
+      api.getAdminAcademicYears().then((data) =>
+        setAcademicYears(
+          (data as Array<Record<string, unknown>>).map(mapAcademicYear)
+        )
+      ),
       api.getAdminStudents().then((data) =>
         setStudents(
           (data as Array<Record<string, unknown>>).map((s) => ({
@@ -182,28 +192,38 @@ export default function AdminFinancePage() {
   }
 
   function openCreatePlan() {
-    setPlanForm(DEFAULT_FEE_PLAN_FORM);
+    setPlanForm(createDefaultFeePlanForm(academicYears));
     setShowPlanForm(true);
     setError("");
+    setPlanValidationError("");
     setTimeout(() => planFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
   }
 
   function openEditPlan(plan: FeePlan) {
-    setPlanForm(feePlanToForm(plan));
+    setPlanForm(feePlanToForm(plan, academicYears));
     setShowPlanForm(true);
     setError("");
+    setPlanValidationError("");
     setTimeout(() => planFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
   }
 
   function closePlanForm() {
     setShowPlanForm(false);
-    setPlanForm(DEFAULT_FEE_PLAN_FORM);
+    setPlanForm(createDefaultFeePlanForm(academicYears));
+    setPlanValidationError("");
   }
 
   async function savePlan(e: React.FormEvent) {
     e.preventDefault();
+    const validationMessage = validateFeePlanForm(planForm, academicYears, plans);
+    if (validationMessage) {
+      setPlanValidationError(validationMessage);
+      return;
+    }
+
     setSavingPlan(true);
     setError("");
+    setPlanValidationError("");
     const payload = formatPlanPayload(planForm);
     try {
       if (planForm.id) {
@@ -217,8 +237,8 @@ export default function AdminFinancePage() {
       }
       setSuccess("تم حفظ خطة الرسوم وتطبيقها على الطلاب في المراحل المحددة.");
       closePlanForm();
-    } catch {
-      setError("تعذر حفظ خطة الرسوم");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "تعذر حفظ خطة الرسوم");
     } finally {
       setSavingPlan(false);
     }
@@ -597,7 +617,10 @@ export default function AdminFinancePage() {
                   form={planForm}
                   onChange={setPlanForm}
                   gradeOptions={gradeOptions}
+                  plans={plans}
+                  academicYears={academicYears}
                   saving={savingPlan}
+                  validationError={planValidationError}
                   onSubmit={savePlan}
                   onCancel={closePlanForm}
                 />

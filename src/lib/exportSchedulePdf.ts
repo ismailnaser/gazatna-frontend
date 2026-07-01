@@ -6,15 +6,12 @@ import {
   loadSchoolLogoDataUrl,
   mountPdfElement,
 } from "@/lib/pdfExport";
-import { formatClassLessonTimeRange, formatScheduleTime12 } from "@/lib/scheduleTime";
+import { formatScheduleTime12 } from "@/lib/scheduleTime";
 import type { ClassScheduleEntry, Schedule, TeacherScheduleRow } from "@/types/schedules";
 import {
   buildStudentScheduleGrid,
-  formatClassDurationLabel,
-  parseClassDurationMinutes,
+  buildTeacherScheduleGrid,
   SCHEDULE_TYPE_LABELS,
-  sortClassScheduleEntries,
-  sortTeacherScheduleRows,
 } from "@/types/schedules";
 
 export type SchedulePdfVariant = "full" | "student" | "exam";
@@ -34,7 +31,7 @@ const thStyle =
 const tdStyle =
   "border:1px solid #d4d4d4;padding:8px 12px;font-size:13px;color:#111;vertical-align:top;text-align:right;";
 
-function buildStudentGridPdfHtml(schedule: Schedule) {
+function buildStudentGridPdfHtml(schedule: Schedule, showTeacher = false) {
   const grid = buildStudentScheduleGrid(schedule.entries as ClassScheduleEntry[]);
   const headerCells = grid.lessonColumns
     .map(
@@ -53,13 +50,20 @@ function buildStudentGridPdfHtml(schedule: Schedule) {
       : grid.rows
           .map((row, index) => {
             const rowBg = index % 2 === 1 ? "background:#fafafa;" : "";
-            const cells = row.subjects
-              .map(
-                (subject) =>
-                  `<td style="${tdStyle}text-align:center;${subject !== "—" ? "font-weight:600;" : ""}">${escapeHtml(subject)}</td>`
-              )
+            const cells = row.cells
+              .map((cell) => {
+                const hasSubject = cell.subject && cell.subject !== "—";
+                const subjectHtml = hasSubject
+                  ? `<div style="font-weight:600;">${escapeHtml(cell.subject)}</div>${
+                      showTeacher && cell.teacher
+                        ? `<div style="margin-top:2px;font-size:10px;font-weight:400;color:#666;">المعلم: ${escapeHtml(cell.teacher)}</div>`
+                        : ""
+                    }`
+                  : "—";
+                return `<td style="${tdStyle}text-align:center;vertical-align:middle;">${subjectHtml}</td>`;
+              })
               .join("");
-            return `<tr style="${rowBg}"><td style="${tdStyle}font-weight:600;background:#fafafa;">${escapeHtml(row.day)}</td>${cells}</tr>`;
+            return `<tr style="${rowBg}"><td style="${tdStyle}font-weight:600;background:#fafafa;white-space:nowrap;">${escapeHtml(row.day)}</td>${cells}</tr>`;
           })
           .join("");
 
@@ -77,37 +81,7 @@ function buildStudentGridPdfHtml(schedule: Schedule) {
 }
 
 function buildFullClassPdfHtml(schedule: Schedule) {
-  const displayEntries = sortClassScheduleEntries(schedule.entries as ClassScheduleEntry[]);
-  const headers = ["اليوم", "الحصة", "الموعد", "مدة الحصة", "المادة", "المعلم", "القاعة", "ملاحظات"];
-  const rowsHtml =
-    displayEntries.length === 0
-      ? `<tr><td colspan="${headers.length}" style="${tdStyle}text-align:center;color:#666;">لا توجد صفوف في هذا الجدول</td></tr>`
-      : displayEntries
-          .map((row, index) => {
-            const rowBg = index % 2 === 1 ? "background:#fafafa;" : "";
-            const durationMinutes = parseClassDurationMinutes(row.duration);
-            const timeLabel = formatClassLessonTimeRange(row.time, durationMinutes);
-            return `<tr style="${rowBg}">
-              <td style="${tdStyle}font-weight:600;">${escapeHtml(row.day || "—")}</td>
-              <td style="${tdStyle}">${escapeHtml(row.period || "—")}</td>
-              <td style="${tdStyle}">${escapeHtml(timeLabel)}</td>
-              <td style="${tdStyle}">${escapeHtml(formatClassDurationLabel(row.duration))}</td>
-              <td style="${tdStyle}font-weight:600;">${escapeHtml(row.subject || "—")}</td>
-              <td style="${tdStyle}">${escapeHtml(row.teacher || "—")}</td>
-              <td style="${tdStyle}">${escapeHtml(row.room || "—")}</td>
-              <td style="${tdStyle}">${escapeHtml(row.notes || "—")}</td>
-            </tr>`;
-          })
-          .join("");
-
-  return `
-    <table style="width:100%;border-collapse:collapse;table-layout:fixed;">
-      <thead>
-        <tr>${headers.map((label) => `<th style="${thStyle}">${label}</th>`).join("")}</tr>
-      </thead>
-      <tbody>${rowsHtml}</tbody>
-    </table>
-  `;
+  return buildStudentGridPdfHtml(schedule, true);
 }
 
 function buildExamPdfHtml(schedule: Schedule) {
@@ -182,6 +156,55 @@ async function buildSchedulePdfElement(schedule: Schedule, options: SchedulePdfE
   `);
 }
 
+function buildTeacherGridPdfHtml(rows: TeacherScheduleRow[]) {
+  const grid = buildTeacherScheduleGrid(rows);
+  const headerCells = grid.lessonColumns
+    .map(
+      (column) =>
+        `<th style="${thStyle}text-align:center;">${escapeHtml(column.period)}${
+          column.timeLabel && column.timeLabel !== "—"
+            ? `<div style="margin-top:2px;font-size:10px;font-weight:500;color:#666;">${escapeHtml(column.timeLabel)}</div>`
+            : ""
+        }</th>`
+    )
+    .join("");
+
+  const bodyRows =
+    grid.rows.length === 0
+      ? `<tr><td colspan="${Math.max(grid.lessonColumns.length + 1, 2)}" style="${tdStyle}text-align:center;color:#666;">لا توجد حصص مسندة إليك</td></tr>`
+      : grid.rows
+          .map((row, index) => {
+            const rowBg = index % 2 === 1 ? "background:#fafafa;" : "";
+            const cells = row.cells
+              .map((cell) => {
+                const hasSubject = cell.subject && cell.subject !== "—";
+                const subjectHtml = hasSubject
+                  ? `<div style="font-weight:600;">${escapeHtml(cell.subject)}</div>${
+                      cell.classLabel
+                        ? `<div style="margin-top:2px;font-size:10px;font-weight:400;color:#666;">الفصل: ${escapeHtml(cell.classLabel)}</div>`
+                        : ""
+                    }`
+                  : "—";
+                return `<td style="${tdStyle}text-align:center;vertical-align:middle;">${subjectHtml}</td>`;
+              })
+              .join("");
+            return `<tr style="${rowBg}"><td style="${tdStyle}font-weight:600;background:#fafafa;white-space:nowrap;">${escapeHtml(row.day)}</td>${cells}</tr>`;
+          })
+          .join("");
+
+  return `
+    <table style="width:100%;border-collapse:collapse;table-layout:fixed;">
+      <thead>
+        <tr>
+          <th style="${thStyle}">اليوم</th>
+          ${headerCells}
+        </tr>
+      </thead>
+      <tbody>${bodyRows}</tbody>
+    </table>
+  `;
+}
+
 async function buildTeacherSchedulePdfElement(
   rows: TeacherScheduleRow[],
   options: TeacherSchedulePdfExportOptions = {}
@@ -189,26 +212,6 @@ async function buildTeacherSchedulePdfElement(
   const logoDataUrl = await loadSchoolLogoDataUrl();
   const schoolName = options.schoolName?.trim() || "مدرسة غَزتنا";
   const title = options.title?.trim() || "جدول حصصي الأسبوعي";
-  const displayRows = sortTeacherScheduleRows(rows);
-  const headers = ["اليوم", "موعد الحصة", "الفصل والشعبة", "المادة"];
-  const rowsHtml =
-    displayRows.length === 0
-      ? `<tr><td colspan="${headers.length}" style="${tdStyle}text-align:center;color:#666;">لا توجد حصص مسندة إليك</td></tr>`
-      : displayRows
-          .map((row, index) => {
-            const rowBg = index % 2 === 1 ? "background:#fafafa;" : "";
-            const timeLabel = formatClassLessonTimeRange(
-              row.time,
-              parseClassDurationMinutes(row.duration)
-            );
-            return `<tr style="${rowBg}">
-              <td style="${tdStyle}font-weight:600;">${escapeHtml(row.day || "—")}</td>
-              <td style="${tdStyle}">${escapeHtml(timeLabel)}</td>
-              <td style="${tdStyle}">${escapeHtml(row.classLabel || "—")}</td>
-              <td style="${tdStyle}font-weight:600;">${escapeHtml(row.subject || "—")}</td>
-            </tr>`;
-          })
-          .join("");
 
   return mountPdfElement(`
     <div dir="rtl" style="font-family:Tahoma,Arial,sans-serif;background:#ffffff;color:#111111;width:746px;">
@@ -218,12 +221,7 @@ async function buildTeacherSchedulePdfElement(
         title,
         lines: ["جدول حصصي الأسبوعي", `تاريخ التصدير: ${formatExportDate()}`],
       })}
-      <table style="width:100%;border-collapse:collapse;table-layout:fixed;">
-        <thead>
-          <tr>${headers.map((label) => `<th style="${thStyle}">${label}</th>`).join("")}</tr>
-        </thead>
-        <tbody>${rowsHtml}</tbody>
-      </table>
+      ${buildTeacherGridPdfHtml(rows)}
     </div>
   `);
 }

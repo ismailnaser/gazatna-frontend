@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Card } from "@/components/atoms/Card";
 import { PageHeader } from "@/components/molecules/PageHeader";
+import { AcademicPeriodBanner } from "@/components/shared/AcademicPeriodBanner";
 import {
   isParentFeeRestricted,
   ParentAccessBlockedCard,
@@ -164,6 +165,8 @@ export default function ParentDashboard() {
         title="الرئيسية"
         description="متابعة ابنك/ابنتك — محتوى المواد، الاختبارات، والعلامات"
       />
+
+      <AcademicPeriodBanner />
 
       <div className="mb-8 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         <Card className="col-span-2 flex min-w-0 items-center gap-2 p-4 sm:gap-3 sm:p-6 lg:col-span-4">

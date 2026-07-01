@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo } from "react";
 import { Card } from "@/components/atoms/Card";
+import { AcademicPeriodBanner } from "@/components/shared/AcademicPeriodBanner";
 import { TeacherSubmissionAlerts } from "@/components/teacher/TeacherSubmissionAlerts";
 import { useAssignments } from "@/context/AssignmentsContext";
 import { useAuth } from "@/context/AuthContext";
@@ -104,6 +105,8 @@ export default function TeacherDashboard() {
         <h1 className="text-xl font-bold text-p-green sm:text-2xl">فصولي</h1>
         <p className="mt-1 text-sm text-p-black/55">الفصول المسندة إليك من الإدارة</p>
       </header>
+
+      <AcademicPeriodBanner />
 
       {classes.length > 0 && (
         <Card className="border-neutral-100 p-3 sm:p-4">

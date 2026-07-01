@@ -34,6 +34,11 @@ export function AcademicTermsPanel() {
         </p>
       </div>
       <div className="space-y-4 px-4 py-4">
+        {termsDraft.length === 0 ? (
+          <p className="rounded-xl border border-dashed border-neutral-200 bg-p-cream/20 px-4 py-6 text-center text-sm text-p-black/55">
+            لا توجد فصول دراسية لهذه السنة بعد. اضغط «إضافة فصل» لإنشاء الفصول يدوياً.
+          </p>
+        ) : null}
         {termsDraft.map((term, index) => (
           <div
             key={term.id}
@@ -62,7 +67,6 @@ export function AcademicTermsPanel() {
                 <Button
                   variant="outline"
                   className="h-8 px-3 text-xs text-p-red hover:bg-p-red/5"
-                  disabled={termsDraft.length <= 1}
                   onClick={() => setDeleteTermTarget(term)}
                 >
                   <Trash2 className="h-3.5 w-3.5" />
@@ -71,7 +75,7 @@ export function AcademicTermsPanel() {
                 ) : null}
               </div>
             </div>
-            <div className="grid gap-3 md:grid-cols-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
               <Input
                 label="اسم الفصل"
                 value={term.name}

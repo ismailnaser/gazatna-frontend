@@ -4,9 +4,14 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Alert } from "@/components/atoms/Alert";
 import { Button } from "@/components/atoms/Button";
 import { Card } from "@/components/atoms/Card";
-import { Input } from "@/components/atoms/Input";
 import { DashboardLoadingState } from "@/components/dashboard/DashboardLoadingState";
 import { SaveFeedback } from "@/components/molecules/SaveFeedback";
+import {
+  GradeSchemeEditorForm,
+  buildDefaultGradeSchemeComponents,
+  gradeSchemeComponentsTotal,
+  newGradeSchemeComponentId,
+} from "@/components/grades/GradeSchemeEditorForm";
 import { GradeSectionClassPicker } from "@/components/shared/GradeSectionClassPicker";
 import { NumberFieldWithKeypad } from "@/components/teacher/NumberFieldWithKeypad";
 import { useSchool } from "@/context/SchoolContext";
@@ -18,31 +23,7 @@ import type {
   GradeSchemeEntry,
 } from "@/types/gradeSchemes";
 import { groupClassesByGrade } from "@/lib/groupClassesByGrade";
-import Link from "next/link";
-import { BookOpen, ChevronDown, ChevronUp, Plus, Save, Search, Trash2, Users } from "lucide-react";
-
-const DEFAULT_COMPONENTS: Array<{ name: string; maxScore: number }> = [
-  { name: "النشاط", maxScore: 10 },
-  { name: "الشهري", maxScore: 10 },
-  { name: "النصفي", maxScore: 30 },
-  { name: "النهائي", maxScore: 50 },
-];
-
-function newComponentId() {
-  return `cmp-${Math.random().toString(36).slice(2, 10)}`;
-}
-
-function buildDefaultComponents(): GradeSchemeComponent[] {
-  return DEFAULT_COMPONENTS.map((item) => ({
-    id: newComponentId(),
-    name: item.name,
-    maxScore: item.maxScore,
-  }));
-}
-
-function componentsTotal(components: GradeSchemeComponent[]) {
-  return components.reduce((sum, item) => sum + (Number(item.maxScore) || 0), 0);
-}
+import { BookOpen, Save, Search, Users } from "lucide-react";
 
 function parseApiError(error: unknown): string {
   if (error instanceof Error && error.message) return error.message;
@@ -156,7 +137,7 @@ function GradeSubjectMultiSelect({
   );
 }
 
-export function TeacherGradesPanel({ mode = "entry" }: { mode?: "scheme" | "entry" }) {
+export function TeacherGradesPanel() {
   const { classes, currentTeacher, loading: schoolLoading, refresh } = useSchool();
 
   function showSuccessMessage(message: string, scroll = true) {
@@ -196,13 +177,12 @@ export function TeacherGradesPanel({ mode = "entry" }: { mode?: "scheme" | "entr
   const [activeSubject, setActiveSubject] = useState("");
   const [availableSubjects, setAvailableSubjects] = useState<string[]>([]);
   const [maxScore, setMaxScore] = useState("100");
-  const [components, setComponents] = useState<GradeSchemeComponent[]>(buildDefaultComponents);
+  const [components, setComponents] = useState<GradeSchemeComponent[]>(buildDefaultGradeSchemeComponents);
   const [entries, setEntries] = useState<GradeSchemeEntry[]>([]);
   const [schemeSaved, setSchemeSaved] = useState(false);
   const [gradesSaved, setGradesSaved] = useState(false);
   const [search, setSearch] = useState("");
   const [loadingBundle, setLoadingBundle] = useState(false);
-  const [savingScheme, setSavingScheme] = useState(false);
   const [savingGrades, setSavingGrades] = useState(false);
   const [error, setError] = useState("");
   const [academicTermLabel, setAcademicTermLabel] = useState("");
@@ -261,7 +241,7 @@ export function TeacherGradesPanel({ mode = "entry" }: { mode?: "scheme" | "entr
     }
   }, [subjects, activeSubject]);
 
-  const componentTotal = componentsTotal(components);
+  const componentTotal = gradeSchemeComponentsTotal(components);
   const maxScoreNumber = Number(maxScore) || 0;
   const splitValid = componentTotal === maxScoreNumber && maxScoreNumber > 0;
 
@@ -286,7 +266,7 @@ export function TeacherGradesPanel({ mode = "entry" }: { mode?: "scheme" | "entr
         setMaxScore(String(data.scheme.maxScore));
         setComponents(
           (data.scheme.components ?? []).map((item) => ({
-            id: item.id || newComponentId(),
+            id: item.id || newGradeSchemeComponentId(),
             name: item.name,
             maxScore: Number(item.maxScore),
           }))
@@ -294,7 +274,7 @@ export function TeacherGradesPanel({ mode = "entry" }: { mode?: "scheme" | "entr
         setSchemeSaved(true);
       } else if (!nextSubject) {
         setMaxScore("100");
-        setComponents(buildDefaultComponents());
+        setComponents(buildDefaultGradeSchemeComponents());
         setSchemeSaved(false);
       }
       setEntries(data.entries ?? []);
@@ -332,45 +312,6 @@ export function TeacherGradesPanel({ mode = "entry" }: { mode?: "scheme" | "entr
     );
   }, [entries, search]);
 
-  function updateComponent(index: number, field: "name" | "maxScore", value: string) {
-    setComponents((prev) =>
-      prev.map((item, i) =>
-        i === index
-          ? {
-              ...item,
-              [field]: field === "maxScore" ? Number(value) || 0 : value,
-            }
-          : item
-      )
-    );
-    setSchemeSaved(false);
-    clearFeedback();
-  }
-
-  function addComponent() {
-    setComponents((prev) => [...prev, { id: newComponentId(), name: "", maxScore: 0 }]);
-    setSchemeSaved(false);
-    clearFeedback();
-  }
-
-  function removeComponent(index: number) {
-    setComponents((prev) => prev.filter((_, i) => i !== index));
-    setSchemeSaved(false);
-    clearFeedback();
-  }
-
-  function moveComponent(index: number, direction: -1 | 1) {
-    setComponents((prev) => {
-      const next = index + direction;
-      if (next < 0 || next >= prev.length) return prev;
-      const copy = [...prev];
-      [copy[index], copy[next]] = [copy[next], copy[index]];
-      return copy;
-    });
-    setSchemeSaved(false);
-    clearFeedback();
-  }
-
   function updateEntryScore(studentId: string, componentId: string, value: string) {
     setEntries((prev) =>
       prev.map((entry) => {
@@ -388,57 +329,13 @@ export function TeacherGradesPanel({ mode = "entry" }: { mode?: "scheme" | "entr
     clearFeedback();
   }
 
-  async function handleSaveScheme() {
-    if (selectedClassIds.length === 0 || subjects.length === 0) {
-      setError("اختر الفصول والمواد أولاً");
-      return;
-    }
-    if (!splitValid) {
-      setError(`مجموع التقسيمة (${componentTotal}) يجب أن يساوي العلامة الكاملة (${maxScoreNumber})`);
-      return;
-    }
-    if (components.some((item) => !item.name.trim())) {
-      setError("أدخل اسم كل عنصر في التقسيمة");
-      return;
-    }
-
-    setSavingScheme(true);
-    setError("");
-    try {
-      const result = (await api.saveTeacherGradeScheme({
-        classIds: selectedClassIds,
-        subjects,
-        maxScore: maxScoreNumber,
-        components,
-      })) as GradeSchemeBundle;
-      if (result.scheme) {
-        setComponents(result.scheme.components);
-      }
-      setEntries(result.entries ?? []);
-      setSchemeSaved(true);
-      showSuccessMessage(
-        hasMultipleSubjects && hasMultipleClasses
-          ? `تم حفظ التقسيمة بنجاح لـ ${subjects.length} مواد في ${selectedClassIds.length} شعب`
-          : hasMultipleSubjects
-            ? `تم حفظ التقسيمة بنجاح لـ ${subjects.length} مواد`
-            : hasMultipleClasses
-              ? `تم حفظ التقسيمة بنجاح لـ ${selectedClassIds.length} شعب`
-              : "تم حفظ تقسيمة العلامات بنجاح"
-      );
-    } catch (err) {
-      setError(parseApiError(err));
-    } finally {
-      setSavingScheme(false);
-    }
-  }
-
   async function handleSaveGrades() {
     if (selectedClassIds.length === 0 || subjects.length === 0) {
       setError("اختر الفصول والمواد أولاً");
       return;
     }
     if (!schemeSaved) {
-      setError("احفظ تقسيمة العلامات أولاً");
+      setError("لم تُعرّف تقسيمة العلامات الموحّدة بعد. تواصل مع الإدارة.");
       return;
     }
 
@@ -501,9 +398,7 @@ export function TeacherGradesPanel({ mode = "entry" }: { mode?: "scheme" | "entr
         <div>
           <h2 className="text-sm font-bold text-p-black">اختيار المادة والفصول</h2>
           <p className="mt-1 text-xs text-p-black/50">
-            {mode === "scheme"
-              ? "اختر الفصول والمواد لتعريف تقسيمة العلامات وتطبيقها دفعة واحدة."
-              : "اختر الفصول والمواد لإدخال علامات الطلاب حسب التقسيمة المحفوظة."}
+            اختر الفصول والمواد لإدخال علامات الطلاب حسب التقسيمة المعتمدة من الإدارة.
           </p>
         </div>
 
@@ -549,138 +444,37 @@ export function TeacherGradesPanel({ mode = "entry" }: { mode?: "scheme" | "entr
 
       {selectedClassIds.length > 0 && subjects.length > 0 ? (
         <>
-          {mode === "scheme" ? (
-          <Card className="space-y-4 p-4 sm:p-6">
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-              <div>
-                <h2 className="text-sm font-bold text-p-black">تقسيمة العلامات</h2>
-                <p className="mt-1 text-xs text-p-black/50">
-                  حدّد العلامة الكاملة ثم قسّمها. رتّب العناصر بالأسهم لتحديد ما يظهر أولاً في
-                  جدول العلامات. تُطبَّق على{" "}
-                  {hasMultipleSubjects ? `${subjects.length} مواد` : subjects[0]}
-                  {hasMultipleClasses ? ` في ${selectedClassIds.length} شعب` : ""}.
-                </p>
-              </div>
-              <Button type="button" variant="outline" size="sm" onClick={addComponent}>
-                <Plus className="h-4 w-4" />
-                إضافة عنصر
-              </Button>
-            </div>
-
-            <div className="grid gap-3 sm:grid-cols-[140px_1fr] sm:items-end">
-              <NumberFieldWithKeypad
-                fieldId="grade-scheme-max"
-                label="العلامة الكاملة"
-                value={maxScore}
-                onChange={(value) => {
-                  setMaxScore(value);
-                  setSchemeSaved(false);
-                  clearFeedback();
-                }}
-                min={1}
-                max={1000}
-                allowDecimal
-                maxDecimalPlaces={2}
-                placeholder="100"
-              />
-              <p
-                className={cn(
-                  "rounded-xl px-3 py-2 text-xs font-semibold",
-                  splitValid ? "bg-p-green/10 text-p-green" : "bg-brand-orange/10 text-brand-orange"
-                )}
-              >
-                مجموع التقسيمة: {componentTotal} / {maxScoreNumber || "—"}
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              {components.map((component, index) => (
-                <div
-                  key={component.id}
-                  className="grid gap-2 rounded-xl border border-neutral-100 bg-neutral-50/60 p-3 sm:grid-cols-[1fr_120px_auto]"
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white text-xs font-bold text-p-black/45 ring-1 ring-neutral-200">
-                      {index + 1}
-                    </span>
-                    <Input
-                      className="min-w-0 flex-1"
-                      value={component.name}
-                      onChange={(e) => updateComponent(index, "name", e.target.value)}
-                      placeholder="اسم العنصر (مثال: النشاط)"
-                    />
-                  </div>
-                  <NumberFieldWithKeypad
-                    compact
-                    fieldId={`component-max-${component.id}`}
-                    label="علامة العنصر"
-                    value={String(component.maxScore || "")}
-                    onChange={(value) => updateComponent(index, "maxScore", value)}
-                    min={0}
-                    allowDecimal
-                    maxDecimalPlaces={2}
-                  />
-                  <div className="flex items-end justify-end gap-0.5 self-end">
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="px-2"
-                      disabled={index === 0}
-                      onClick={() => moveComponent(index, -1)}
-                      aria-label="تحريك لأعلى"
-                    >
-                      <ChevronUp className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="px-2"
-                      disabled={index === components.length - 1}
-                      onClick={() => moveComponent(index, 1)}
-                      aria-label="تحريك لأسفل"
-                    >
-                      <ChevronDown className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="px-2 text-p-red hover:bg-p-red/5"
-                      onClick={() => removeComponent(index)}
-                      disabled={components.length <= 1}
-                      aria-label="حذف العنصر"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <Button onClick={handleSaveScheme} disabled={savingScheme || !splitValid}>
-              <Save className="h-4 w-4" />
-              {savingScheme ? "جاري الحفظ..." : schemeSaved ? "تحديث التقسيمة" : "حفظ التقسيمة"}
-            </Button>
-            <SaveFeedback
-              success={success}
-              scrollIntoView={scrollFeedback && mode === "scheme"}
-              className="mt-3"
-            />
-          </Card>
-          ) : null}
-
-          {mode === "entry" ? (
-          <>
           {!schemeSaved && !loadingBundle ? (
             <Alert variant="warning">
-              لا توجد تقسيمة محفوظة للاختيار الحالي.{" "}
-              <Link href="/teacher/grade-schemes" className="font-semibold text-brand-blue hover:underline">
-                أنشئ التقسيمة أولاً
-              </Link>
+              لم تُعرّف تقسيمة العلامات الموحّدة بعد للفصل الدراسي الحالي. تواصل مع الإدارة لإعدادها
+              قبل إدخال العلامات.
             </Alert>
           ) : null}
+
+          {schemeSaved ? (
+            <Card className="space-y-3 p-4 sm:p-5">
+              <div>
+                <h2 className="text-sm font-bold text-p-black">التقسيمة المعتمدة</h2>
+                <p className="mt-1 text-xs text-p-black/50">
+                  تقسيمة موحّدة من الإدارة
+                  {academicTermLabel ? ` — ${academicTermLabel}` : ""}
+                </p>
+              </div>
+              <GradeSchemeEditorForm
+                maxScore={maxScore}
+                components={components}
+                componentTotal={componentTotal}
+                splitValid={splitValid}
+                readOnly
+                onMaxScoreChange={() => undefined}
+                onComponentChange={() => undefined}
+                onAddComponent={() => undefined}
+                onRemoveComponent={() => undefined}
+                onMoveComponent={() => undefined}
+              />
+            </Card>
+          ) : null}
+
           <section className="overflow-hidden rounded-2xl border border-neutral-100 bg-white shadow-sm">
             <header className="border-b border-neutral-100 bg-neutral-50/70 px-3 py-3 sm:px-4">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -754,7 +548,7 @@ export function TeacherGradesPanel({ mode = "entry" }: { mode?: "scheme" | "entr
                   </div>
                   <SaveFeedback
                     success={success}
-                    scrollIntoView={scrollFeedback && mode === "entry"}
+                    scrollIntoView={scrollFeedback}
                     className="mt-2"
                   />
 
@@ -844,8 +638,6 @@ export function TeacherGradesPanel({ mode = "entry" }: { mode?: "scheme" | "entr
               )}
             </div>
           </section>
-          </>
-          ) : null}
         </>
       ) : null}
     </div>

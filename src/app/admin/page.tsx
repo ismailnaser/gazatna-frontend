@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Card } from "@/components/atoms/Card";
 import { PageHeader } from "@/components/molecules/PageHeader";
+import { AcademicPeriodBanner } from "@/components/shared/AcademicPeriodBanner";
 import { SimpleBarChart } from "@/components/molecules/SimpleBarChart";
 import { useAuth } from "@/context/AuthContext";
 import { api } from "@/lib/api";
@@ -57,6 +58,8 @@ export default function AdminDashboard() {
           </Link>
         )}
       </div>
+
+      <AcademicPeriodBanner />
 
       <div className="mb-8 grid gap-4 sm:grid-cols-2">
         {canOpenGradesAnalytics && (

@@ -10,6 +10,7 @@ import {
 import type {
   ClassScheduleEntry,
   ExamScheduleEntry,
+  Schedule,
   ScheduleEntry,
   ScheduleType,
 } from "@/types/schedules";
@@ -25,6 +26,12 @@ type ScheduleEntryEditorProps = {
   teachers?: TeacherProfile[];
   editorKey?: string;
   classGridRef?: React.RefObject<ClassScheduleEntryEditorHandle | null>;
+  classTimingMode?: "custom" | "reuse";
+  classTimingTemplateScheduleId?: string;
+  classTimingTemplateEntries?: ClassScheduleEntry[];
+  onRequestCustomClassTimings?: () => void;
+  otherPublishedClassSchedules?: Schedule[];
+  otherClassSchedulesForConflict?: Schedule[];
 };
 
 export function ScheduleEntryEditor({
@@ -36,6 +43,12 @@ export function ScheduleEntryEditor({
   teachers = [],
   editorKey,
   classGridRef,
+  classTimingMode,
+  classTimingTemplateScheduleId,
+  classTimingTemplateEntries,
+  onRequestCustomClassTimings,
+  otherPublishedClassSchedules = [],
+  otherClassSchedulesForConflict = [],
 }: ScheduleEntryEditorProps) {
   const isExam = scheduleType === "exam";
 
@@ -61,6 +74,12 @@ export function ScheduleEntryEditor({
         classIds={classIds}
         subjects={subjects}
         teachers={teachers}
+        timingMode={classTimingMode}
+        timingTemplateScheduleId={classTimingTemplateScheduleId}
+        timingTemplateEntries={classTimingTemplateEntries}
+        onRequestCustomTimings={onRequestCustomClassTimings}
+        otherPublishedClassSchedules={otherPublishedClassSchedules}
+        otherClassSchedulesForConflict={otherClassSchedulesForConflict}
       />
     );
   }

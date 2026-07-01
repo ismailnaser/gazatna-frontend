@@ -56,6 +56,7 @@ export default function AdminNewTeacherPage() {
           onCreated={(_, creds) => {
             if (creds) {
               setCredentials(creds);
+              window.scrollTo({ top: 0, behavior: "smooth" });
               return;
             }
             router.push("/admin/teachers");

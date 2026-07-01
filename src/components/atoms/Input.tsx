@@ -1,4 +1,3 @@
-import { Calendar } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type InputProps = React.InputHTMLAttributes<HTMLInputElement> & {
@@ -20,12 +19,6 @@ export function Input({ label, error, className, id, type, ...props }: InputProp
         </label>
       )}
       <div className="relative">
-        {isDateField ? (
-          <Calendar
-            className="pointer-events-none absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400"
-            aria-hidden
-          />
-        ) : null}
         <input
           id={inputId}
           type={type}
@@ -36,7 +29,7 @@ export function Input({ label, error, className, id, type, ...props }: InputProp
             "placeholder:text-neutral-400 focus:border-p-green focus:outline-none focus:ring-2 focus:ring-p-green/20",
             type === "number" &&
               "[appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none",
-            isDateField && "date-time-input ps-10",
+            isDateField && "date-time-input min-w-[9.5rem]",
             error && "border-p-red focus:border-p-red focus:ring-p-red/20",
             className
           )}

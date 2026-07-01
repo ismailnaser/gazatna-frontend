@@ -13,12 +13,14 @@ import {
 } from "@/components/parent/ParentAccessCards";
 import { useGradesCertificateExport } from "@/hooks/useGradesCertificateExport";
 import { api } from "@/lib/api";
+import { formatAcademicPeriodCombined } from "@/lib/academicPeriod";
 import {
   collectGradeReportColumns,
   findGradeComponent,
 } from "@/lib/gradesReportLayout";
 import { cn } from "@/lib/utils";
 import type { Grade, Student } from "@/types";
+import { mapAcademicContext } from "@/types/academic";
 import { mapFeeStatus } from "@/types/finance";
 import { Download, Lock } from "lucide-react";
 
@@ -138,11 +140,8 @@ export default function ParentGradesPage() {
         if (hero?.schoolName?.trim()) setSchoolName(hero.schoolName.trim());
       }).catch(() => {}),
       api.getAcademicContext().then((res) => {
-        const ctx = res as { academicYear?: { name?: string }; currentTerm?: { name?: string } };
-        const year = ctx.academicYear?.name;
-        const term = ctx.currentTerm?.name;
-        if (year && term) setAcademicContextLabel(`${year} — ${term}`);
-        else if (term) setAcademicContextLabel(term);
+        const label = formatAcademicPeriodCombined(mapAcademicContext(res as Record<string, unknown>));
+        if (label) setAcademicContextLabel(label);
       }).catch(() => {}),
       api.getParentFees().then((data) => {
         const status = mapFeeStatus(data.feeStatus as Record<string, unknown>);

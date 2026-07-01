@@ -6,6 +6,7 @@ import type {
   PromotionPreview,
   PromotionStudentAction,
 } from "@/types/academic";
+import { passRuleLabels } from "@/types/academic";
 import type { Grade } from "@/types/teacher";
 
 export const TERM_ORDINALS = ["الأول", "الثاني", "الثالث", "الرابع", "الخامس", "السادس"];
@@ -17,19 +18,110 @@ export function defaultTermName(sortOrder: number) {
   return `الفصل ${ordinal}`;
 }
 
+const AUTO_TERM_CODE = /^T\d+$/i;
+
+/** اسم معروض للفصل — يحوّل الرموز التقنية مثل T1 إلى «الفصل الأول». */
+export function getTermDisplayName(
+  term: Pick<AcademicTermStatus, "name" | "sortOrder" | "displayName"> | null | undefined
+): string {
+  if (!term) return "—";
+  if (term.displayName?.trim()) return term.displayName.trim();
+  const trimmed = term.name.trim();
+  if (!trimmed || AUTO_TERM_CODE.test(trimmed)) {
+    return defaultTermName(term.sortOrder);
+  }
+  return trimmed;
+}
+
+export function resolveTermLabelFromYear(
+  year: AcademicYear | null,
+  termId: string | null | undefined,
+  fallbackName?: string | null
+): string {
+  if (year && termId) {
+    const term = year.terms.find((item) => item.id === termId);
+    if (term) return getTermDisplayName(term);
+  }
+  if (year && fallbackName?.trim()) {
+    const byName = year.terms.find((item) => item.name === fallbackName.trim());
+    if (byName) return getTermDisplayName(byName);
+  }
+  const fallback = fallbackName?.trim();
+  if (!fallback) return "—";
+  if (AUTO_TERM_CODE.test(fallback)) {
+    const order = Number(fallback.slice(1)) || 1;
+    return defaultTermName(order);
+  }
+  return fallback;
+}
+
 export function cloneTerms(terms: AcademicTermStatus[]): AcademicTermStatus[] {
   return terms.map((term) => ({ ...term }));
+}
+
+export function addIsoDays(isoDate: string, days: number): string {
+  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(isoDate.trim());
+  if (!match) return isoDate;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const date = new Date(year, month - 1, day);
+  date.setDate(date.getDate() + days);
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
 }
 
 export function suggestedTermDates(year: AcademicYear, terms: AcademicTermStatus[]) {
   const last = terms[terms.length - 1];
   if (last) {
-    const start = new Date(last.endDate);
-    start.setDate(start.getDate() + 1);
-    const startDate = start.toISOString().slice(0, 10);
+    const startDate = addIsoDays(last.endDate, 1);
+    if (startDate > year.endDate) {
+      return { startDate: year.endDate, endDate: year.endDate };
+    }
     return { startDate, endDate: year.endDate };
   }
   return { startDate: year.startDate, endDate: year.endDate };
+}
+
+export function validateAcademicTerms(
+  year: Pick<AcademicYear, "startDate" | "endDate">,
+  terms: Array<Pick<AcademicTermStatus, "name" | "sortOrder" | "startDate" | "endDate">>
+): string | null {
+  if (terms.length === 0) {
+    return "يجب تحديد فصل دراسي واحد على الأقل";
+  }
+
+  const sorted = [...terms].sort((a, b) => a.sortOrder - b.sortOrder);
+
+  for (const term of sorted) {
+    const name = term.name.trim() || "الفصل";
+    if (!term.name.trim()) {
+      return "أدخل اسم كل فصل دراسي";
+    }
+    if (term.endDate < term.startDate) {
+      return `تاريخ نهاية «${name}» يجب أن يكون بعد تاريخ البداية`;
+    }
+    if (term.startDate < year.startDate) {
+      return `بداية «${name}» يجب أن تكون ضمن السنة الدراسية (${year.startDate} — ${year.endDate})`;
+    }
+    if (term.endDate > year.endDate) {
+      return `نهاية «${name}» يجب أن تكون ضمن السنة الدراسية (${year.startDate} — ${year.endDate})`;
+    }
+  }
+
+  for (let index = 1; index < sorted.length; index += 1) {
+    const previous = sorted[index - 1];
+    const current = sorted[index];
+    const prevName = previous.name.trim() || "الفصل السابق";
+    const currName = current.name.trim() || "الفصل";
+    if (current.startDate <= previous.endDate) {
+      return `«${currName}» يتداخل مع «${prevName}». يجب أن يبدأ في ${addIsoDays(previous.endDate, 1)} أو بعده`;
+    }
+  }
+
+  return null;
 }
 
 export function reindexTerms(terms: AcademicTermStatus[]): AcademicTermStatus[] {
@@ -51,10 +143,40 @@ export const defaultPolicy = (): PromotionPolicy => ({
   failHandlingMode: "manual_review",
 });
 
+export function maxRequiredSubjectsForPolicy(
+  policy: Pick<PromotionPolicy, "passRule" | "passMinimumCount">,
+  passMinimumCountInput?: string
+): number | null {
+  if (policy.passRule !== "minimum_count") return null;
+  return Math.max(1, Number(passMinimumCountInput || policy.passMinimumCount) || 1);
+}
+
+export function trimRequiredSubjects(requiredSubjects: string[], max: number | null): string[] {
+  if (max == null) return requiredSubjects;
+  return requiredSubjects.slice(0, max);
+}
+
+export function isGradePolicyConfigured(grade: { promotionPolicy?: PromotionPolicy | null }): boolean {
+  return Boolean(grade.promotionPolicy?.isConfigured);
+}
+
+export function summarizePromotionPolicy(policy: PromotionPolicy): string {
+  const passLabel = passRuleLabels[policy.passRule];
+  if (policy.passRule === "minimum_count") {
+    return `${passLabel}: ${policy.passMinimumCount} مواد`;
+  }
+  return passLabel;
+}
+
 export function buildPolicyDraftsFromGrades(gradeRows: Grade[]): Record<string, PromotionPolicy> {
   const drafts: Record<string, PromotionPolicy> = {};
   for (const grade of gradeRows) {
-    drafts[grade.id] = grade.promotionPolicy ? { ...grade.promotionPolicy } : defaultPolicy();
+    const policy = grade.promotionPolicy ? { ...grade.promotionPolicy } : defaultPolicy();
+    const maxRequired = maxRequiredSubjectsForPolicy(policy, String(policy.passMinimumCount));
+    drafts[grade.id] = {
+      ...policy,
+      requiredSubjects: trimRequiredSubjects(policy.requiredSubjects, maxRequired),
+    };
   }
   return drafts;
 }
@@ -164,6 +286,16 @@ export function sortedTerms(year: AcademicYear) {
 
 export function getCurrentTerm(year: AcademicYear) {
   return year.terms.find((term) => term.isCurrent) ?? sortedTerms(year)[0] ?? null;
+}
+
+export function getActiveCertificateTerm(year: AcademicYear | null) {
+  if (!year) return null;
+  const byFlag = year.terms.find((term) => term.isCurrent);
+  if (byFlag) return byFlag;
+  if (year.currentTermId) {
+    return year.terms.find((term) => term.id === year.currentTermId) ?? null;
+  }
+  return null;
 }
 
 export function isLastTermInYear(year: AcademicYear, term: AcademicTermStatus) {

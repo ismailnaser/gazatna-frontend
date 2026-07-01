@@ -106,7 +106,7 @@ export function AcademicAdminShell({ children }: { children: ReactNode }) {
       <FormDialog
         open={createYearOpen}
         title="إنشاء سنة دراسية جديدة"
-        description="أدخل بيانات السنة الدراسية قبل الحفظ"
+        description="أدخل بيانات السنة الدراسية فقط. يمكنك إضافة الفصول الدراسية لاحقاً من قسم «الفصول الدراسية»."
         onClose={() => {
           if (!creatingYear) setCreateYearOpen(false);
         }}

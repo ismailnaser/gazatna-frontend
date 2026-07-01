@@ -4,7 +4,6 @@ import { Alert } from "@/components/atoms/Alert";
 import { Badge } from "@/components/atoms/Badge";
 import { Button } from "@/components/atoms/Button";
 import { Card } from "@/components/atoms/Card";
-import { Input } from "@/components/atoms/Input";
 import { Select } from "@/components/atoms/Select";
 import { promotionActionLabels } from "@/types/academic";
 import type { PromotionStudentAction } from "@/types/academic";
@@ -12,6 +11,7 @@ import { Download, Eye, Play } from "lucide-react";
 import {
   canUseYearEnd,
   getCurrentTerm,
+  getTermDisplayName,
   isLastTermInYear,
   priorTermsAllClosed,
   resolveStudentDecision,
@@ -27,8 +27,6 @@ export function YearEndPanel() {
     loadingPreview,
     executingRollover,
     rolloverSuccess,
-    newYearName,
-    setNewYearName,
     exportingPdf,
     promotionDecisionOptions,
     handleExportPdf,
@@ -58,7 +56,7 @@ export function YearEndPanel() {
     return (
       <Alert variant="info">
         نهاية السنة متاحة عند <strong>الفصل الأخير</strong> فقط. أغلق الفصول السابقة من صفحة{" "}
-        <strong>نهاية الفصل</strong> أولاً. الفصل الحالي: {currentTerm.name}.
+        <strong>نهاية الفصل</strong> أولاً. الفصل الحالي: {getTermDisplayName(currentTerm)}.
       </Alert>
     );
   }
@@ -69,7 +67,7 @@ export function YearEndPanel() {
     );
     return (
       <Alert variant="warning">
-        يجب إغلاق الفصول السابقة أولاً: {pending.map((term) => term.name).join("، ")}. استخدم صفحة{" "}
+        يجب إغلاق الفصول السابقة أولاً: {pending.map((term) => getTermDisplayName(term)).join("، ")}. استخدم صفحة{" "}
         <strong>نهاية الفصل</strong>.
       </Alert>
     );
@@ -90,7 +88,9 @@ export function YearEndPanel() {
           <h3 className="font-bold text-p-black">معاينة وتنفيذ نهاية السنة</h3>
           <p className="text-xs text-p-black/55">
             راجع نتائج السنة على مستوى الطالب، حدّد قرارات الترفيع، ثم نفّذ الأرشفة وفتح سنة
-            جديدة. تُصفَّر علامات الفصل الأول في السنة الجديدة تلقائياً.
+            جديدة. عند التنفيذ تُصدر شهادة نهاية السنة (معدل جميع الفصول) وشهادة التقدير للمؤهلين
+            فقط — دون شهادة منفصلة للفصل الأخير — ثم تُؤرشف السنة. أنشئ السنة الدراسية الجديدة يدوياً
+            من قسم السنوات الدراسية.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -187,27 +187,20 @@ export function YearEndPanel() {
             </table>
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
-            <Input
-              label="اسم السنة الجديدة"
-              value={newYearName}
-              onChange={(e) => setNewYearName(e.target.value)}
-              placeholder="2026-2027"
-            />
-            <div className="flex flex-wrap gap-2">
-              <Button variant="outline" onClick={handleLoadPreview} disabled={loadingPreview}>
-                تحديث المعاينة
-              </Button>
-              <Button onClick={handleExecuteRollover} disabled={executingRollover}>
-                <Play className="h-4 w-4" />
-                {executingRollover ? "جاري التنفيذ..." : "تنفيذ نهاية السنة"}
-              </Button>
-            </div>
+          <div className="flex flex-wrap justify-end gap-2">
+            <Button variant="outline" onClick={handleLoadPreview} disabled={loadingPreview}>
+              تحديث المعاينة
+            </Button>
+            <Button onClick={handleExecuteRollover} disabled={executingRollover}>
+              <Play className="h-4 w-4" />
+              {executingRollover ? "جاري التنفيذ..." : "تنفيذ نهاية السنة"}
+            </Button>
           </div>
 
           <Alert variant="info">
-            سيُصدر تلقائياً شهادات نهاية السنة (معدل كل الفصول) ثم تُؤرشف السنة وتُفتح سنة جديدة
-            بعلامات فارغة للفصل الأول.
+            سيُصدر تلقائياً عند التنفيذ: شهادة نهاية السنة (معدل جميع الفصول) وشهادة تقدير نهاية السنة
+            للطلاب المؤهلين حسب الحد الأدنى للمعدل — دون إصدار شهادة منفصلة للفصل الأخير. ثم تُؤرشف
+            السنة الحالية دون إنشاء سنة جديدة تلقائياً — أنشئ السنة التالية من «السنوات الدراسية».
           </Alert>
 
           {preview.summary.pending > 0 ? (

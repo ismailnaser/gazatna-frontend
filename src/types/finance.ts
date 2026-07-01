@@ -47,6 +47,9 @@ export type FeePlan = {
   name: string;
   totalAmount: number;
   installmentsCount: number;
+  billingPeriod: "full_year" | "single_term";
+  academicYearId: string | null;
+  academicTermId: string | null;
   isActive: boolean;
   gradeIds: string[];
   gradeNames: string[];
@@ -95,6 +98,9 @@ export function mapFeePlan(raw: Record<string, unknown>): FeePlan {
     name: String(raw.name),
     totalAmount: Number(raw.totalAmount),
     installmentsCount: Number(raw.installmentsCount),
+    billingPeriod: raw.billingPeriod === "single_term" ? "single_term" : "full_year",
+    academicYearId: raw.academicYearId != null ? String(raw.academicYearId) : null,
+    academicTermId: raw.academicTermId != null ? String(raw.academicTermId) : null,
     isActive: Boolean(raw.isActive),
     gradeIds: Array.isArray(raw.gradeIds) ? raw.gradeIds.map(String) : [],
     gradeNames: Array.isArray(raw.gradeNames) ? raw.gradeNames.map(String) : [],

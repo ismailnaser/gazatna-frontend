@@ -5,13 +5,14 @@ import { Button } from "@/components/atoms/Button";
 import { subjectGradient, subjectInitial, teacherCountLabel } from "@/lib/adminSubjects";
 import { cn } from "@/lib/utils";
 import type { Subject } from "@/types/teacher";
-import { BookOpen, ChevronLeft, GraduationCap, Pencil, Trash2, UserPlus, Users } from "lucide-react";
+import { BookOpen, ChevronLeft, GraduationCap, Pencil, Trash2, Users } from "lucide-react";
 
 type AdminSubjectsGridProps = {
   subjects: Subject[];
   hasActiveFilters: boolean;
   onView: (subject: Subject) => void;
-  onAssign: (subject: Subject) => void;
+  onAssignClasses: (subject: Subject) => void;
+  onAssignTeachers: (subject: Subject) => void;
   onEdit: (subject: Subject) => void;
   onDelete: (subject: Subject) => void;
 };
@@ -20,7 +21,8 @@ export function AdminSubjectsGrid({
   subjects,
   hasActiveFilters,
   onView,
-  onAssign,
+  onAssignClasses,
+  onAssignTeachers,
   onEdit,
   onDelete,
 }: AdminSubjectsGridProps) {
@@ -54,7 +56,7 @@ export function AdminSubjectsGrid({
               <p className="truncate text-base font-bold">{subject.name}</p>
               <p className="mt-0.5 flex items-center gap-1 text-xs text-white/85">
                 <BookOpen className="h-3.5 w-3.5 shrink-0" />
-                اضغط لإدارة الإسناد
+                اضغط لعرض تفاصيل المادة
               </p>
             </div>
             <ChevronLeft className="h-5 w-5 shrink-0 opacity-80" />
@@ -75,8 +77,8 @@ export function AdminSubjectsGrid({
               <span className="inline-flex items-center gap-1.5 text-sm text-p-black/60">
                 <GraduationCap className="h-4 w-4 text-brand-teal" />
                 {(subject.classIds?.length ?? 0) === 0
-                  ? "غير مسندة لفصول"
-                  : `${subject.classIds?.length ?? 0} فصل`}
+                  ? "بدون فصول"
+                  : `${subject.classIds?.length ?? 0} ${(subject.classIds?.length ?? 0) === 1 ? "شعبة" : "شعب"}`}
               </span>
               <Badge variant={(subject.classIds?.length ?? 0) > 0 ? "success" : "default"}>
                 {subject.classIds?.length ?? 0}
@@ -84,14 +86,26 @@ export function AdminSubjectsGrid({
             </div>
 
             <div className="space-y-2 border-t border-neutral-50 pt-3">
-              <Button
-                type="button"
-                className="h-9 w-full text-xs"
-                onClick={() => onAssign(subject)}
-              >
-                <UserPlus className="h-3.5 w-3.5" />
-                إسناد للفصول والمعلمين
-              </Button>
+              <p className="text-xs font-semibold text-p-black/45">إدارة الإسناد</p>
+              <div className="grid gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-10 w-full justify-start gap-2.5 px-3 text-sm"
+                  onClick={() => onAssignClasses(subject)}
+                >
+                  <GraduationCap className="h-4 w-4 shrink-0" />
+                  إسناد لفصول
+                </Button>
+                <Button
+                  type="button"
+                  className="h-10 w-full justify-start gap-2.5 px-3 text-sm"
+                  onClick={() => onAssignTeachers(subject)}
+                >
+                  <Users className="h-4 w-4 shrink-0" />
+                  إسناد لمعلمين
+                </Button>
+              </div>
               <div className="flex flex-wrap gap-2">
               <Button
                 type="button"

@@ -308,7 +308,7 @@ export default function AdminTeacherDetailPage() {
           <div className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
               <Input label="اسم المعلم" value={name} onChange={(e) => setName(e.target.value)} required />
-              <Input label="الخبرة" value={experience} onChange={(e) => setExperience(e.target.value)} required />
+              <Input label="الخبرة (اختياري)" value={experience} onChange={(e) => setExperience(e.target.value)} />
               <Select
                 label="الحالة"
                 name="status"
@@ -364,6 +364,7 @@ export default function AdminTeacherDetailPage() {
           <TeacherClassPicker
             classes={classes}
             grades={grades}
+            subjects={subjects}
             value={draftClasses}
             onChange={setDraftClasses}
             subjectIds={draftSubjects}

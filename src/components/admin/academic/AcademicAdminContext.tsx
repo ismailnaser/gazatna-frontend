@@ -6,10 +6,11 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
-import { api } from "@/lib/api";
+import { api, formatClientFetchError } from "@/lib/api";
 import { mapGrade, mapGrades } from "@/lib/mapSchoolClass";
 import { buildHonorsCertificateHtml, buildStudentCertificateHtml } from "@/lib/certificateHtml";
 import { exportHonorsCertificatePdf } from "@/lib/exportHonorsCertificatePdf";
@@ -37,13 +38,18 @@ import {
   buildPolicyDraftsFromGrades,
   cloneTerms,
   defaultCertificateConfig,
+  getActiveCertificateTerm,
+  getTermDisplayName,
+  resolveTermLabelFromYear,
   defaultPolicy,
+  maxRequiredSubjectsForPolicy,
+  trimRequiredSubjects,
   defaultTermName,
   isArchivedAcademicYear,
-  nextYearName,
   reindexTerms,
   suggestNewYearForm,
   suggestedTermDates,
+  validateAcademicTerms,
 } from "./academicAdminUtils";
 
 export type AcademicAdminContextValue = {
@@ -83,8 +89,6 @@ export type AcademicAdminContextValue = {
   loadingPreview: boolean;
   executingRollover: boolean;
   rolloverSuccess: string;
-  newYearName: string;
-  setNewYearName: (name: string) => void;
   expandedStudentIds: Record<string, boolean>;
   schoolName: string;
   exportingPdf: boolean;
@@ -97,11 +101,11 @@ export type AcademicAdminContextValue = {
   certificateConfig: CertificateConfig | null;
   certificateDraft: CertificateConfig;
   setCertificateDraft: React.Dispatch<React.SetStateAction<CertificateConfig>>;
-  publishTermId: string;
-  setPublishTermId: (id: string) => void;
+  activeCertificateTerm: AcademicTermStatus | null;
   loadingCertificate: boolean;
   savingCertificate: boolean;
   certificateSaved: boolean;
+  certificatePublishSuccess: string;
   publishingCertificates: boolean;
   unpublishingCertificates: boolean;
   certificatePreview: CertificatePreview | null;
@@ -133,6 +137,8 @@ export type AcademicAdminContextValue = {
   removeRequiredSubject: (gradeId: string, subjectName: string) => void;
   handleSaveTerms: () => Promise<void>;
   handleSaveGradePolicy: (gradeId: string) => Promise<void>;
+  handleSaveGradePolicies: (gradeIds: string[]) => Promise<void>;
+  handleResetGradePolicy: (gradeId: string) => Promise<void>;
   subjectPickerOptions: (gradeId: string) => { value: string; label: string }[];
   toggleStudentExpanded: (studentId: string) => void;
   handleExportPdf: () => Promise<void>;
@@ -204,7 +210,6 @@ export function AcademicAdminProvider({ children }: { children: ReactNode }) {
   const [loadingPreview, setLoadingPreview] = useState(false);
   const [executingRollover, setExecutingRollover] = useState(false);
   const [rolloverSuccess, setRolloverSuccess] = useState("");
-  const [newYearName, setNewYearName] = useState("");
   const [expandedStudentIds, setExpandedStudentIds] = useState<Record<string, boolean>>({});
   const [schoolName, setSchoolName] = useState(DEFAULT_SCHOOL_NAME);
   const [exportingPdf, setExportingPdf] = useState(false);
@@ -218,10 +223,10 @@ export function AcademicAdminProvider({ children }: { children: ReactNode }) {
   const [certificateDraft, setCertificateDraft] = useState<CertificateConfig>(
     defaultCertificateConfig()
   );
-  const [publishTermId, setPublishTermId] = useState("");
   const [loadingCertificate, setLoadingCertificate] = useState(false);
   const [savingCertificate, setSavingCertificate] = useState(false);
   const [certificateSaved, setCertificateSaved] = useState(false);
+  const [certificatePublishSuccess, setCertificatePublishSuccess] = useState("");
   const [publishingCertificates, setPublishingCertificates] = useState(false);
   const [unpublishingCertificates, setUnpublishingCertificates] = useState(false);
   const [certificatePreview, setCertificatePreview] = useState<CertificatePreview | null>(null);
@@ -240,18 +245,24 @@ export function AcademicAdminProvider({ children }: { children: ReactNode }) {
   const [termsDraft, setTermsDraft] = useState<AcademicTermStatus[]>([]);
   const [savingTerms, setSavingTerms] = useState(false);
   const [termsSaved, setTermsSaved] = useState(false);
+  const termsDraftYearRef = useRef("");
 
   const selectedYear = useMemo(
     () => years.find((year) => year.id === selectedYearId) ?? null,
     [years, selectedYearId]
   );
 
+  const activeCertificateTerm = useMemo(
+    () => getActiveCertificateTerm(selectedYear),
+    [selectedYear]
+  );
+
   const termSelectOptions = useMemo(
     () => [
       { value: "", label: "اختر الفصل" },
       ...(termsDraft.length > 0
-        ? termsDraft.map((term) => ({ value: term.id, label: term.name }))
-        : (selectedYear?.terms.map((term) => ({ value: term.id, label: term.name })) ?? [])),
+        ? termsDraft.map((term) => ({ value: term.id, label: getTermDisplayName(term) }))
+        : (selectedYear?.terms.map((term) => ({ value: term.id, label: getTermDisplayName(term) })) ?? [])),
     ],
     [selectedYear, termsDraft]
   );
@@ -328,31 +339,35 @@ export function AcademicAdminProvider({ children }: { children: ReactNode }) {
   }, [reload, reloadGrades]);
 
   useEffect(() => {
-    if (selectedYear) {
-      setTermsDraft(cloneTerms(selectedYear.terms));
+    const year = years.find((item) => item.id === selectedYearId) ?? null;
+    const yearChanged = termsDraftYearRef.current !== selectedYearId;
+
+    if (year) {
+      if (yearChanged) {
+        setTermsDraft(cloneTerms(year.terms));
+        termsDraftYearRef.current = selectedYearId;
+        setTermsSaved(false);
+      }
       setRequiredSubjectPickers({});
       setSavedPolicyGradeId("");
-      const parts = selectedYear.name.split("-");
-      if (parts.length === 2 && parts[1]) {
-        setNewYearName(`${parts[1]}-${Number(parts[1]) + 1}`);
-      } else {
-        setNewYearName(nextYearName(years));
-      }
-    } else {
+    } else if (!selectedYearId) {
       setTermsDraft([]);
+      termsDraftYearRef.current = "";
     }
+
+    if (!yearChanged) return;
+
     setPreview(null);
     setDecisions({});
     setExpandedStudentIds({});
     setRolloverSuccess("");
     setCertificateConfig(null);
     setCertificateDraft(defaultCertificateConfig());
-    setPublishTermId("");
     setCertificateSaved(false);
+    setCertificatePublishSuccess("");
     setCertificatePreview(null);
     setExpandedCertificateStudentIds({});
-    setTermsSaved(false);
-  }, [selectedYear, years]);
+  }, [selectedYearId, years]);
 
   useEffect(() => {
     if (!selectedYear) return;
@@ -363,12 +378,6 @@ export function AcademicAdminProvider({ children }: { children: ReactNode }) {
         const mapped = mapCertificateConfig(raw as Record<string, unknown>);
         setCertificateConfig(mapped);
         setCertificateDraft(mapped);
-        setPublishTermId(
-          mapped.publishedTermId ||
-            selectedYear.currentTermId ||
-            selectedYear.terms[0]?.id ||
-            ""
-        );
       })
       .catch(() => {
         setCertificateConfig(null);
@@ -405,12 +414,8 @@ export function AcademicAdminProvider({ children }: { children: ReactNode }) {
 
   async function handlePublishCertificates() {
     if (!selectedYear) return;
-    if (
-      certificateDraft.issuanceScope === "term" &&
-      !publishTermId &&
-      !selectedYear.currentTermId
-    ) {
-      setError("حدد الفصل الدراسي قبل إصدار الشهادات");
+    if (certificateDraft.issuanceScope === "term" && !activeCertificateTerm) {
+      setError("لا يوجد فصل دراسي نشط حالياً. عيّن الفصل الحالي من إعدادات الفصول الدراسية أولاً.");
       return;
     }
     if (
@@ -423,19 +428,26 @@ export function AcademicAdminProvider({ children }: { children: ReactNode }) {
 
     setPublishingCertificates(true);
     setError("");
+    setCertificatePublishSuccess("");
     try {
       const updated = mapCertificateConfig(
         (await api.publishAdminCertificates(
           selectedYear.id,
           certificateDraft.issuanceScope === "term"
-            ? { termId: publishTermId || selectedYear.currentTermId || undefined }
+            ? { termId: activeCertificateTerm?.id }
             : undefined
         )) as Record<string, unknown>
       );
       setCertificateConfig(updated);
       setCertificateDraft(updated);
+      setCertificatePublishSuccess(
+        certificateDraft.issuanceScope === "term" && activeCertificateTerm
+          ? `تم إصدار ونشر شهادات ${getTermDisplayName(activeCertificateTerm)} بنجاح. يمكن لأولياء الأمور الاطلاع عليها من صفحة «الشهادات».`
+          : "تم إصدار ونشر شهادات السنة الدراسية بنجاح. يمكن لأولياء الأمور الاطلاع عليها من صفحة «الشهادات»."
+      );
     } catch {
       setError("تعذر إصدار الشهادات");
+      setCertificatePublishSuccess("");
     } finally {
       setPublishingCertificates(false);
     }
@@ -469,19 +481,15 @@ export function AcademicAdminProvider({ children }: { children: ReactNode }) {
       honorsTitle: certificateDraft.honorsTitle,
       honorsMessage: certificateDraft.honorsMessage,
       ...(certificateDraft.issuanceScope === "term"
-        ? { termId: publishTermId || selectedYear?.currentTermId || undefined }
+        ? { termId: activeCertificateTerm?.id }
         : {}),
     };
   }
 
   async function handleLoadCertificatePreview() {
     if (!selectedYear) return;
-    if (
-      certificateDraft.issuanceScope === "term" &&
-      !publishTermId &&
-      !selectedYear.currentTermId
-    ) {
-      setError("حدد الفصل الدراسي قبل معاينة الشهادات");
+    if (certificateDraft.issuanceScope === "term" && !activeCertificateTerm) {
+      setError("لا يوجد فصل دراسي نشط حالياً. عيّن الفصل الحالي من إعدادات الفصول الدراسية أولاً.");
       return;
     }
 
@@ -721,7 +729,6 @@ export function AcademicAdminProvider({ children }: { children: ReactNode }) {
 
   function handleRemoveTerm(termId: string) {
     setTermsDraft((prev) => {
-      if (prev.length <= 1) return prev;
       const removed = prev.find((term) => term.id === termId);
       const next = reindexTerms(prev.filter((term) => term.id !== termId));
       if (removed?.isCurrent && next.length > 0) {
@@ -743,7 +750,9 @@ export function AcademicAdminProvider({ children }: { children: ReactNode }) {
   function addRequiredSubject(gradeId: string) {
     const value = (requiredSubjectPickers[gradeId] ?? "").trim();
     const draft = policyDraftsByGradeId[gradeId] ?? defaultPolicy();
+    const maxRequired = maxRequiredSubjectsForPolicy(draft, passMinimumCountInputs[gradeId]);
     if (!value || draft.requiredSubjects.includes(value)) return;
+    if (maxRequired != null && draft.requiredSubjects.length >= maxRequired) return;
     updateGradePolicyDraft(gradeId, {
       requiredSubjects: [...draft.requiredSubjects, value],
     });
@@ -758,20 +767,12 @@ export function AcademicAdminProvider({ children }: { children: ReactNode }) {
   }
 
   async function handleSaveTerms() {
-    if (!selectedYear) return;
-    if (termsDraft.length === 0) {
-      setError("يجب تحديد فصل دراسي واحد على الأقل");
+    if (!selectedYear || savingTerms) return;
+
+    const validationError = validateAcademicTerms(selectedYear, reindexTerms(termsDraft));
+    if (validationError) {
+      setError(validationError);
       return;
-    }
-    for (const term of termsDraft) {
-      if (!term.name.trim()) {
-        setError("أدخل اسم كل فصل دراسي");
-        return;
-      }
-      if (term.endDate < term.startDate) {
-        setError(`تاريخ نهاية «${term.name}» يجب أن يكون بعد البداية`);
-        return;
-      }
     }
 
     setSavingTerms(true);
@@ -792,43 +793,95 @@ export function AcademicAdminProvider({ children }: { children: ReactNode }) {
       );
       setYears((prev) => prev.map((year) => (year.id === updated.id ? updated : year)));
       setTermsDraft(cloneTerms(updated.terms));
-      setPublishTermId(
-        updated.currentTermId || updated.terms.find((term) => term.isCurrent)?.id || ""
-      );
+      termsDraftYearRef.current = updated.id;
       setTermsSaved(true);
-    } catch {
-      setError("تعذر حفظ الفصول الدراسية");
+    } catch (err) {
+      setError(formatClientFetchError(err, "تعذر حفظ الفصول الدراسية"));
     } finally {
       setSavingTerms(false);
     }
   }
 
+  async function handleSaveGradePolicies(gradeIds: string[]) {
+    if (gradeIds.length === 0) return;
+
+    setSavingPolicyGradeId("__batch__");
+    setSavedPolicyGradeId("");
+    setError("");
+
+    try {
+      const results = await Promise.all(
+        gradeIds.map(async (gradeId) => {
+          const draft = policyDraftsByGradeId[gradeId] ?? defaultPolicy();
+          const normalizedMinimumCount = Math.max(1, Number(passMinimumCountInputs[gradeId]) || 1);
+          const maxRequired = maxRequiredSubjectsForPolicy(
+            { ...draft, passMinimumCount: normalizedMinimumCount },
+            String(normalizedMinimumCount)
+          );
+          const payload: PromotionPolicy = {
+            ...draft,
+            passMinimumCount: normalizedMinimumCount,
+            requiredSubjects: trimRequiredSubjects(draft.requiredSubjects, maxRequired),
+            evaluationScope: "single_term",
+          };
+          updateGradePolicyDraft(gradeId, payload);
+          return mapGrade(
+            (await api.updateAdminGradePromotionPolicy(gradeId, payload)) as Record<string, unknown>
+          );
+        })
+      );
+
+      const byId = new Map(results.map((grade) => [grade.id, grade]));
+      setGrades((prev) => prev.map((grade) => byId.get(grade.id) ?? grade));
+      setPolicyDraftsByGradeId((prev) => {
+        const next = { ...prev };
+        for (const updated of results) {
+          next[updated.id] = updated.promotionPolicy
+            ? { ...updated.promotionPolicy }
+            : next[updated.id];
+        }
+        return next;
+      });
+      setPassMinimumCountInputs((prev) => {
+        const next = { ...prev };
+        for (const updated of results) {
+          next[updated.id] = String(updated.promotionPolicy?.passMinimumCount ?? 1);
+        }
+        return next;
+      });
+      setSavedPolicyGradeId("__batch__");
+    } catch {
+      setError("تعذر حفظ سياسات الترفيع");
+    } finally {
+      setSavingPolicyGradeId("");
+    }
+  }
+
   async function handleSaveGradePolicy(gradeId: string) {
-    const draft = policyDraftsByGradeId[gradeId] ?? defaultPolicy();
-    const normalizedMinimumCount = Math.max(1, Number(passMinimumCountInputs[gradeId]) || 1);
-    setPassMinimumCountInputs((prev) => ({ ...prev, [gradeId]: String(normalizedMinimumCount) }));
-    const payload: PromotionPolicy = {
-      ...draft,
-      passMinimumCount: normalizedMinimumCount,
-      evaluationScope: "single_term",
-    };
-    updateGradePolicyDraft(gradeId, payload);
+    await handleSaveGradePolicies([gradeId]);
+  }
+
+  async function handleResetGradePolicy(gradeId: string) {
     setSavingPolicyGradeId(gradeId);
     setSavedPolicyGradeId("");
     setError("");
+
     try {
       const updated = mapGrade(
-        (await api.updateAdminGradePromotionPolicy(gradeId, payload)) as Record<string, unknown>
+        (await api.resetAdminGradePromotionPolicy(gradeId)) as Record<string, unknown>
       );
       setGrades((prev) => prev.map((grade) => (grade.id === updated.id ? updated : grade)));
-      setPolicyDraftsByGradeId((prev) => ({
+      const resetDraft = updated.promotionPolicy
+        ? { ...updated.promotionPolicy }
+        : defaultPolicy();
+      setPolicyDraftsByGradeId((prev) => ({ ...prev, [gradeId]: resetDraft }));
+      setPassMinimumCountInputs((prev) => ({
         ...prev,
-        [gradeId]: updated.promotionPolicy ? { ...updated.promotionPolicy } : payload,
+        [gradeId]: String(resetDraft.passMinimumCount),
       }));
-      setPassMinimumCountInputs((prev) => ({ ...prev, [gradeId]: String(normalizedMinimumCount) }));
-      setSavedPolicyGradeId(gradeId);
+      setRequiredSubjectPickers((prev) => ({ ...prev, [gradeId]: "" }));
     } catch {
-      setError("تعذر حفظ سياسة الترفيع");
+      setError("تعذر حذف سياسة الترفيع");
     } finally {
       setSavingPolicyGradeId("");
     }
@@ -867,13 +920,18 @@ export function AcademicAdminProvider({ children }: { children: ReactNode }) {
 
   async function handleExportTermPdf() {
     if (!termPreview) return;
+    const closingLabel = resolveTermLabelFromYear(
+      selectedYear,
+      termPreview.termId,
+      termPreview.termName
+    );
     setExportingTermPdf(true);
     setError("");
     try {
       await exportPromotionPreviewPdf({
         preview: termPreview,
         schoolName,
-        title: `معاينة نهاية ${termPreview.termName ?? "الفصل"}`,
+        title: `معاينة نهاية ${closingLabel}`,
         passedLabel: "ناجح في الفصل",
         failedLabel: "راسب في الفصل",
         hideDecisionColumns: true,
@@ -948,10 +1006,24 @@ export function AcademicAdminProvider({ children }: { children: ReactNode }) {
 
   async function handleExecuteTermEnd() {
     if (!selectedYear || !termPreview) return;
-    const nextLabel = termPreview.nextTermName ? ` والانتقال إلى «${termPreview.nextTermName}»` : "";
+    const closingLabel = resolveTermLabelFromYear(
+      selectedYear,
+      termPreview.termId,
+      termPreview.termName
+    );
+    const nextTermLabel = termPreview.nextTermName
+      ? resolveTermLabelFromYear(selectedYear, termPreview.nextTermId, termPreview.nextTermName)
+      : "";
+    const activationNote = termPreview.nextTermActivatesImmediately
+      ? nextTermLabel
+        ? ` وتفعيل «${nextTermLabel}» فوراً`
+        : ""
+      : nextTermLabel && termPreview.nextTermStartDate
+        ? `. «${nextTermLabel}» يُفعَّل تلقائياً بتاريخ ${termPreview.nextTermStartDate}`
+        : "";
     if (
       !window.confirm(
-        `سيتم إغلاق «${termPreview.termName}»، نشر شهادات الفصل${nextLabel}. هل أنت متأكد؟`
+        `سيتم إغلاق «${closingLabel}» ونشر شهادات الفصل${activationNote}. هل أنت متأكد؟`
       )
     ) {
       return;
@@ -970,13 +1042,27 @@ export function AcademicAdminProvider({ children }: { children: ReactNode }) {
         const mapped = mapAcademicYear(updatedYear);
         setYears((prev) => prev.map((year) => (year.id === mapped.id ? mapped : year)));
         setTermsDraft(cloneTerms(mapped.terms));
-        setPublishTermId(mapped.currentTermId || "");
       }
-      setTermEndSuccess(
-        termPreview.nextTermName
-          ? `تم إغلاق «${termPreview.termName}» بنجاح. الفصل الحالي الآن: ${termPreview.nextTermName}`
-          : `تم إغلاق «${termPreview.termName}» بنجاح.`
-      );
+      const nextTerm = result.nextTerm as
+        | { activated?: boolean; startDate?: string; name?: string }
+        | undefined;
+      const nextActivated = Boolean(nextTerm?.activated ?? termPreview.nextTermActivatesImmediately);
+      if (termPreview.nextTermName) {
+        const nextLabel = resolveTermLabelFromYear(
+          selectedYear,
+          termPreview.nextTermId,
+          termPreview.nextTermName
+        );
+        setTermEndSuccess(
+          nextActivated
+            ? `تم إغلاق «${closingLabel}» بنجاح. الفصل الحالي الآن: ${nextLabel}`
+            : `تم إغلاق «${closingLabel}» بنجاح. سيبدأ «${nextLabel}» تلقائياً في ${
+                nextTerm?.startDate ?? termPreview.nextTermStartDate ?? "تاريخ بدايته"
+              }.`
+        );
+      } else {
+        setTermEndSuccess(`تم إغلاق «${closingLabel}» بنجاح.`);
+      }
       setTermPreview(null);
       await reload();
     } catch (err) {
@@ -995,7 +1081,7 @@ export function AcademicAdminProvider({ children }: { children: ReactNode }) {
     if (!selectedYear || !preview) return;
     if (
       !window.confirm(
-        "سيتم أرشفة السنة الحالية، ترفيع/إعادة الطلاب، وفتح سنة جديدة. هل أنت متأكد؟"
+        "سيتم أرشفة السنة الحالية وترفيع/إعادة الطلاب دون إنشاء سنة جديدة. أنشئ السنة التالية يدوياً من السنوات الدراسية. هل أنت متأكد؟"
       )
     ) {
       return;
@@ -1008,13 +1094,10 @@ export function AcademicAdminProvider({ children }: { children: ReactNode }) {
       const payload = buildDecisionsPayload();
       const result = (await api.executeAdminYearRollover(selectedYear.id, {
         decisions: payload,
-        newYearName: newYearName.trim() || undefined,
+        publishCertificates: true,
       })) as Record<string, unknown>;
-      const newYear = result.newYear as Record<string, unknown> | undefined;
       setRolloverSuccess(
-        newYear?.name
-          ? `تم تنفيذ نهاية السنة بنجاح. السنة الجديدة: ${newYear.name}`
-          : "تم تنفيذ نهاية السنة بنجاح."
+        "تم تنفيذ نهاية السنة بنجاح: شهادة نهاية السنة (معدل جميع الفصول) وشهادة التقدير للمؤهلين. أُرشفت السنة — أنشئ السنة الدراسية الجديدة من قسم السنوات الدراسية."
       );
       setPreview(null);
       setDecisions({});
@@ -1073,8 +1156,6 @@ export function AcademicAdminProvider({ children }: { children: ReactNode }) {
     loadingPreview,
     executingRollover,
     rolloverSuccess,
-    newYearName,
-    setNewYearName,
     expandedStudentIds,
     schoolName,
     exportingPdf,
@@ -1087,11 +1168,11 @@ export function AcademicAdminProvider({ children }: { children: ReactNode }) {
     certificateConfig,
     certificateDraft,
     setCertificateDraft,
-    publishTermId,
-    setPublishTermId,
+    activeCertificateTerm,
     loadingCertificate,
     savingCertificate,
     certificateSaved,
+    certificatePublishSuccess,
     publishingCertificates,
     unpublishingCertificates,
     certificatePreview,
@@ -1119,6 +1200,8 @@ export function AcademicAdminProvider({ children }: { children: ReactNode }) {
     removeRequiredSubject,
     handleSaveTerms,
     handleSaveGradePolicy,
+    handleSaveGradePolicies,
+    handleResetGradePolicy,
     subjectPickerOptions,
     toggleStudentExpanded,
     handleExportPdf,

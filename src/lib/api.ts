@@ -38,9 +38,18 @@ async function fetchWithTimeout(
 ) {
   const controller = new AbortController();
   const signal = mergeAbortSignals([options.signal, controller.signal]);
-  const id = setTimeout(() => controller.abort(), timeoutMs);
+  let timedOut = false;
+  const id = setTimeout(() => {
+    timedOut = true;
+    controller.abort();
+  }, timeoutMs);
   try {
     return await fetch(url, { ...options, signal });
+  } catch (err) {
+    if (timedOut) {
+      throw new Error("timeout");
+    }
+    throw err;
   } finally {
     clearTimeout(id);
   }
@@ -97,8 +106,10 @@ function formatApiError(err: unknown, fallback: string): string {
   const data = err as Record<string, unknown>;
   if (typeof data.detail === "string") return data.detail;
   if (Array.isArray(data.detail)) return data.detail.map(String).join("، ");
+  if (typeof data.terms === "string") return data.terms;
+  if (Array.isArray(data.terms)) return data.terms.map(String).join("، ");
   const fieldMessages = Object.entries(data)
-    .filter(([key]) => key !== "detail")
+    .filter(([key]) => key !== "detail" && key !== "terms")
     .flatMap(([key, value]) => {
       if (Array.isArray(value)) return value.map((msg) => `${key}: ${String(msg)}`);
       if (typeof value === "string") return [`${key}: ${value}`];
@@ -106,6 +117,19 @@ function formatApiError(err: unknown, fallback: string): string {
     });
   if (fieldMessages.length > 0) return fieldMessages.join(" — ");
   return fallback;
+}
+
+function localizeApiErrorMessage(message: string): string {
+  if (message.includes("No AcademicYear matches the given query")) {
+    return "السنة الدراسية غير موجودة. حدّث الصفحة وحاول مرة أخرى.";
+  }
+  if (message.includes("No SchoolClass matches the given query")) {
+    return "الشعبة غير موجودة. حدّث الصفحة وحاول مرة أخرى.";
+  }
+  if (/^No .+ matches the given query\.?$/.test(message)) {
+    return "العنصر غير موجود أو تم حذفه مسبقاً. حدّث الصفحة وحاول مرة أخرى.";
+  }
+  return message;
 }
 
 async function parseFailedResponse(res: Response): Promise<string> {
@@ -120,25 +144,25 @@ async function parseFailedResponse(res: Response): Promise<string> {
             ? "العنصر غير موجود أو تم حذفه مسبقاً."
             : "حدث خطأ في الاتصال بالخادم";
   const err = await res.json().catch(() => null);
-  const message = formatApiError(err, fallback);
-  if (message.includes("No SchoolClass matches the given query")) {
-    return "الشعبة غير موجودة. حدّث الصفحة وحاول مرة أخرى.";
-  }
-  return message;
+  return localizeApiErrorMessage(formatApiError(err, fallback));
 }
 
 export function formatClientFetchError(err: unknown, fallback: string): string {
   if (!(err instanceof Error)) return fallback;
   const message = err.message.toLowerCase();
+  if (message === "timeout" || message.includes("timeout")) {
+    return "انتهت مهلة الاتصال بالخادم. تحقق أن الخادم الخلفي يعمل ثم أعد المحاولة.";
+  }
   if (
     message.includes("failed to fetch") ||
     message.includes("networkerror") ||
     message.includes("load failed") ||
+    message.includes("signal is aborted") ||
     message.includes("aborted")
   ) {
-    return "تعذر الاتصال بالخادم. تأكد أن الخادم الخلفي يعمل على http://localhost:8000 ثم أعد المحاولة.";
+    return "تعذر الاتصال بالخادم. تحقق أن الخادم الخلفي يعمل ثم أعد المحاولة.";
   }
-  return err.message || fallback;
+  return localizeApiErrorMessage(err.message) || fallback;
 }
 
 function rebuildFormData(entries: [string, FormDataEntryValue][]): FormData {
@@ -182,28 +206,34 @@ export async function apiFetch<T>(
   let token = getAccessToken();
   if (token) headers.Authorization = `Bearer ${token}`;
 
-  let res = await fetchWithTimeout(`${API_BASE}${path}`, { ...options, headers });
+  const timeoutMs = method === "GET" ? DEFAULT_TIMEOUT_MS : 30000;
 
-  if (res.status === 401 && token) {
-    const newToken = await refreshAccessToken();
-    if (newToken) {
-      headers.Authorization = `Bearer ${newToken}`;
-      res = await fetchWithTimeout(`${API_BASE}${path}`, { ...options, headers });
+  try {
+    let res = await fetchWithTimeout(`${API_BASE}${path}`, { ...options, headers }, timeoutMs);
+
+    if (res.status === 401 && token) {
+      const newToken = await refreshAccessToken();
+      if (newToken) {
+        headers.Authorization = `Bearer ${newToken}`;
+        res = await fetchWithTimeout(`${API_BASE}${path}`, { ...options, headers }, timeoutMs);
+      }
     }
+
+    if (!res.ok) {
+      throw new Error(await parseFailedResponse(res));
+    }
+
+    if (res.status === 204) return undefined as T;
+    const data = (await res.json()) as T;
+
+    if (isCacheableGet(path, method)) {
+      writeApiCache(cacheKey, data, getCacheTtl(path));
+    }
+
+    return data;
+  } catch (err) {
+    throw new Error(formatClientFetchError(err, "تعذر الاتصال بالخادم. حاول مرة أخرى."));
   }
-
-  if (!res.ok) {
-    throw new Error(await parseFailedResponse(res));
-  }
-
-  if (res.status === 204) return undefined as T;
-  const data = (await res.json()) as T;
-
-  if (isCacheableGet(path, method)) {
-    writeApiCache(cacheKey, data, getCacheTtl(path));
-  }
-
-  return data;
 }
 
 async function apiFormFetch<T>(
@@ -360,6 +390,8 @@ export const api = {
       method: "PATCH",
       body: JSON.stringify(data),
     }),
+  resetAdminGradePromotionPolicy: (gradeId: string) =>
+    apiFetch<unknown>(`/admin/grades/${gradeId}/promotion-policy/`, { method: "DELETE" }),
   getAdminPromotionPreview: (yearId: string, decisions?: Array<{ studentId: string; action: string }>) =>
     decisions?.length
       ? apiFetch<unknown>(`/admin/academic-years/${yearId}/promotion-preview/`, {
@@ -369,7 +401,10 @@ export const api = {
       : apiFetch<unknown>(`/admin/academic-years/${yearId}/promotion-preview/`),
   executeAdminYearRollover: (
     yearId: string,
-    data: { decisions?: Array<{ studentId: string; action: string }>; newYearName?: string }
+    data: {
+      decisions?: Array<{ studentId: string; action: string }>;
+      publishCertificates?: boolean;
+    }
   ) =>
     apiFetch<unknown>(`/admin/academic-years/${yearId}/execute-rollover/`, {
       method: "POST",
@@ -450,6 +485,27 @@ export const api = {
     apiFetch<void>(`/admin/subjects/${id}/`, { method: "DELETE" }),
   getAdminSchedules: (type?: "exam" | "class") =>
     apiList<unknown>(type ? `/admin/schedules/?type=${type}` : "/admin/schedules/"),
+  getAdminScheduleRolloverContext: (type: "exam" | "class") =>
+    apiFetch<unknown>(`/admin/schedules/rollover-context/?type=${type}`),
+  adoptAdminSchedules: (data: {
+    scheduleType: "exam" | "class";
+    classIds: string[];
+    mode: "copy" | "fresh";
+  }) =>
+    apiFetch<unknown>("/admin/schedules/adopt/", {
+      method: "POST",
+      body: JSON.stringify({
+        scheduleType: data.scheduleType,
+        classIds: data.classIds.map(Number),
+        mode: data.mode,
+      }),
+    }),
+  getAdminGradeSchemeTemplate: () => apiFetch<unknown>("/admin/grade-scheme-template/"),
+  saveAdminGradeSchemeTemplate: (data: { maxScore: number; components: unknown[] }) =>
+    apiFetch<unknown>("/admin/grade-scheme-template/", {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
   createAdminSchedule: (data: unknown) =>
     apiFetch<unknown>("/admin/schedules/", { method: "POST", body: JSON.stringify(data) }),
   updateAdminSchedule: (id: string, data: unknown) =>
@@ -525,6 +581,15 @@ export const api = {
 
   getTeacherProfile: () => apiFetch<unknown>("/teacher/profile/"),
   getTeacherSchedules: () => apiList<unknown>("/teacher/schedules/"),
+  getTeacherArchive: () => apiFetch<{ years: unknown[] }>("/teacher/archive/"),
+  getTeacherArchiveTermClasses: (termId: string) =>
+    apiList<unknown>(`/teacher/archive/terms/${termId}/classes/`),
+  getTeacherArchiveClassGrades: (termId: string, classId: string, subject?: string) =>
+    apiFetch<{ subjects: string[]; students: unknown[] }>(
+      subject
+        ? `/teacher/archive/terms/${termId}/classes/${classId}/grades/?subject=${encodeURIComponent(subject)}`
+        : `/teacher/archive/terms/${termId}/classes/${classId}/grades/`
+    ),
   getTeacherClasses: () => apiList<unknown>("/teacher/classes/"),
   getTeacherClassStudents: (classId: string) =>
     apiList<unknown>(`/teacher/classes/${classId}/`),
@@ -642,6 +707,11 @@ export const api = {
   getParentGradesNotification: () =>
     apiFetch<{ hasNew: boolean; count: number }>("/parent/grades/notification/"),
   getParentCertificates: () => apiFetch<unknown>("/parent/certificates/"),
+  getParentArchive: () => apiFetch<{ years: unknown[] }>("/parent/archive/"),
+  getParentArchiveTermGrades: (termId: string) =>
+    apiList<unknown>(`/parent/archive/terms/${termId}/grades/`),
+  getParentArchiveCertificates: () => apiFetch<unknown>("/parent/archive/certificates/"),
+  getParentCertificateArchive: () => apiFetch<unknown>("/parent/archive/certificates/"),
   getParentAssessments: () => apiList<unknown>("/parent/assessments/"),
   getParentFees: () =>
     apiFetch<{ student: unknown; notices: unknown[]; feeStatus: unknown }>("/parent/fees/"),

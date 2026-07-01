@@ -5,6 +5,11 @@ import { Alert } from "@/components/atoms/Alert";
 import { Button } from "@/components/atoms/Button";
 import { Card } from "@/components/atoms/Card";
 import { AdminScheduleFormPanel } from "@/components/admin/AdminScheduleFormPanel";
+import {
+  AdminScheduleRolloverPanel,
+  mapScheduleRolloverContext,
+  type ScheduleRolloverContext,
+} from "@/components/admin/schedules/AdminScheduleRolloverPanel";
 import { AdminSchedulesTable } from "@/components/admin/AdminSchedulesTable";
 import { ConfirmDialog } from "@/components/molecules/ConfirmDialog";
 import { PageHeader } from "@/components/molecules/PageHeader";
@@ -28,11 +33,13 @@ export default function AdminSchedulesPage() {
   const { classes, grades, subjects, teachers } = useSchool();
   const [tab, setTab] = useState<TabId>("exam");
   const [schedules, setSchedules] = useState<Schedule[]>([]);
+  const [rolloverContext, setRolloverContext] = useState<ScheduleRolloverContext | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [search, setSearch] = useState("");
   const [showForm, setShowForm] = useState(false);
+  const [createClassIds, setCreateClassIds] = useState<string[]>([]);
   const [editing, setEditing] = useState<Schedule | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Schedule | null>(null);
@@ -40,23 +47,28 @@ export default function AdminSchedulesPage() {
   const [previewTarget, setPreviewTarget] = useState<Schedule | null>(null);
   const { exportingId, requestExport } = useSchedulePdfExport(useCallback((message: string) => setError(message), []));
 
-  async function load() {
+  const load = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
-      const data = await api.getAdminSchedules(tab);
+      const [data, contextRaw] = await Promise.all([
+        api.getAdminSchedules(tab),
+        api.getAdminScheduleRolloverContext(tab),
+      ]);
       setSchedules((data as Array<Record<string, unknown>>).map(mapSchedule));
+      setRolloverContext(mapScheduleRolloverContext(contextRaw as Record<string, unknown>));
     } catch {
       setSchedules([]);
+      setRolloverContext(null);
       setError("تعذر تحميل الجداول");
     } finally {
       setLoading(false);
     }
-  }
+  }, [tab]);
 
   useEffect(() => {
-    load();
-  }, [tab]);
+    void load();
+  }, [load]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -67,8 +79,9 @@ export default function AdminSchedulesPage() {
     });
   }, [schedules, search]);
 
-  function openCreate() {
+  function openCreate(classIds: string[] = []) {
     setEditing(null);
+    setCreateClassIds(classIds);
     setShowForm(true);
     setError("");
     setSuccess("");
@@ -84,6 +97,7 @@ export default function AdminSchedulesPage() {
   function closeForm() {
     setShowForm(false);
     setEditing(null);
+    setCreateClassIds([]);
     setError("");
   }
 
@@ -118,8 +132,10 @@ export default function AdminSchedulesPage() {
         setSuccess("تم إنشاء الجدول بنجاح.");
         closeForm();
       }
+      await load();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "فشل حفظ الجدول");
+      const message = err instanceof Error ? err.message : "فشل حفظ الجدول";
+      setError(message);
     } finally {
       setSubmitting(false);
     }
@@ -134,6 +150,7 @@ export default function AdminSchedulesPage() {
       setSchedules((prev) => prev.filter((s) => s.id !== deleteTarget.id));
       setSuccess("تم حذف الجدول.");
       setDeleteTarget(null);
+      await load();
     } catch (err) {
       setError(err instanceof Error ? err.message : "فشل حذف الجدول");
     } finally {
@@ -153,11 +170,20 @@ export default function AdminSchedulesPage() {
           title="الجداول"
           description="إنشاء جداول الاختبارات والحصص وربطها بالفصول، مع إمكانية التصدير كملف PDF."
         />
-        <Button onClick={openCreate} className="shrink-0">
+        <Button onClick={() => openCreate()} className="shrink-0">
           <Plus className="h-4 w-4" />
           {tab === "exam" ? "جدول اختبارات جديد" : "جدول حصص جديد"}
         </Button>
       </div>
+
+      {rolloverContext ? (
+        <AdminScheduleRolloverPanel
+          scheduleType={tab}
+          context={rolloverContext}
+          onChanged={load}
+          onCreateFresh={(classId) => openCreate([classId])}
+        />
+      ) : null}
 
       {success ? <Alert variant="success">{success}</Alert> : null}
       {error && !showForm && !editing ? <Alert variant="error">{error}</Alert> : null}
@@ -166,10 +192,12 @@ export default function AdminSchedulesPage() {
         <AdminScheduleFormPanel
           mode="create"
           scheduleType={tab}
+          initialClassIds={createClassIds}
           classes={classes}
           grades={grades}
           subjects={subjects}
           teachers={teachers}
+          existingClassSchedules={schedules.filter((schedule) => schedule.scheduleType === "class")}
           error={error}
           submitting={submitting}
           onSubmit={saveSchedule}
@@ -186,6 +214,7 @@ export default function AdminSchedulesPage() {
           grades={grades}
           subjects={subjects}
           teachers={teachers}
+          existingClassSchedules={schedules.filter((schedule) => schedule.scheduleType === "class")}
           error={error}
           submitting={submitting}
           onSubmit={saveSchedule}

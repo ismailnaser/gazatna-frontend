@@ -12,6 +12,7 @@ export type SubjectGradeScheme = {
   maxScore: number;
   components: GradeSchemeComponent[];
   updatedAt?: string | null;
+  managedByAdmin?: boolean;
 };
 
 export type GradeSchemeEntry = {
