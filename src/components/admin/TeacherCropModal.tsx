@@ -45,7 +45,7 @@ export function TeacherCropModal({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="border-b border-neutral-100 px-5 py-4">
-          <p className="text-base font-bold text-p-black">قص صورة المعلم</p>
+          <p className="text-base font-bold text-p-black">قص صورة العضو</p>
           <p className="mt-1 text-sm text-neutral-500">حرّك الصورة وحدد الإطار المربع قبل الحفظ.</p>
         </div>
 

@@ -38,14 +38,16 @@ export function TeacherProfileImageField({
       </div>
       <div className="min-w-0 flex-1">
         <FileUploadField
-          label="صورة المعلم"
+          label="صورة العضو (اختياري)"
           preset="image"
           buttonText="اضغط لاختيار أو تغيير الصورة"
           disabled={disabled}
           selectedFileName={imageSrc ? "تم اختيار صورة" : null}
           onChange={(files) => onFileSelect(files?.[0] ?? null)}
         />
-        <p className="mt-2 text-xs text-p-black/45">اختياري — صورة مربعة تظهر في صفحة الكادر والملف الشخصي.</p>
+        <p className="mt-2 text-xs text-p-black/45">
+          يمكنك ترك هذا الحقل فارغاً — الصورة تظهر في صفحة الكادر والملف الشخصي إن رُفعت.
+        </p>
       </div>
     </div>
   );

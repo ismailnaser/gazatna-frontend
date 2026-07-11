@@ -15,7 +15,7 @@ const cairo = Cairo({
 });
 
 export const metadata: Metadata = {
-  title: "مدرسة غزتنا النموذجية الخاصة | Ghazatna Private Model School",
+  title: "مدرسة غزتنا الخاصة | Ghazzatuna Private School",
   description:
     "منصة تعليمية رقمية لمدرسة غزتنا — تعليم متميز، أخبار، برامج أكاديمية، وتسجيل إلكتروني.",
   applicationName: "غزتنا",

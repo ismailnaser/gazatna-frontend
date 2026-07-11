@@ -1,11 +1,15 @@
 import type { NextConfig } from "next";
 
-const apiOrigin = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api").replace(
-  /\/api\/?$/,
-  ""
-);
+// We proxy API calls through Next.js so the frontend can work from:
+// - localhost (same machine)
+// - LAN IP (other browsers/devices)
+// without the browser trying to call "localhost:8000" on *its own* device.
+const apiOrigin = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api").replace(/\/api\/?$/, "");
 
 const nextConfig: NextConfig = {
+  // Important for API proxying: avoid stripping trailing slashes (causes redirect loops with Django/DRF).
+  skipTrailingSlashRedirect: true,
+  skipMiddlewareUrlNormalize: true,
   async headers() {
     return [
       {
@@ -19,6 +23,10 @@ const nextConfig: NextConfig = {
   },
   async rewrites() {
     return [
+      {
+        source: "/api/:path*",
+        destination: `${apiOrigin}/api/:path*`,
+      },
       {
         source: "/media/:path*",
         destination: `${apiOrigin}/media/:path*`,

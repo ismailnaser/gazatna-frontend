@@ -10,6 +10,8 @@ import { Card } from "@/components/atoms/Card";
 import { Input } from "@/components/atoms/Input";
 import { Select } from "@/components/atoms/Select";
 import { Textarea } from "@/components/atoms/Textarea";
+import { StaffProfileFieldsForm } from "@/components/admin/StaffProfileFieldsForm";
+import { useAdminStaffTypes } from "@/components/admin/AdminTeacherAddForm";
 import { TeacherClassPicker } from "@/components/admin/TeacherClassPicker";
 import { cropTeacherImageFile, TeacherCropModal } from "@/components/admin/TeacherCropModal";
 import { TeacherFormSection } from "@/components/admin/TeacherFormSection";
@@ -21,6 +23,7 @@ import { api } from "@/lib/api";
 import { teacherInitial } from "@/lib/adminTeachers";
 import { buildOccupiedPairs, findAssignmentConflicts } from "@/lib/adminTeacherAssignments";
 import { resolveMediaUrl } from "@/lib/media";
+import { emptyStaffProfileFields, type StaffProfileFields } from "@/lib/staffProfile";
 import { cn } from "@/lib/utils";
 import type { AccountCredentials } from "@/types";
 import { BookMarked, KeyRound, Layers, Save, Shield, Trash2, UserRound } from "lucide-react";
@@ -36,13 +39,14 @@ export default function AdminTeacherDetailPage() {
   const teacherId = String(params.id);
 
   const { teachers, classes, grades, subjects, assignments, updateTeacher, removeTeacher } = useSchool();
+  const { staffTypes } = useAdminStaffTypes();
   const current = teachers.find((teacher) => teacher.id === teacherId);
   const occupiedPairs = useMemo(
     () => buildOccupiedPairs(teachers, teacherId),
     [teachers, teacherId]
   );
 
-  const [name, setName] = useState("");
+  const [profileFields, setProfileFields] = useState<StaffProfileFields>(emptyStaffProfileFields());
   const [experience, setExperience] = useState("");
   const [bio, setBio] = useState("");
   const [status, setStatus] = useState<"active" | "inactive">("active");
@@ -78,7 +82,20 @@ export default function AdminTeacherDetailPage() {
 
   useEffect(() => {
     if (!current) return;
-    setName(current.name);
+    setProfileFields({
+      staffTypeId: current.staffTypeId ?? "",
+      name: current.name ?? "",
+      nameEn: current.nameEn ?? "",
+      nationalId: current.nationalId ?? "",
+      dateOfBirth: current.dateOfBirth ? String(current.dateOfBirth) : "",
+      gender: current.gender ?? "",
+      maritalStatus: current.maritalStatus ?? "",
+      mobile: current.mobile ?? "",
+      altMobile: current.altMobile ?? "",
+      address: current.address ?? "",
+      joinDate: current.joinDate ? String(current.joinDate) : "",
+      notes: current.notes ?? "",
+    });
     setExperience(current.experience);
     setBio(current.bio);
     setStatus(current.status === "inactive" ? "inactive" : "active");
@@ -136,10 +153,21 @@ export default function AdminTeacherDetailPage() {
     setProfileSaved(false);
     try {
       await updateTeacher(current.id, {
-        name: name.trim(),
+        staffTypeId: profileFields.staffTypeId,
+        name: profileFields.name.trim(),
+        nameEn: profileFields.nameEn.trim(),
+        nationalId: profileFields.nationalId.trim(),
+        dateOfBirth: profileFields.dateOfBirth || null,
+        gender: profileFields.gender,
+        maritalStatus: profileFields.maritalStatus,
+        mobile: profileFields.mobile.trim(),
+        altMobile: profileFields.altMobile.trim(),
+        address: profileFields.address.trim(),
+        joinDate: profileFields.joinDate || null,
+        notes: profileFields.notes.trim(),
         experience: experience.trim(),
         bio: bio.trim(),
-        status,
+        status: current.isTeacher ? status : undefined,
       });
       setProfileSaved(true);
     } catch (err) {
@@ -215,7 +243,7 @@ export default function AdminTeacherDetailPage() {
     return (
       <div className="mx-auto max-w-lg">
         <PageHeader
-          title="تعديل المعلم"
+          title="تعديل عضو الكادر"
           description="المعلم غير موجود أو لم يتم تحميل البيانات بعد."
           className="mb-6"
         />
@@ -238,7 +266,7 @@ export default function AdminTeacherDetailPage() {
 
   return (
     <div ref={pageTopRef} className="mx-auto max-w-4xl">
-      <PageHeader title="تعديل المعلم" description={current.name} className="mb-6" />
+      <PageHeader title="تعديل عضو الكادر" description={current.name} className="mb-6" />
 
       {success ? (
         <Alert variant="success" className="mb-4">
@@ -281,18 +309,25 @@ export default function AdminTeacherDetailPage() {
           </div>
           <div className="min-w-0 flex-1">
             <h2 className="text-xl font-bold text-p-black">{current.name}</h2>
-            <p className="mt-1 text-sm text-p-black/55">{current.subject || "بدون مواد"}</p>
+            <p className="mt-1 text-sm text-p-black/55">
+              {current.staffTypeName || "—"}
+              {current.isTeacher && current.subject ? ` • ${current.subject}` : ""}
+            </p>
             <div className="mt-2 flex flex-wrap gap-2">
               {current.username ? (
                 <Badge variant="default" className="font-mono" dir="ltr">
                   {current.username}
                 </Badge>
               ) : null}
-              <Badge variant="info">{draftSubjects.length} مادة</Badge>
-              <Badge variant="success">{draftClasses.length} فصل</Badge>
-              <Badge variant={status === "active" ? "success" : "default"}>
-                {status === "active" ? "نشط" : "غير نشط"}
-              </Badge>
+              {current.isTeacher ? (
+                <>
+                  <Badge variant="info">{draftSubjects.length} مادة</Badge>
+                  <Badge variant="success">{draftClasses.length} فصل</Badge>
+                  <Badge variant={status === "active" ? "success" : "default"}>
+                    {status === "active" ? "نشط" : "غير نشط"}
+                  </Badge>
+                </>
+              ) : null}
             </div>
           </div>
         </div>
@@ -301,31 +336,37 @@ export default function AdminTeacherDetailPage() {
       <div className="space-y-5">
         <TeacherFormSection
           icon={UserRound}
-          title="البيانات الشخصية"
-          description="الاسم، الصورة، الخبرة، والسيرة الذاتية"
+          title="بيانات عضو الكادر"
+          description="البيانات الأساسية والتواصل"
           tone="blue"
         >
           <div className="space-y-4">
+            <StaffProfileFieldsForm
+              fields={profileFields}
+              staffTypes={staffTypes}
+              onChange={setProfileFields}
+            />
             <div className="grid gap-4 sm:grid-cols-2">
-              <Input label="اسم المعلم" value={name} onChange={(e) => setName(e.target.value)} required />
               <Input label="الخبرة (اختياري)" value={experience} onChange={(e) => setExperience(e.target.value)} />
-              <Select
-                label="الحالة"
-                name="status"
-                options={teacherStatusOptions}
-                value={status}
-                onChange={(e) => setStatus(e.target.value as "active" | "inactive")}
-              />
+              {current.isTeacher ? (
+                <Select
+                  label="الحالة"
+                  name="status"
+                  options={teacherStatusOptions}
+                  value={status}
+                  onChange={(e) => setStatus(e.target.value as "active" | "inactive")}
+                />
+              ) : null}
             </div>
             <TeacherProfileImageField
-              name={name}
+              name={profileFields.name}
               imageGradient={current.imageGradient}
               previewUrl={imagePreview}
               disabled={uploadingImage}
               onFileSelect={handleFileSelect}
             />
             <Textarea
-              label="نبذة (السيرة الذاتية) (اختياري)"
+              label="نبذة / سيرة ذاتية (اختياري)"
               value={bio}
               onChange={(e) => setBio(e.target.value)}
               rows={5}
@@ -340,58 +381,64 @@ export default function AdminTeacherDetailPage() {
           </div>
         </TeacherFormSection>
 
-        <TeacherFormSection
-          icon={BookMarked}
-          title="المواد الدراسية"
-          description="يمكن للمعلم تدريس أكثر من مادة — لكل فصل معلم واحد فقط لكل مادة"
-          tone="violet"
-        >
-          <TeacherSubjectPicker
-            subjects={subjects}
-            value={draftSubjects}
-            onChange={setDraftSubjects}
-            classIds={draftClasses}
-            occupiedPairs={occupiedPairs}
-          />
-        </TeacherFormSection>
+        {current.isTeacher ? (
+          <>
+            <TeacherFormSection
+              icon={BookMarked}
+              title="المواد الدراسية"
+              description="يمكن للمعلم تدريس أكثر من مادة — لكل فصل معلم واحد فقط لكل مادة"
+              tone="violet"
+            >
+              <TeacherSubjectPicker
+                subjects={subjects}
+                value={draftSubjects}
+                onChange={setDraftSubjects}
+                classIds={draftClasses}
+                occupiedPairs={occupiedPairs}
+              />
+            </TeacherFormSection>
 
-        <TeacherFormSection
-          icon={Layers}
-          title="فصول تدريس المواد"
-          description="الفصول التي يدرّس فيها المعلم مواده — مستقل عن مربي الصف"
-          tone="green"
-        >
-          <TeacherClassPicker
-            classes={classes}
-            grades={grades}
-            subjects={subjects}
-            value={draftClasses}
-            onChange={setDraftClasses}
-            subjectIds={draftSubjects}
-            occupiedPairs={occupiedPairs}
-          />
-          <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-neutral-100 pt-4">
-            <Button type="button" onClick={saveAssignments} disabled={savingAssignments || draftSubjects.length === 0}>
-              <Save className="h-4 w-4" />
-              {savingAssignments ? "جاري الحفظ..." : "حفظ الإسناد"}
-            </Button>
-          </div>
-        </TeacherFormSection>
+            <TeacherFormSection
+              icon={Layers}
+              title="فصول تدريس المواد"
+              description="الفصول التي يدرّس فيها المعلم مواده — مستقل عن مربي الصف"
+              tone="green"
+            >
+              <TeacherClassPicker
+                classes={classes}
+                grades={grades}
+                subjects={subjects}
+                value={draftClasses}
+                onChange={setDraftClasses}
+                subjectIds={draftSubjects}
+                occupiedPairs={occupiedPairs}
+              />
+              <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-neutral-100 pt-4">
+                <Button type="button" onClick={saveAssignments} disabled={savingAssignments || draftSubjects.length === 0}>
+                  <Save className="h-4 w-4" />
+                  {savingAssignments ? "جاري الحفظ..." : "حفظ الإسناد"}
+                </Button>
+              </div>
+            </TeacherFormSection>
+          </>
+        ) : null}
 
         <TeacherFormSection
           icon={Shield}
           title="الحساب والإجراءات"
-          description="كلمة المرور وحذف المعلم"
+          description={current.isTeacher ? "كلمة المرور وحذف العضو" : "حذف العضو"}
           tone="orange"
         >
           <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-            <Button type="button" variant="outline" onClick={() => setConfirmReset(true)} disabled={resettingPassword}>
-              <KeyRound className="h-4 w-4" />
-              إعادة تعيين كلمة المرور
-            </Button>
+            {current.isTeacher ? (
+              <Button type="button" variant="outline" onClick={() => setConfirmReset(true)} disabled={resettingPassword}>
+                <KeyRound className="h-4 w-4" />
+                إعادة تعيين كلمة المرور
+              </Button>
+            ) : null}
             <Button type="button" variant="danger" onClick={() => setConfirmDelete(true)}>
               <Trash2 className="h-4 w-4" />
-              حذف المعلم
+              حذف العضو
             </Button>
           </div>
         </TeacherFormSection>

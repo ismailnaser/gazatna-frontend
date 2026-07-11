@@ -33,7 +33,7 @@ export function AppLoadingScreen({
           <Logo variant="icon" href={undefined} className="h-16 w-16 sm:h-20 sm:w-20" />
         </div>
 
-        <h1 className="text-lg font-bold text-p-black sm:text-xl">مدرسة غزتنا النموذجية الخاصة</h1>
+        <h1 className="text-lg font-bold text-p-black sm:text-xl">مدرسة غزتنا الخاصة</h1>
         <div className="mt-2 h-1 w-14 rounded-full bg-p-red" />
 
         <p className="mt-5 text-sm font-medium text-p-black/55">{message}</p>

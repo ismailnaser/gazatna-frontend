@@ -72,6 +72,26 @@ function mapTeacherProfile(raw: Record<string, unknown>): TeacherProfile {
     ...(raw as TeacherProfile),
     id: String(raw.id),
     userId: raw.userId != null ? String(raw.userId) : undefined,
+    staffTypeId: raw.staffTypeId != null ? String(raw.staffTypeId) : undefined,
+    staffTypeName: raw.staffTypeName != null ? String(raw.staffTypeName) : undefined,
+    isTeacher: raw.isTeacher === true,
+    nameEn: raw.nameEn != null ? String(raw.nameEn) : "",
+    nationalId: raw.nationalId != null ? String(raw.nationalId) : "",
+    dateOfBirth: raw.dateOfBirth != null ? String(raw.dateOfBirth) : null,
+    age: raw.age != null ? Number(raw.age) : null,
+    gender: raw.gender === "male" || raw.gender === "female" ? raw.gender : "",
+    maritalStatus:
+      raw.maritalStatus === "single" ||
+      raw.maritalStatus === "married" ||
+      raw.maritalStatus === "divorced" ||
+      raw.maritalStatus === "widowed"
+        ? raw.maritalStatus
+        : "",
+    mobile: raw.mobile != null ? String(raw.mobile) : "",
+    altMobile: raw.altMobile != null ? String(raw.altMobile) : "",
+    address: raw.address != null ? String(raw.address) : "",
+    joinDate: raw.joinDate != null ? String(raw.joinDate) : null,
+    notes: raw.notes != null ? String(raw.notes) : "",
     classIds: Array.isArray(raw.classIds) ? raw.classIds.map(String) : [],
     subjectIds: Array.isArray(raw.subjectIds) ? raw.subjectIds.map(String) : [],
     homeroomClassId:
@@ -251,8 +271,19 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
 
   const addTeacher = useCallback(async (teacher: Omit<TeacherProfile, "id">, image?: File) => {
     const classIds = (teacher.classIds ?? []).map(Number);
-    const base = {
+    const base: Record<string, unknown> = {
+      staffTypeId: teacher.staffTypeId ? Number(teacher.staffTypeId) : undefined,
       name: teacher.name,
+      nameEn: teacher.nameEn ?? "",
+      nationalId: teacher.nationalId ?? "",
+      dateOfBirth: teacher.dateOfBirth || null,
+      gender: teacher.gender || "",
+      maritalStatus: teacher.maritalStatus || "",
+      mobile: teacher.mobile ?? "",
+      altMobile: teacher.altMobile ?? "",
+      address: teacher.address ?? "",
+      joinDate: teacher.joinDate || null,
+      notes: teacher.notes ?? "",
       experience: teacher.experience,
       bio: teacher.bio,
       imageGradient: teacher.imageGradient,
@@ -262,20 +293,23 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
     let created: TeacherProfile;
     if (image) {
       const formData = new FormData();
-      formData.append("name", teacher.name);
-      formData.append("experience", teacher.experience);
-      formData.append("bio", teacher.bio);
-      formData.append("imageGradient", teacher.imageGradient);
+      for (const [key, value] of Object.entries(base)) {
+        if (value == null) continue;
+        if (key === "classIds" && Array.isArray(value)) {
+          value.forEach((id) => formData.append("classIds", String(id)));
+          continue;
+        }
+        formData.append(key, String(value));
+      }
       teacher.subjectIds?.forEach((id) => formData.append("subjectIds", id));
-      teacher.classIds?.forEach((id) => formData.append("classIds", id));
       formData.append("image", image);
-      created = (await api.createAdminTeacher(formData)) as TeacherProfile;
+      created = mapTeacherProfile((await api.createAdminTeacher(formData)) as Record<string, unknown>);
     } else {
       const payload: Record<string, unknown> = { ...base };
       if (teacher.subjectIds?.length) {
         payload.subjectIds = teacher.subjectIds.map(Number);
       }
-      created = (await api.createAdminTeacher(payload)) as TeacherProfile;
+      created = mapTeacherProfile((await api.createAdminTeacher(payload)) as Record<string, unknown>);
     }
     setState((prev) => ({
       teachers: [...prev.teachers, created],
@@ -294,6 +328,7 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
       );
     } else {
       const payload: Record<string, unknown> = { ...data };
+      if (data.staffTypeId) payload.staffTypeId = Number(data.staffTypeId);
       if (data.subjectIds) {
         payload.subjectIds = data.subjectIds.map(Number);
         delete payload.subject;

@@ -1,6 +1,8 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api";
+// Keep media URLs same-origin; Next rewrites `/media/*` to backend.
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "/api";
 
 export function mediaOrigin(): string {
+  // When API_BASE is `/api`, origin is empty (same host).
   return API_BASE.replace(/\/api\/?$/, "");
 }
 

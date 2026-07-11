@@ -7,7 +7,9 @@ import {
   writeApiCache,
 } from "@/lib/apiCache";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api";
+// Use same-origin `/api` so it works when opened via LAN IP too.
+// Next.js rewrites `/api/*` to the backend (see `next.config.ts`).
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "/api";
 
 const TOKEN_KEY = "ghazatna_access";
 const REFRESH_KEY = "ghazatna_refresh";
@@ -101,6 +103,27 @@ async function refreshAccessToken(): Promise<string | null> {
   return data.access;
 }
 
+const API_FIELD_LABELS: Record<string, string> = {
+  staffTypeId: "التخصص / الوظيفة",
+  nationalId: "رقم الهوية",
+  name: "الاسم بالعربي",
+  nameEn: "الاسم بالإنجليزي",
+  subjectIds: "المواد الدراسية",
+  classIds: "الفصول",
+};
+
+function formatFieldError(label: string, message: string): string {
+  const text = String(message);
+  if (
+    text.includes("هذا النوع موجود") ||
+    text.includes("نوع «معلم»") ||
+    text.includes("اسم النوع مطلوب")
+  ) {
+    return text;
+  }
+  return `${label}: ${text}`;
+}
+
 function formatApiError(err: unknown, fallback: string): string {
   if (!err || typeof err !== "object") return fallback;
   const data = err as Record<string, unknown>;
@@ -111,8 +134,9 @@ function formatApiError(err: unknown, fallback: string): string {
   const fieldMessages = Object.entries(data)
     .filter(([key]) => key !== "detail" && key !== "terms")
     .flatMap(([key, value]) => {
-      if (Array.isArray(value)) return value.map((msg) => `${key}: ${String(msg)}`);
-      if (typeof value === "string") return [`${key}: ${value}`];
+      const label = API_FIELD_LABELS[key] ?? key;
+      if (Array.isArray(value)) return value.map((msg) => formatFieldError(label, String(msg)));
+      if (typeof value === "string") return [formatFieldError(label, value)];
       return [];
     });
   if (fieldMessages.length > 0) return fieldMessages.join(" — ");
@@ -120,6 +144,12 @@ function formatApiError(err: unknown, fallback: string): string {
 }
 
 function localizeApiErrorMessage(message: string): string {
+  if (message.includes("نوع الكادر") && message.includes("موجود مسبقاً")) {
+    return "هذا النوع موجود مسبقاً";
+  }
+  if (/^الاسم بالعربي:.*موجود مسبقاً/.test(message)) {
+    return "هذا النوع موجود مسبقاً";
+  }
   if (message.includes("No AcademicYear matches the given query")) {
     return "السنة الدراسية غير موجودة. حدّث الصفحة وحاول مرة أخرى.";
   }
@@ -528,6 +558,11 @@ export const api = {
     apiFetch<unknown>(`/admin/teachers/${id}/reset-password/`, { method: "POST" }),
   deleteAdminTeacher: (id: string) =>
     apiFetch<void>(`/admin/teachers/${id}/`, { method: "DELETE" }),
+  getAdminStaffTypes: () => apiList<unknown>("/admin/staff-types/"),
+  createAdminStaffType: (data: { name: string }) =>
+    apiFetch<unknown>("/admin/staff-types/", { method: "POST", body: JSON.stringify(data) }),
+  deleteAdminStaffType: (id: string) =>
+    apiFetch<void>(`/admin/staff-types/${id}/`, { method: "DELETE" }),
   getAdminUsers: () => apiList<unknown>("/auth/users/"),
   createAdminUser: (data: unknown) =>
     apiFetch<unknown>("/auth/users/", { method: "POST", body: JSON.stringify(data) }),

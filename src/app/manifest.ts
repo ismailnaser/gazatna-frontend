@@ -2,7 +2,7 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "منصة غزتنا — مدرسة غزتنا النموذجية",
+    name: "منصة غزتنا — مدرسة غزتنا الخاصة",
     short_name: "غزتنا",
     description:
       "منصة تعليمية رقمية لمدرسة غزتنا — متابعة العلامات، الواجبات، الجداول، والشهادات.",

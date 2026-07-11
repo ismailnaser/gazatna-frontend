@@ -21,7 +21,7 @@ export function Logo({
     variant === "icon" ? (
       <Image
         src="/images/logo-icon.png"
-        alt="مدرسة غزتنا"
+        alt="مدرسة غزتنا الخاصة"
         width={56}
         height={56}
         unoptimized
@@ -32,11 +32,11 @@ export function Logo({
     ) : (
       <Image
         src="/images/logo.png"
-        alt="مدرسة غزتنا النموذجية الخاصة"
-        width={240}
-        height={103}
+        alt="مدرسة غزتنا الخاصة"
+        width={280}
+        height={120}
         unoptimized
-        className={cn("h-12 w-auto object-contain sm:h-12 lg:h-[3.25rem]", className)}
+        className={cn("h-11 w-auto object-contain sm:h-12 lg:h-[3.25rem]", className)}
         style={filter ? { filter } : undefined}
         priority
       />

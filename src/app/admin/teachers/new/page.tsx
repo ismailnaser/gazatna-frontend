@@ -4,20 +4,21 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Alert } from "@/components/atoms/Alert";
 import { Button } from "@/components/atoms/Button";
-import { AdminTeacherAddForm } from "@/components/admin/AdminTeacherAddForm";
+import { AdminTeacherAddForm, useAdminStaffTypes } from "@/components/admin/AdminTeacherAddForm";
 import { PageHeader } from "@/components/molecules/PageHeader";
 import type { AccountCredentials } from "@/types";
 
 export default function AdminNewTeacherPage() {
   const router = useRouter();
+  const { staffTypes } = useAdminStaffTypes();
   const [credentials, setCredentials] = useState<AccountCredentials | null>(null);
   const [formKey, setFormKey] = useState(0);
 
   return (
     <div className="mx-auto max-w-3xl">
       <PageHeader
-        title="إضافة معلم جديد"
-        description="أنشئ ملف المعلم واسند له المواد والفصول"
+        title="إضافة عضو كادر جديد"
+        description="أضف أي شخص يعمل في المدرسة: مدير، نائب مدير، معلم، سكرتير…"
         className="mb-6"
       />
 
@@ -45,13 +46,14 @@ export default function AdminNewTeacherPage() {
                 setFormKey((key) => key + 1);
               }}
             >
-              إضافة معلم آخر
+              إضافة عضو آخر
             </Button>
           </div>
         </div>
       ) : (
         <AdminTeacherAddForm
           key={formKey}
+          staffTypes={staffTypes}
           onCancel={() => router.push("/admin/teachers")}
           onCreated={(_, creds) => {
             if (creds) {
