@@ -25,7 +25,7 @@ export function Logo({
         width={56}
         height={56}
         unoptimized
-        className={cn("h-10 w-10 object-contain sm:h-11 sm:w-11", className)}
+        className={cn("h-10 w-10 bg-transparent object-contain sm:h-11 sm:w-11", className)}
         style={filter ? { filter } : undefined}
         priority
       />
@@ -36,7 +36,7 @@ export function Logo({
         width={280}
         height={120}
         unoptimized
-        className={cn("h-11 w-auto object-contain sm:h-12 lg:h-[3.25rem]", className)}
+        className={cn("h-11 w-auto bg-transparent object-contain sm:h-12 lg:h-[3.25rem]", className)}
         style={filter ? { filter } : undefined}
         priority
       />
