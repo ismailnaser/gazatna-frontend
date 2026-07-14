@@ -64,6 +64,7 @@ function mapStudent(s: Record<string, unknown>): AdminStudent {
     nationalId: s.nationalId ? String(s.nationalId) : undefined,
     username: s.username ? String(s.username) : undefined,
     generatedPassword: s.generatedPassword ? String(s.generatedPassword) : undefined,
+    isActive: s.isActive !== undefined ? Boolean(s.isActive) : s.is_active !== false,
     paymentStatus: s.paymentStatus as AdminStudent["paymentStatus"],
     documents: Array.isArray(s.documents)
       ? (s.documents as Array<Record<string, unknown>>).map((d) => ({

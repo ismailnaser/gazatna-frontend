@@ -107,10 +107,12 @@ export default function AdminAnalyticsDetailsPage() {
     router.replace(`/admin/analytics?tab=${tab}`);
   }
 
-  const tabs: { id: AdminAnalyticsTab; label: string }[] = [
-    { id: "grades", label: "نسب النجاح" },
-    { id: "fees", label: "تحصيل الرسوم" },
-  ].filter((t) => user && isAdminRole(user.role) && canAccessAdminAnalyticsTab(user.role, t.id));
+  const tabs = (
+    [
+      { id: "grades", label: "نسب النجاح" },
+      { id: "fees", label: "تحصيل الرسوم" },
+    ] as const satisfies ReadonlyArray<{ id: AdminAnalyticsTab; label: string }>
+  ).filter((t) => user && isAdminRole(user.role) && canAccessAdminAnalyticsTab(user.role, t.id));
 
   return (
     <div>

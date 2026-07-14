@@ -31,6 +31,7 @@ function mapStudent(s: Record<string, unknown>): AdminStudent {
     generatedPassword: s.generatedPassword ? String(s.generatedPassword) : undefined,
     paymentStatus: (s.paymentStatus as AdminStudent["paymentStatus"]) ?? "pending",
     documents: (s.documents as AdminStudent["documents"]) ?? [],
+    isActive: s.isActive !== undefined ? Boolean(s.isActive) : s.is_active !== false,
   };
 }
 
