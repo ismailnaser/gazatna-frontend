@@ -14,6 +14,10 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+  // Fewer workers = lower RAM during build on shared hosting
+  experimental: {
+    cpus: 1,
+  },
   async headers() {
     return [
       {
