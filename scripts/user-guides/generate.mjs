@@ -9,6 +9,7 @@ import parentManual from "./content/parent-student.mjs";
 import lifecycleManual from "./content/lifecycle.mjs";
 import cpanelDeployManual from "./content/cpanel-deploy.mjs";
 import cpanelDeployTerminalManual from "./content/cpanel-deploy-terminal.mjs";
+import cpanelFrontendRecreateManual from "./content/cpanel-frontend-recreate.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const OUT_DIR = path.resolve(__dirname, "../../../docs/user-guides");
@@ -24,6 +25,7 @@ const ALL_MANUALS = [
   lifecycleManual,
   cpanelDeployManual,
   cpanelDeployTerminalManual,
+  cpanelFrontendRecreateManual,
 ];
 
 const MANUALS = ONLY
