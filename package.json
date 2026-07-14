@@ -13,7 +13,6 @@
     "guides:user": "node scripts/user-guides/generate.mjs"
   },
   "dependencies": {
-    "@next/swc-win32-x64-msvc": "^16.2.7",
     "framer-motion": "^12.40.0",
     "html2canvas": "^1.4.1",
     "html2pdf.js": "^0.14.0",
