@@ -1,20 +1,43 @@
 import type { NextConfig } from "next";
 
-// We proxy API calls through Next.js so the frontend can work from:
-// - localhost (same machine)
-// - LAN IP (other browsers/devices)
-// without the browser trying to call "localhost:8000" on *its own* device.
-const apiOrigin = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api").replace(/\/api\/?$/, "");
+/**
+ * Plan B (same domain):
+ * - Browser calls same-origin `/api` (NEXT_PUBLIC_API_URL=/api)
+ * - Next proxies /api + /media to the real Django app via BACKEND_URL
+ *
+ * BACKEND_URL must be the Python App origin on cPanel, e.g.:
+ *   https://gzsedu.example.com/path-to-python-app
+ *   or whatever Application URL Setup Python App shows
+ * DO NOT set BACKEND_URL to https://gzs.edu.ps — that creates a proxy loop.
+ */
+function resolveBackendOrigin(): string {
+  const explicit = (process.env.BACKEND_URL ?? process.env.DJANGO_BACKEND_URL ?? "").trim();
+  if (explicit) {
+    return explicit.replace(/\/$/, "").replace(/\/api\/?$/, "");
+  }
+
+  const publicApi = (process.env.NEXT_PUBLIC_API_URL ?? "").trim();
+  if (
+    !publicApi ||
+    publicApi === "/api" ||
+    publicApi.startsWith("/") ||
+    /\/\/(localhost|127\.0\.0\.1)(:\d+)?(\/|$)/i.test(publicApi)
+  ) {
+    return "http://127.0.0.1:8000";
+  }
+
+  // Absolute public URL — strip /api. Warn: if this equals the frontend host, set BACKEND_URL.
+  return publicApi.replace(/\/api\/?$/, "");
+}
+
+const backendOrigin = resolveBackendOrigin();
 
 const nextConfig: NextConfig = {
-  // Important for API proxying: avoid stripping trailing slashes (causes redirect loops with Django/DRF).
   skipTrailingSlashRedirect: true,
   skipMiddlewareUrlNormalize: true,
-  // Existing codebase has TS strictness gaps; allow production build on cPanel while types are cleaned up.
   typescript: {
     ignoreBuildErrors: true,
   },
-  // Fewer workers = lower RAM during build on shared hosting
   experimental: {
     cpus: 1,
   },
@@ -33,11 +56,11 @@ const nextConfig: NextConfig = {
     return [
       {
         source: "/api/:path*",
-        destination: `${apiOrigin}/api/:path*`,
+        destination: `${backendOrigin}/api/:path*`,
       },
       {
         source: "/media/:path*",
-        destination: `${apiOrigin}/media/:path*`,
+        destination: `${backendOrigin}/media/:path*`,
       },
     ];
   },

@@ -1,25 +1,38 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
+/**
+ * Proxy /api and /media to Django.
+ * Prefer BACKEND_URL (Python App origin). Never proxy back to the public frontend host.
+ */
 function getBackendOrigin(): string {
-  const apiBase = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api";
-  return apiBase.replace(/\/api\/?$/, "");
+  const explicit = (process.env.BACKEND_URL ?? process.env.DJANGO_BACKEND_URL ?? "").trim();
+  if (explicit) {
+    return explicit.replace(/\/$/, "").replace(/\/api\/?$/, "");
+  }
+
+  const publicApi = (process.env.NEXT_PUBLIC_API_URL ?? "").trim();
+  if (
+    !publicApi ||
+    publicApi === "/api" ||
+    publicApi.startsWith("/")
+  ) {
+    return "http://127.0.0.1:8000";
+  }
+
+  return publicApi.replace(/\/api\/?$/, "");
 }
 
 export function middleware(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
+  const backend = getBackendOrigin();
 
-  // Proxy API/media through Next in dev and LAN usage.
-  // This avoids redirect loops / CORS issues when the frontend is opened
-  // from a different browser/device and "localhost:8000" isn't reachable there.
   if (pathname === "/api" || pathname.startsWith("/api/")) {
-    const backend = getBackendOrigin();
-    return NextResponse.rewrite(new URL(`${backend}${pathname}${search}`, request.url));
+    return NextResponse.rewrite(new URL(`${backend}${pathname}${search}`));
   }
 
   if (pathname === "/media" || pathname.startsWith("/media/")) {
-    const backend = getBackendOrigin();
-    return NextResponse.rewrite(new URL(`${backend}${pathname}${search}`, request.url));
+    return NextResponse.rewrite(new URL(`${backend}${pathname}${search}`));
   }
 
   const response = NextResponse.next();

@@ -7,13 +7,13 @@ $ErrorActionPreference = "Stop"
 $root = Split-Path -Parent $PSScriptRoot
 Set-Location $root
 
+# Plan B default: browser uses same-origin /api
 if (-not $env:NEXT_PUBLIC_API_URL) {
-  Write-Host "ERROR: Set NEXT_PUBLIC_API_URL before packing." -ForegroundColor Red
-  Write-Host 'Example: $env:NEXT_PUBLIC_API_URL = "https://api.gzs.edu.ps/api"'
-  exit 1
+  $env:NEXT_PUBLIC_API_URL = "/api"
 }
 
-Write-Host "API URL: $env:NEXT_PUBLIC_API_URL" -ForegroundColor Cyan
+Write-Host "NEXT_PUBLIC_API_URL: $env:NEXT_PUBLIC_API_URL" -ForegroundColor Cyan
+Write-Host "Note: On cPanel Node App, set BACKEND_URL to your Python App Application URL." -ForegroundColor Yellow
 Write-Host "Building locally..." -ForegroundColor Cyan
 npm run build
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
