@@ -11,6 +11,7 @@ import cpanelDeployManual from "./content/cpanel-deploy.mjs";
 import cpanelDeployTerminalManual from "./content/cpanel-deploy-terminal.mjs";
 import cpanelFrontendRecreateManual from "./content/cpanel-frontend-recreate.mjs";
 import cpanelLinkFeBeManual from "./content/cpanel-link-frontend-backend.mjs";
+import cpanelFromScratchBackendPathManual from "./content/cpanel-from-scratch-backend-path.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const OUT_DIR = path.resolve(__dirname, "../../../docs/user-guides");
@@ -28,6 +29,7 @@ const ALL_MANUALS = [
   cpanelDeployTerminalManual,
   cpanelFrontendRecreateManual,
   cpanelLinkFeBeManual,
+  cpanelFromScratchBackendPathManual,
 ];
 
 const MANUALS = ONLY

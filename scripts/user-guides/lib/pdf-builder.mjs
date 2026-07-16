@@ -135,6 +135,12 @@ function renderSection(section, index) {
       }
       html += "</tbody></table>";
     }
+    if (block.type === "code") {
+      html += `<pre style="direction:ltr;text-align:left;background:#1a1a1a;color:#e8e8e8;padding:12px;border-radius:8px;overflow:auto;font-size:0.85rem;white-space:pre-wrap;word-break:break-word">${escapeHtml(block.text)}</pre>`;
+    }
+    if (block.type === "html") {
+      html += block.html || "";
+    }
   }
   html += "</section>";
   return html;
