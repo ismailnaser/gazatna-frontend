@@ -2,9 +2,8 @@
  * cPanel Setup Node.js App entry point.
  * Set "Application startup file" to: server.js
  *
- * When Node owns gzs.edu.ps root, LiteSpeed often sends /backend/* to Next too.
- * We reverse-proxy those paths back to the local web server so Passenger/Django
- * (Setup Python App on /backend) can handle them.
+ * Proxies /backend/* to the local web stack so Django/Passenger can answer
+ * when Node owns the domain root.
  */
 const http = require("http");
 const https = require("https");
@@ -13,6 +12,7 @@ const next = require("next");
 
 const port = Number(process.env.PORT) || 3000;
 const hostname = process.env.HOSTNAME || "127.0.0.1";
+const PROXY_MARK = "ghazatna-node-backend-proxy";
 
 const app = next({
   dev: false,
@@ -26,20 +26,38 @@ function isBackendPath(urlPath) {
   return urlPath === "/backend" || urlPath.startsWith("/backend/");
 }
 
-/**
- * Proxy /backend to the site's HTTP stack on loopback.
- * Prefer BACKEND_PROXY_HOST / BACKEND_PROXY_PORT if set; else 127.0.0.1:80
- * with the original Host header so cPanel routes to the Python app.
- */
+function headerHasProxyMark(headers) {
+  const raw = headers["x-ghazatna-proxy"];
+  if (!raw) return false;
+  const value = Array.isArray(raw) ? raw.join(",") : String(raw);
+  return value.includes(PROXY_MARK);
+}
+
 function proxyBackend(req, res) {
+  if (headerHasProxyMark(req.headers)) {
+    console.error("Backend proxy loop detected for", req.url);
+    res.statusCode = 502;
+    res.setHeader("Content-Type", "text/plain; charset=utf-8");
+    res.end(
+      "Bad Gateway: /backend request looped back to Node.\n" +
+        "Ask host to exclude /backend from Node, or put frontend on www only."
+    );
+    return;
+  }
+
   const proxyHost = (process.env.BACKEND_PROXY_HOST || "127.0.0.1").trim();
   const proxyPort = Number(process.env.BACKEND_PROXY_PORT || 80);
-  const useTls = process.env.BACKEND_PROXY_TLS === "1";
+  const useTls = String(process.env.BACKEND_PROXY_TLS || "").trim() === "1";
   const transport = useTls ? https : http;
+  const publicHost = (process.env.BACKEND_PROXY_PUBLIC_HOST || "gzs.edu.ps").trim();
 
   const headers = { ...req.headers };
-  // Avoid compressing through the proxy pipe in awkward ways on some hosts.
   delete headers["accept-encoding"];
+  headers.host = publicHost;
+  headers["x-ghazatna-proxy"] = PROXY_MARK;
+  // Help some reverse proxies preserve original scheme/path.
+  headers["x-forwarded-proto"] = useTls ? "https" : "http";
+  headers["x-forwarded-host"] = publicHost;
 
   const opts = {
     hostname: proxyHost,
@@ -47,8 +65,13 @@ function proxyBackend(req, res) {
     path: req.url,
     method: req.method,
     headers,
-    servername: useTls ? headers.host && String(headers.host).split(":")[0] : undefined,
+    rejectUnauthorized: false,
+    servername: useTls ? publicHost : undefined,
   };
+
+  console.log(
+    `[backend-proxy] ${req.method} ${req.url} -> ${useTls ? "https" : "http"}://${proxyHost}:${proxyPort}`
+  );
 
   const upstream = transport.request(opts, (upRes) => {
     res.writeHead(upRes.statusCode || 502, upRes.headers);
@@ -59,7 +82,8 @@ function proxyBackend(req, res) {
     console.error("Backend proxy error:", req.url, err.message);
     if (!res.headersSent) {
       res.statusCode = 502;
-      res.end("Bad Gateway (backend proxy)");
+      res.setHeader("Content-Type", "text/plain; charset=utf-8");
+      res.end("Bad Gateway (backend proxy): " + err.message);
     }
   });
 
@@ -87,7 +111,7 @@ app
       }
     }).listen(port, hostname, () => {
       console.log(`Next.js ready on http://${hostname}:${port}`);
-      console.log("Proxying /backend/* to local web server for Django/Passenger");
+      console.log("Proxying /backend/* via local web server for Django");
     });
   })
   .catch((err) => {
