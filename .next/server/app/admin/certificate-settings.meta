@@ -1,0 +1,17 @@
+{
+  "headers": {
+    "x-nextjs-stale-time": "300",
+    "x-nextjs-prerender": "1",
+    "x-next-cache-tags": "_N_T_/layout,_N_T_/admin/layout,_N_T_/admin/(academic-workspace)/layout,_N_T_/admin/(academic-workspace)/certificate-settings/layout,_N_T_/admin/(academic-workspace)/certificate-settings/page,_N_T_/admin/certificate-settings"
+  },
+  "segmentPaths": [
+    "/_tree",
+    "/_full",
+    "/admin/!KGFjYWRlbWljLXdvcmtzcGFjZSk/certificate-settings/__PAGE__",
+    "/admin/!KGFjYWRlbWljLXdvcmtzcGFjZSk/certificate-settings",
+    "/admin/!KGFjYWRlbWljLXdvcmtzcGFjZSk",
+    "/admin",
+    "/_index",
+    "/_head"
+  ]
+}

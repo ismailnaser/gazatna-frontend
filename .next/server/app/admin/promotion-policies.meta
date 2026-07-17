@@ -1,0 +1,17 @@
+{
+  "headers": {
+    "x-nextjs-stale-time": "300",
+    "x-nextjs-prerender": "1",
+    "x-next-cache-tags": "_N_T_/layout,_N_T_/admin/layout,_N_T_/admin/(academic-workspace)/layout,_N_T_/admin/(academic-workspace)/promotion-policies/layout,_N_T_/admin/(academic-workspace)/promotion-policies/page,_N_T_/admin/promotion-policies"
+  },
+  "segmentPaths": [
+    "/_tree",
+    "/_full",
+    "/admin/!KGFjYWRlbWljLXdvcmtzcGFjZSk/promotion-policies/__PAGE__",
+    "/admin/!KGFjYWRlbWljLXdvcmtzcGFjZSk/promotion-policies",
+    "/admin/!KGFjYWRlbWljLXdvcmtzcGFjZSk",
+    "/admin",
+    "/_index",
+    "/_head"
+  ]
+}

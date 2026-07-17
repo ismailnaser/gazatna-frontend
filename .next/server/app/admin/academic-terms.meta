@@ -1,0 +1,17 @@
+{
+  "headers": {
+    "x-nextjs-stale-time": "300",
+    "x-nextjs-prerender": "1",
+    "x-next-cache-tags": "_N_T_/layout,_N_T_/admin/layout,_N_T_/admin/(academic-workspace)/layout,_N_T_/admin/(academic-workspace)/academic-terms/layout,_N_T_/admin/(academic-workspace)/academic-terms/page,_N_T_/admin/academic-terms"
+  },
+  "segmentPaths": [
+    "/_tree",
+    "/_full",
+    "/admin/!KGFjYWRlbWljLXdvcmtzcGFjZSk/academic-terms/__PAGE__",
+    "/admin/!KGFjYWRlbWljLXdvcmtzcGFjZSk/academic-terms",
+    "/admin/!KGFjYWRlbWljLXdvcmtzcGFjZSk",
+    "/admin",
+    "/_index",
+    "/_head"
+  ]
+}

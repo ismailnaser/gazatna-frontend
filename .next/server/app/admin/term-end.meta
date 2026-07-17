@@ -1,0 +1,17 @@
+{
+  "headers": {
+    "x-nextjs-stale-time": "300",
+    "x-nextjs-prerender": "1",
+    "x-next-cache-tags": "_N_T_/layout,_N_T_/admin/layout,_N_T_/admin/(academic-workspace)/layout,_N_T_/admin/(academic-workspace)/term-end/layout,_N_T_/admin/(academic-workspace)/term-end/page,_N_T_/admin/term-end"
+  },
+  "segmentPaths": [
+    "/_tree",
+    "/_full",
+    "/admin/!KGFjYWRlbWljLXdvcmtzcGFjZSk/term-end/__PAGE__",
+    "/admin/!KGFjYWRlbWljLXdvcmtzcGFjZSk/term-end",
+    "/admin/!KGFjYWRlbWljLXdvcmtzcGFjZSk",
+    "/admin",
+    "/_index",
+    "/_head"
+  ]
+}
