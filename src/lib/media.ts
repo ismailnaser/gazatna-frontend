@@ -1,9 +1,18 @@
-// Keep media URLs same-origin; Next rewrites `/media/*` to backend.
+// Media files live on the Django origin.
+// - Local: NEXT_PUBLIC_API_URL=/api → use /media (Next rewrites to backend)
+// - Production subdomain: NEXT_PUBLIC_API_URL=https://django.../api → use that host
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "/api";
 
 export function mediaOrigin(): string {
-  // When API_BASE is `/api`, origin is empty (same host).
   return API_BASE.replace(/\/api\/?$/, "");
+}
+
+function joinOrigin(origin: string, path: string): string {
+  if (!origin) return path;
+  if (origin.startsWith("http://") || origin.startsWith("https://")) {
+    return `${origin.replace(/\/$/, "")}${path.startsWith("/") ? path : `/${path}`}`;
+  }
+  return path;
 }
 
 export function resolveMediaUrl(url?: string | null): string | null {
@@ -14,7 +23,9 @@ export function resolveMediaUrl(url?: string | null): string | null {
     try {
       const parsed = new URL(url);
       if (parsed.pathname.startsWith("/media/")) {
-        return `${parsed.pathname}${parsed.search}`;
+        const path = `${parsed.pathname}${parsed.search}`;
+        // Point to Django origin when API is absolute (django.gzs.edu.ps).
+        return joinOrigin(origin, path);
       }
     } catch {
       return url;
@@ -22,10 +33,10 @@ export function resolveMediaUrl(url?: string | null): string | null {
     return url;
   }
 
-  if (url.startsWith("/media/")) return url;
-  if (url.startsWith("media/")) return `/${url}`;
+  if (url.startsWith("/media/")) return joinOrigin(origin, url);
+  if (url.startsWith("media/")) return joinOrigin(origin, `/${url}`);
 
-  return `${origin}${url.startsWith("/") ? url : `/${url}`}`;
+  return joinOrigin(origin, url.startsWith("/") ? url : `/${url}`);
 }
 
 export async function downloadMediaFile(url: string, filename: string): Promise<void> {

@@ -29,12 +29,9 @@ export function AppLoadingScreen({
       </div>
 
       <div className="relative flex w-full max-w-sm flex-col items-center text-center">
-        <div className="loading-logo-pulse mb-6 rounded-3xl bg-white p-5 shadow-sm ring-1 ring-neutral-100">
-          <Logo variant="icon" href={undefined} className="h-16 w-16 sm:h-20 sm:w-20" />
+        <div className="loading-logo-pulse mb-6 rounded-3xl bg-white px-6 py-4 shadow-sm ring-1 ring-neutral-100">
+          <Logo href={undefined} className="h-14 w-auto sm:h-16" />
         </div>
-
-        <h1 className="text-lg font-bold text-p-black sm:text-xl">مدرسة غزتنا الخاصة</h1>
-        <div className="mt-2 h-1 w-14 rounded-full bg-p-red" />
 
         <p className="mt-5 text-sm font-medium text-p-black/55">{message}</p>
 

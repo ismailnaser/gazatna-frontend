@@ -16,7 +16,7 @@ export function DashboardHeader() {
     <>
       <header className="sticky top-0 z-40 flex h-16 items-center justify-between gap-3 border-b border-neutral-200 bg-white px-4 sm:px-6">
         <div className="flex min-w-0 shrink-0 items-center gap-2 sm:gap-3">
-          <Logo variant="icon" />
+          <Logo variant="full" />
         </div>
 
         <div className="flex min-w-0 flex-1 justify-center">

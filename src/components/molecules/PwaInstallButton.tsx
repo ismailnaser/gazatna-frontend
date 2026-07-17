@@ -45,7 +45,7 @@ function InstallGuide({
 
 export function PwaInstallButton({ className, compact = false }: PwaInstallButtonProps) {
   const { canShow, showIosHint, installing, install } = usePwaInstall();
-  const [guide, setGuide] = useState<"ios" | "desktop" | null>(null);
+  const [guide, setGuide] = useState<"ios" | null>(null);
   const guideRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -72,24 +72,16 @@ export function PwaInstallButton({ className, compact = false }: PwaInstallButto
     const installed = await install();
     if (installed) return;
 
+    // Only show guidance when iOS needs the Share sheet steps.
     if (showIosHint) {
       setGuide("ios");
-      return;
     }
-
-    setGuide("desktop");
   }
 
   const iosSteps = [
     "اضغط زر المشاركة في أسفل أو أعلى المتصفح.",
     "اختر «إضافة إلى الشاشة الرئيسية».",
     "اضغط «إضافة» لتثبيت تطبيق غزتنا.",
-  ];
-
-  const desktopSteps = [
-    "متصفح Cursor لا يدعم التثبيت المباشر.",
-    "انسخ الرابط وافتحه في Chrome أو Edge.",
-    "ثم اضغط «تثبيت» مرة أخرى أو من قائمة المتصفح (⋮) → تثبيت التطبيق.",
   ];
 
   return (
@@ -119,14 +111,6 @@ export function PwaInstallButton({ className, compact = false }: PwaInstallButto
         <InstallGuide
           title="تثبيت على iPhone / iPad"
           steps={iosSteps}
-          onClose={() => setGuide(null)}
-        />
-      ) : null}
-
-      {guide === "desktop" ? (
-        <InstallGuide
-          title="التثبيت غير متاح هنا"
-          steps={desktopSteps}
           onClose={() => setGuide(null)}
         />
       ) : null}

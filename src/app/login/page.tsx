@@ -47,7 +47,7 @@ export default function LoginPage() {
     <div className="flex min-h-screen flex-col items-center justify-center bg-white px-4">
       <div className="w-full max-w-md">
         <div className="mb-8 text-center">
-          <Logo variant="icon" className="mx-auto h-12 w-12" />
+          <Logo className="mx-auto h-12 w-auto" />
           <h1 className="mt-4 text-2xl font-bold text-p-green">تسجيل الدخول</h1>
           <div className="mx-auto mt-2 h-1 w-12 rounded-full bg-p-red" />
         </div>
