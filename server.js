@@ -93,7 +93,7 @@ function proxyBackend(req, res) {
 app
   .prepare()
   .then(() => {
-    createServer(async (req, res) => {
+    http.createServer(async (req, res) => {
       try {
         const parsedUrl = parse(req.url || "/", true);
         const pathname = parsedUrl.pathname || "/";
