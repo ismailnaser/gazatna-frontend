@@ -6,6 +6,7 @@ import { Alert } from "@/components/atoms/Alert";
 import { Button } from "@/components/atoms/Button";
 import { Input } from "@/components/atoms/Input";
 import { Select } from "@/components/atoms/Select";
+import { Textarea } from "@/components/atoms/Textarea";
 import { FileUploadField } from "@/components/molecules/FileUploadField";
 import { GradeSectionClassPicker } from "@/components/shared/GradeSectionClassPicker";
 import { useAuth } from "@/context/AuthContext";
@@ -30,7 +31,7 @@ function FormSection({
   children: React.ReactNode;
 }) {
   return (
-    <section className="overflow-hidden rounded-2xl border border-neutral-100 bg-white shadow-sm">
+    <section className="overflow-hidden rounded-2xl border border-neutral-100 bg-neutral-50 shadow-sm">
       <header className="border-b border-neutral-100 bg-neutral-50/70 px-3 py-2.5 sm:px-4">
         <h3 className="text-sm font-bold text-p-black">{title}</h3>
         {description ? <p className="mt-0.5 text-xs text-p-black/50">{description}</p> : null}
@@ -100,7 +101,7 @@ export function AdminStudentFormPanel({
   }
 
   return (
-    <article className="overflow-hidden rounded-2xl border border-brand-blue/20 bg-white shadow-sm">
+    <article className="overflow-hidden rounded-2xl border border-brand-blue/20 bg-neutral-50 shadow-sm">
       <header className="flex items-start justify-between gap-3 border-b border-neutral-100 bg-brand-blue/5 px-4 py-3 sm:px-5">
         <div>
           <p className="text-xs font-semibold text-brand-blue">
@@ -192,6 +193,38 @@ export function AdminStudentFormPanel({
                   defaultValue={editing?.isActive !== false ? "true" : "false"}
                 />
               ) : null}
+            </div>
+          </FormSection>
+
+          <FormSection
+            title="التواصل والتقييم"
+            description="بيانات التواصل مع ولي الأمر وتقييم موجز للطالب."
+          >
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Input
+                label="رقم جوال ولي الأمر"
+                name="parentPhone"
+                type="tel"
+                defaultValue={editing?.parentPhone ?? ""}
+                placeholder="05xxxxxxxx"
+                dir="ltr"
+              />
+              <Input
+                label="العنوان"
+                name="address"
+                defaultValue={editing?.address ?? ""}
+                placeholder="المدينة / الحي"
+                className="sm:col-span-1"
+              />
+              <div className="sm:col-span-2">
+                <Textarea
+                  label="تقييم الطالب"
+                  name="evaluation"
+                  defaultValue={editing?.evaluation ?? ""}
+                  placeholder="ملاحظات أكاديمية أو سلوكية مختصرة (اختياري)"
+                  className="min-h-[88px]"
+                />
+              </div>
             </div>
           </FormSection>
 

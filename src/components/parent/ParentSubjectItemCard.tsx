@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import type { LucideIcon } from "lucide-react";
@@ -63,7 +63,7 @@ function SubjectCardShell({
   const card = (
     <article
       className={cn(
-        "overflow-hidden rounded-2xl border border-neutral-100 bg-white shadow-sm transition-shadow",
+        "overflow-hidden rounded-2xl border border-neutral-100 bg-neutral-50 shadow-sm transition-shadow",
         href && "hover:shadow-md",
         className
       )}

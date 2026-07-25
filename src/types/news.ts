@@ -89,9 +89,18 @@ export type AdminAnalytics = {
   overdueInstallments?: number;
   pendingAdmissions?: number;
   newMessages?: number;
+  registeredStudents?: number;
+  previousYearRegisteredStudents?: number;
+  studentsGrowthPercent?: number | null;
+  academicYear?: string | null;
+  previousAcademicYear?: string | null;
+  activeStudents?: number;
+  totalStudents?: number;
   urgentTasks: Array<{ id: string; text: string; type: string }>;
   gradeChart: Array<{ label: string; value: number }>;
   feesChart: Array<{ label: string; value: number }>;
+  studentsChart?: Array<{ label: string; value: number }>;
+  yearlyStudentsChart?: Array<{ label: string; value: number }>;
 };
 
 export const emptyAdminAnalytics: AdminAnalytics = {
@@ -103,7 +112,16 @@ export const emptyAdminAnalytics: AdminAnalytics = {
   overdueInstallments: 0,
   pendingAdmissions: 0,
   newMessages: 0,
+  registeredStudents: 0,
+  previousYearRegisteredStudents: 0,
+  studentsGrowthPercent: null,
+  academicYear: null,
+  previousAcademicYear: null,
+  activeStudents: 0,
+  totalStudents: 0,
   urgentTasks: [],
   gradeChart: [],
   feesChart: [],
+  studentsChart: [],
+  yearlyStudentsChart: [],
 };

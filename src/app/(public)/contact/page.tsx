@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import { Alert } from "@/components/atoms/Alert";
@@ -94,7 +94,7 @@ export default function ContactPage() {
         ) : (
           <form
             onSubmit={handleSubmit}
-            className="space-y-4 rounded-2xl border border-neutral-100 bg-white p-6 shadow-sm"
+            className="space-y-4 rounded-2xl border border-neutral-100 bg-neutral-50 p-6 shadow-sm"
           >
             {error && <Alert variant="error">{error}</Alert>}
             <Input label="الاسم" name="name" required />

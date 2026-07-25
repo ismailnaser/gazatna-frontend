@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Alert } from "@/components/atoms/Alert";
@@ -92,6 +92,9 @@ export default function AdminStudentsPage() {
           student.name,
           student.studentNumber,
           student.nationalId,
+          student.parentPhone,
+          student.address,
+          student.evaluation,
           student.username,
           formatClassLabel(student.grade, student.section),
         ]
@@ -272,6 +275,9 @@ export default function AdminStudentsPage() {
       const payload = new FormData();
       payload.append("name", String(form.get("name") ?? ""));
       payload.append("nationalId", nationalId);
+      payload.append("parentPhone", String(form.get("parentPhone") ?? "").trim());
+      payload.append("address", String(form.get("address") ?? "").trim());
+      payload.append("evaluation", String(form.get("evaluation") ?? "").trim());
       payload.append("classId", String(Number(classId)));
       for (const row of docRows) {
         if (!row.file) continue;
@@ -329,6 +335,9 @@ export default function AdminStudentsPage() {
       const updated = (await api.updateAdminStudent(editing.id, {
         name: form.get("name"),
         nationalId,
+        parentPhone: String(form.get("parentPhone") ?? "").trim(),
+        address: String(form.get("address") ?? "").trim(),
+        evaluation: String(form.get("evaluation") ?? "").trim(),
         classId: Number(classId),
         is_active: form.get("isActive") === "true",
       })) as Record<string, unknown>;
@@ -431,7 +440,7 @@ export default function AdminStudentsPage() {
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2">
-        <div className="flex items-center gap-3 rounded-xl border border-neutral-100 bg-white px-4 py-3 shadow-sm">
+        <div className="flex items-center gap-3 rounded-xl border border-neutral-100 bg-neutral-50 px-4 py-3 shadow-sm">
           <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-blue/10 text-brand-blue">
             <Users className="h-5 w-5" />
           </span>
@@ -440,7 +449,7 @@ export default function AdminStudentsPage() {
             <p className="text-lg font-bold text-p-black">{students.length}</p>
           </div>
         </div>
-        <div className="flex items-center gap-3 rounded-xl border border-neutral-100 bg-white px-4 py-3 shadow-sm">
+        <div className="flex items-center gap-3 rounded-xl border border-neutral-100 bg-neutral-50 px-4 py-3 shadow-sm">
           <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-orange/10 text-brand-orange">
             <Search className="h-5 w-5" />
           </span>
@@ -451,7 +460,7 @@ export default function AdminStudentsPage() {
         </div>
       </div>
 
-      <section className="rounded-2xl border border-neutral-100 bg-white shadow-sm">
+      <section className="rounded-2xl border border-neutral-100 bg-neutral-50 shadow-sm">
         <header className="relative z-10 space-y-3 border-b border-neutral-100 bg-neutral-50/70 px-3 py-3 sm:px-4 sm:py-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h2 className="text-sm font-bold text-p-black">بحث وتصفية</h2>
@@ -536,7 +545,7 @@ export default function AdminStudentsPage() {
           aria-modal="true"
           onClick={() => setConfirmReset(null)}
         >
-          <div className="w-full max-w-lg rounded-2xl border border-neutral-100 bg-white p-5 shadow-lg sm:p-6">
+          <div className="w-full max-w-lg rounded-2xl border border-neutral-100 bg-neutral-50 p-5 shadow-lg sm:p-6">
             <p className="text-base font-bold text-p-black">تأكيد تغيير كلمة المرور</p>
             <p className="mt-2 text-sm text-p-black/70">
               إعادة تعيين كلمة مرور الطالب{" "}

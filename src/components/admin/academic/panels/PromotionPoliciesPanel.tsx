@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Badge } from "@/components/atoms/Badge";
@@ -352,7 +352,7 @@ export function PromotionPoliciesPanel() {
                 </div>
 
                 {formMode === "create" ? (
-                  <div className="rounded-xl border border-neutral-100 bg-white p-3">
+                  <div className="rounded-xl border border-neutral-100 bg-neutral-50 p-3">
                     <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                       <p className="text-sm font-bold text-p-black">اختر المراحل</p>
                       {pickerGrades.length > 0 ? (

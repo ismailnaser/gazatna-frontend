@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Button } from "@/components/atoms/Button";
@@ -102,7 +102,7 @@ export function GradeSectionClassMultiSelect({
             />
           </div>
 
-          <div className="sticky bottom-0 border-t border-neutral-100 bg-white px-3 py-2.5">
+          <div className="sticky bottom-0 border-t border-neutral-100 bg-neutral-50 px-3 py-2.5">
             <button
               type="button"
               onClick={() => setOpen(false)}

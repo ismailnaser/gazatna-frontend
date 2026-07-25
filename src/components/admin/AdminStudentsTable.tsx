@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 import type { AdminStudent } from "@/types";
 import { FileText, KeyRound, Pencil, Power, Trash2 } from "lucide-react";
 
-const STUDENTS_TABLE = "w-full min-w-[960px] border-collapse border border-neutral-200 text-sm";
+const STUDENTS_TABLE = "w-full min-w-[1280px] border-collapse border border-neutral-200 text-sm";
 const STUDENTS_TH =
   "border-b border-e border-neutral-200 bg-neutral-50 px-3 py-3 text-start text-xs font-bold text-p-black/55 last:border-e-0 sm:px-4";
 const STUDENTS_TD =
@@ -45,19 +45,25 @@ export function AdminStudentsTable({
     <div className="-mx-3 overflow-x-auto sm:mx-0">
       <table className={STUDENTS_TABLE}>
         <colgroup>
-          <col className="w-[10%]" />
-          <col className="w-[20%]" />
+          <col className="w-[8%]" />
           <col className="w-[12%]" />
-          <col className="w-[14%]" />
+          <col className="w-[9%]" />
+          <col className="w-[10%]" />
           <col className="w-[10%]" />
           <col className="w-[12%]" />
-          <col className="w-[22%]" />
+          <col className="w-[10%]" />
+          <col className="w-[7%]" />
+          <col className="w-[9%]" />
+          <col className="w-[13%]" />
         </colgroup>
         <thead>
           <tr>
             <th className={STUDENTS_TH}>رقم الطالب</th>
             <th className={STUDENTS_TH}>اسم الطالب</th>
             <th className={STUDENTS_TH}>رقم هوية الطالب</th>
+            <th className={STUDENTS_TH}>جوال ولي الأمر</th>
+            <th className={STUDENTS_TH}>العنوان</th>
+            <th className={STUDENTS_TH}>تقييم الطالب</th>
             <th className={STUDENTS_TH}>الفصل</th>
             <th className={STUDENTS_TH}>الحالة</th>
             <th className={STUDENTS_TH}>الوثائق</th>
@@ -81,6 +87,19 @@ export function AdminStudentsTable({
               </td>
               <td className={cn(STUDENTS_TD, "text-p-black/75")} dir="ltr">
                 {student.nationalId || "—"}
+              </td>
+              <td className={cn(STUDENTS_TD, "text-p-black/75")} dir="ltr">
+                {student.parentPhone || "—"}
+              </td>
+              <td className={cn(STUDENTS_TD, "leading-snug text-p-black/75")}>
+                {student.address || "—"}
+              </td>
+              <td className={cn(STUDENTS_TD, "leading-snug text-p-black/75")}>
+                {student.evaluation ? (
+                  <span className="line-clamp-3 whitespace-pre-wrap">{student.evaluation}</span>
+                ) : (
+                  "—"
+                )}
               </td>
               <td className={cn(STUDENTS_TD, "font-medium leading-snug text-p-black/75")}>
                 {formatClassLabel(student.grade, student.section)}

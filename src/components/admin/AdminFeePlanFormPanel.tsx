@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useMemo } from "react";
 import { Button } from "@/components/atoms/Button";
@@ -223,12 +223,12 @@ export function AdminFeePlanFormPanel({
       </section>
 
       <section className="overflow-hidden rounded-2xl border border-neutral-100">
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-neutral-100 bg-white px-4 py-3 sm:px-5">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-neutral-100 bg-neutral-50 px-4 py-3 sm:px-5">
           <div>
             <h4 className="text-sm font-bold text-p-black">جدول الأقساط</h4>
             <p className="mt-0.5 text-xs text-p-black/50">
               {expectedCount > 0
-                ? `يُنشأ تلقائياً ${expectedCount} دفعة — كل دفعة تبدأ بعد انتهاء السابقة.`
+                ? `يُنشأ تلقائياً ${expectedCount} دفعة — يمكنك تسمية كل دفعة (مثل: رسوم حجز مقعد) وتعديل المبلغ والمواعيد.`
                 : "حدّد عدد الدفعات أولاً لعرض جدول الأقساط."}
             </p>
           </div>
@@ -248,10 +248,10 @@ export function AdminFeePlanFormPanel({
               أدخل عدد الدفعات في البيانات الأساسية لإنشاء جدول الأقساط تلقائياً.
             </p>
           ) : (
-            <table className="w-full min-w-[720px] text-sm">
+            <table className="w-full min-w-[860px] text-sm">
               <thead>
                 <tr className="border-b border-neutral-100 bg-neutral-50 text-p-black/55">
-                  <th className="px-3 py-2.5 text-start text-xs font-bold sm:px-4">الدفعة</th>
+                  <th className="px-3 py-2.5 text-start text-xs font-bold sm:px-4">اسم الدفعة</th>
                   <th className="px-3 py-2.5 text-start text-xs font-bold sm:px-4">المبلغ (₪)</th>
                   <th className="px-3 py-2.5 text-start text-xs font-bold sm:px-4">بداية الدفع</th>
                   <th className="px-3 py-2.5 text-start text-xs font-bold sm:px-4">آخر موعد</th>
@@ -264,15 +264,32 @@ export function AdminFeePlanFormPanel({
                   const minStart = getInstallmentStartMin(index, form.installments, period);
                   const minEnd = row.startDate || minStart || period?.start;
                   const maxDate = period?.end;
+                  const nameLabel = row.name?.trim() || `دفعة ${row.order}`;
 
                   return (
-                    <tr key={row.order} className="border-b border-neutral-50 align-top last:border-0">
-                      <td className="px-3 py-3 font-semibold text-p-black sm:px-4">دفعة {row.order}</td>
+                    <tr key={row.order} className="border-b border-neutral-50 align-middle last:border-0">
+                      <td className="px-3 py-3 sm:px-4">
+                        <Input
+                          id={`installment-name-${row.order}`}
+                          aria-label={`اسم الدفعة ${row.order}`}
+                          value={row.name ?? ""}
+                          placeholder="مثال: رسوم حجز مقعد"
+                          onChange={(e) => {
+                            const installments = [...form.installments];
+                            installments[index] = {
+                              ...row,
+                              name: e.target.value,
+                            };
+                            onChange({ ...form, installments });
+                          }}
+                          className="min-w-[160px] py-2.5"
+                        />
+                      </td>
                       <td className="px-3 py-3 sm:px-4">
                         <NumberFieldWithKeypad
                           compact
                           fieldId={`installment-amount-${row.order}`}
-                          label={`مبلغ دفعة ${row.order}`}
+                          label={`مبلغ ${nameLabel}`}
                           value={String(row.amount)}
                           onChange={(value) => {
                             const installments = [...form.installments];
@@ -286,12 +303,13 @@ export function AdminFeePlanFormPanel({
                           onDeactivate={() => onChange(syncLastInstallmentAmount(form))}
                           min={0}
                           max={999999}
-                          inputClassName="w-28 py-1.5"
+                          inputClassName="w-28 py-2.5"
                         />
                       </td>
                       <td className="px-3 py-3 sm:px-4">
                         <Input
-                          label="البداية"
+                          id={`installment-start-${row.order}`}
+                          aria-label={`بداية الدفعة ${row.order}`}
                           type="date"
                           value={row.startDate ?? ""}
                           min={minStart}
@@ -307,11 +325,13 @@ export function AdminFeePlanFormPanel({
                               )
                             )
                           }
+                          className="py-2.5"
                         />
                       </td>
                       <td className="px-3 py-3 sm:px-4">
                         <Input
-                          label="النهاية"
+                          id={`installment-end-${row.order}`}
+                          aria-label={`نهاية الدفعة ${row.order}`}
                           type="date"
                           value={row.endDate ?? ""}
                           min={minEnd}
@@ -327,6 +347,7 @@ export function AdminFeePlanFormPanel({
                               )
                             )
                           }
+                          className="py-2.5"
                         />
                       </td>
                       <td className="px-3 py-3 sm:px-4">

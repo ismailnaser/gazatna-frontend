@@ -17,7 +17,7 @@ import {
 } from "@/lib/adminRoles";
 import type { AdminAnalytics } from "@/types/news";
 import { emptyAdminAnalytics } from "@/types/news";
-import { BarChart3, Bell, CreditCard, Settings2 } from "lucide-react";
+import { BarChart3, Bell, CreditCard, Settings2, Users } from "lucide-react";
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -32,6 +32,20 @@ export default function AdminDashboard() {
     user && isAdminRole(user.role) && canAccessAdminAnalyticsTab(user.role, "grades");
   const canOpenFeesAnalytics =
     user && isAdminRole(user.role) && canAccessAdminAnalyticsTab(user.role, "fees");
+  const canOpenStudentsAnalytics =
+    user && isAdminRole(user.role) && canAccessAdminAnalyticsTab(user.role, "students");
+
+  const growth = data.studentsGrowthPercent;
+  const growthLabel =
+    growth == null ? "—" : `${growth > 0 ? "+" : ""}${growth}%`;
+  const growthClass =
+    growth == null
+      ? "text-p-black"
+      : growth > 0
+        ? "text-p-green"
+        : growth < 0
+          ? "text-p-red"
+          : "text-p-black";
 
   useEffect(() => {
     api.getAdminAnalytics()
@@ -61,10 +75,48 @@ export default function AdminDashboard() {
 
       <AcademicPeriodBanner />
 
-      <div className="mb-8 grid gap-4 sm:grid-cols-2">
+      <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {canOpenStudentsAnalytics ? (
+          <Card
+            className="flex cursor-pointer items-center gap-4 transition-colors hover:bg-neutral-100"
+            onClick={() => router.push("/admin/analytics?tab=students")}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") router.push("/admin/analytics?tab=students");
+            }}
+          >
+            <span className="flex h-12 w-12 items-center justify-center rounded-full bg-p-green/10">
+              <Users className="h-6 w-6 text-p-green" />
+            </span>
+            <div>
+              <p className="text-sm text-p-black/50">
+                المسجلون خلال السنة
+                {data.academicYear ? ` ${data.academicYear}` : ""}
+              </p>
+              <p className="text-3xl font-bold text-p-black">{data.registeredStudents ?? 0}</p>
+              <p className={`mt-0.5 text-xs font-semibold ${growthClass}`}>
+                ازدياد عن السنة السابقة: {growthLabel}
+              </p>
+            </div>
+          </Card>
+        ) : (
+          <Card className="flex items-center gap-4">
+            <span className="flex h-12 w-12 items-center justify-center rounded-full bg-p-green/10">
+              <Users className="h-6 w-6 text-p-green" />
+            </span>
+            <div>
+              <p className="text-sm text-p-black/50">
+                عدد الطلاب المسجلين خلال السنة الدراسية
+                {data.academicYear ? ` ${data.academicYear}` : ""}
+              </p>
+              <p className="text-3xl font-bold text-p-black">{data.registeredStudents ?? 0}</p>
+            </div>
+          </Card>
+        )}
         {canOpenGradesAnalytics && (
         <Card
-          className="flex cursor-pointer items-center gap-4 transition-colors hover:bg-neutral-50"
+          className="flex cursor-pointer items-center gap-4 transition-colors hover:bg-neutral-100"
           onClick={() => router.push("/admin/analytics?tab=grades")}
           role="button"
           tabIndex={0}
@@ -83,7 +135,7 @@ export default function AdminDashboard() {
         )}
         {canOpenFeesAnalytics && (
         <Card
-          className="flex cursor-pointer items-center gap-4 transition-colors hover:bg-neutral-50"
+          className="flex cursor-pointer items-center gap-4 transition-colors hover:bg-neutral-100"
           onClick={() => router.push("/admin/analytics?tab=fees")}
           role="button"
           tabIndex={0}

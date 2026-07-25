@@ -20,9 +20,33 @@ import { cn } from "@/lib/utils";
 type AnalyticsDetails = {
   avgGrade: number;
   feesCollected: number;
+  pendingAdmissions?: number;
+  registeredStudents: number;
+  previousYearRegisteredStudents?: number;
+  studentsGrowthPercent?: number | null;
+  academicYear?: string | null;
+  previousAcademicYear?: string | null;
+  activeStudents?: number;
+  inactiveStudents?: number;
+  totalStudents?: number;
   gradeChart: Array<{ label: string; value: number }>;
   feesChart: Array<{ label: string; value: number }>;
+  studentsChart?: Array<{ label: string; value: number }>;
+  yearlyStudentsChart?: Array<{ label: string; value: number }>;
 };
+
+function formatGrowth(value: number | null | undefined) {
+  if (value == null) return "—";
+  const sign = value > 0 ? "+" : "";
+  return `${sign}${value}%`;
+}
+
+function growthTone(value: number | null | undefined) {
+  if (value == null) return "text-p-black";
+  if (value > 0) return "text-p-green";
+  if (value < 0) return "text-p-red";
+  return "text-p-black";
+}
 
 export default function AdminAnalyticsDetailsPage() {
   const searchParams = useSearchParams();
@@ -34,8 +58,8 @@ export default function AdminAnalyticsDetailsPage() {
     return getAdminAnalyticsTabs(user.role);
   }, [user]);
 
-  const requestedTab = (searchParams.get("tab") as AdminAnalyticsTab | null) ?? allowedTabs[0] ?? "grades";
-  const activeTab = allowedTabs.includes(requestedTab) ? requestedTab : allowedTabs[0] ?? "grades";
+  const requestedTab = (searchParams.get("tab") as AdminAnalyticsTab | null) ?? allowedTabs[0] ?? "students";
+  const activeTab = allowedTabs.includes(requestedTab) ? requestedTab : allowedTabs[0] ?? "students";
   const [activeTabState, setActiveTabState] = useState<AdminAnalyticsTab>(activeTab);
 
   useEffect(() => {
@@ -109,10 +133,13 @@ export default function AdminAnalyticsDetailsPage() {
 
   const tabs = (
     [
+      { id: "students", label: "أعداد الطلاب" },
       { id: "grades", label: "نسب النجاح" },
       { id: "fees", label: "تحصيل الرسوم" },
     ] as const satisfies ReadonlyArray<{ id: AdminAnalyticsTab; label: string }>
   ).filter((t) => user && isAdminRole(user.role) && canAccessAdminAnalyticsTab(user.role, t.id));
+
+  const growth = data?.studentsGrowthPercent;
 
   return (
     <div>
@@ -121,7 +148,6 @@ export default function AdminAnalyticsDetailsPage() {
         description="فلترة حسب المرحلة والفترة الزمنية"
       />
 
-      {/* Tabs */}
       <div className="mb-6 flex gap-2 border-b border-neutral-200">
         {tabs.map((t) => (
           <button
@@ -140,7 +166,6 @@ export default function AdminAnalyticsDetailsPage() {
         ))}
       </div>
 
-      {/* Filters */}
       <Card className="mb-6">
         <div className="grid gap-4 sm:grid-cols-3">
           <div className="flex flex-col gap-1.5">
@@ -207,50 +232,120 @@ export default function AdminAnalyticsDetailsPage() {
         {error && <p className="mt-3 text-sm font-semibold text-p-red">{error}</p>}
       </Card>
 
-      {/* Summary tile */}
-      <div className="mb-6">
-        {activeTabState === "grades" ? (
-          <Card className="flex items-center gap-4">
-            <div>
-              <p className="text-sm text-p-black/50">متوسط الدرجات</p>
-              <p className="text-3xl font-bold text-p-black">{data?.avgGrade ?? 0}%</p>
-            </div>
-          </Card>
-        ) : (
-          <Card className="flex items-center gap-4">
-            <div>
-              <p className="text-sm text-p-black/50">نسبة الرسوم المحصلة</p>
-              <p className="text-3xl font-bold text-p-black">{data?.feesCollected ?? 0}%</p>
-            </div>
-          </Card>
-        )}
-      </div>
+      {activeTabState === "students" ? (
+        <>
+          <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <Card>
+              <p className="text-sm text-p-black/50">
+                المسجلون خلال السنة الدراسية
+                {data?.academicYear ? ` ${data.academicYear}` : ""}
+              </p>
+              <p className="mt-1 text-3xl font-bold text-p-black">{data?.registeredStudents ?? 0}</p>
+            </Card>
+            <Card>
+              <p className="text-sm text-p-black/50">
+                المسجلون في السنة السابقة
+                {data?.previousAcademicYear ? ` ${data.previousAcademicYear}` : ""}
+              </p>
+              <p className="mt-1 text-3xl font-bold text-p-black">
+                {data?.previousYearRegisteredStudents ?? 0}
+              </p>
+            </Card>
+            <Card>
+              <p className="text-sm text-p-black/50">نسبة ازدياد الطلاب</p>
+              <p className={cn("mt-1 text-3xl font-bold", growthTone(growth))}>
+                {formatGrowth(growth)}
+              </p>
+              {growth == null && (data?.registeredStudents ?? 0) > 0 ? (
+                <p className="mt-1 text-xs text-p-black/45">لا توجد تسجيلات في السنة السابقة للمقارنة</p>
+              ) : null}
+            </Card>
+            <Card>
+              <p className="text-sm text-p-black/50">إجمالي الطلاب</p>
+              <p className="mt-1 text-3xl font-bold text-p-black">{data?.totalStudents ?? 0}</p>
+            </Card>
+            <Card>
+              <p className="text-sm text-p-black/50">الطلاب النشطون</p>
+              <p className="mt-1 text-3xl font-bold text-p-black">{data?.activeStudents ?? 0}</p>
+            </Card>
+            <Card>
+              <p className="text-sm text-p-black/50">غير النشطين / طلبات قيد الانتظار</p>
+              <p className="mt-1 text-3xl font-bold text-p-black">
+                {data?.inactiveStudents ?? 0}
+                <span className="mx-1 text-lg font-semibold text-p-black/35">/</span>
+                {data?.pendingAdmissions ?? 0}
+              </p>
+            </Card>
+          </div>
 
-      {/* Chart */}
-      {activeTab === "grades" ? (
-        <Card>
-          <h3 className="mb-4 font-bold text-p-black">نسب النجاح حسب المرحلة</h3>
-          {loading ? (
-            <p className="text-sm text-neutral-500">جاري التحميل...</p>
-          ) : data && data.gradeChart.length > 0 ? (
-            <SimpleBarChart data={data.gradeChart} color="bg-p-green" />
-          ) : (
-            <p className="text-sm text-neutral-500">لا توجد بيانات.</p>
-          )}
-        </Card>
+          <div className="grid gap-6 lg:grid-cols-2">
+            <Card>
+              <h3 className="mb-4 font-bold text-p-black">التسجيلات حسب المرحلة (السنة الحالية)</h3>
+              {loading ? (
+                <p className="text-sm text-neutral-500">جاري التحميل...</p>
+              ) : data && (data.studentsChart?.length ?? 0) > 0 ? (
+                <SimpleBarChart data={data.studentsChart ?? []} color="bg-p-green" unit="" />
+              ) : (
+                <p className="text-sm text-neutral-500">لا توجد بيانات.</p>
+              )}
+            </Card>
+            <Card>
+              <h3 className="mb-4 font-bold text-p-black">مقارنة التسجيلات بين السنوات</h3>
+              {loading ? (
+                <p className="text-sm text-neutral-500">جاري التحميل...</p>
+              ) : data && (data.yearlyStudentsChart?.length ?? 0) > 0 ? (
+                <SimpleBarChart data={data.yearlyStudentsChart ?? []} color="bg-brand-blue" unit="" />
+              ) : (
+                <p className="text-sm text-neutral-500">لا توجد بيانات.</p>
+              )}
+            </Card>
+          </div>
+        </>
       ) : (
-        <Card>
-          <h3 className="mb-4 font-bold text-p-black">نسبة الرسوم المحصلة حسب المرحلة</h3>
-          {loading ? (
-            <p className="text-sm text-neutral-500">جاري التحميل...</p>
-          ) : data && data.feesChart.length > 0 ? (
-            <SimpleBarChart data={data.feesChart} color="bg-p-red" />
+        <>
+          <div className="mb-6">
+            {activeTabState === "grades" ? (
+              <Card className="flex items-center gap-4">
+                <div>
+                  <p className="text-sm text-p-black/50">متوسط الدرجات</p>
+                  <p className="text-3xl font-bold text-p-black">{data?.avgGrade ?? 0}%</p>
+                </div>
+              </Card>
+            ) : (
+              <Card className="flex items-center gap-4">
+                <div>
+                  <p className="text-sm text-p-black/50">نسبة الرسوم المحصلة</p>
+                  <p className="text-3xl font-bold text-p-black">{data?.feesCollected ?? 0}%</p>
+                </div>
+              </Card>
+            )}
+          </div>
+
+          {activeTabState === "grades" ? (
+            <Card>
+              <h3 className="mb-4 font-bold text-p-black">نسب النجاح حسب المرحلة</h3>
+              {loading ? (
+                <p className="text-sm text-neutral-500">جاري التحميل...</p>
+              ) : data && data.gradeChart.length > 0 ? (
+                <SimpleBarChart data={data.gradeChart} color="bg-p-green" />
+              ) : (
+                <p className="text-sm text-neutral-500">لا توجد بيانات.</p>
+              )}
+            </Card>
           ) : (
-            <p className="text-sm text-neutral-500">لا توجد بيانات.</p>
+            <Card>
+              <h3 className="mb-4 font-bold text-p-black">نسبة الرسوم المحصلة حسب المرحلة</h3>
+              {loading ? (
+                <p className="text-sm text-neutral-500">جاري التحميل...</p>
+              ) : data && data.feesChart.length > 0 ? (
+                <SimpleBarChart data={data.feesChart} color="bg-p-red" />
+              ) : (
+                <p className="text-sm text-neutral-500">لا توجد بيانات.</p>
+              )}
+            </Card>
           )}
-        </Card>
+        </>
       )}
     </div>
   );
 }
-

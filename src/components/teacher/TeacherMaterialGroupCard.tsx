@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { Badge } from "@/components/atoms/Badge";
@@ -55,7 +55,7 @@ export function TeacherMaterialGroupCard({
   const fileCount = group.attachments?.length ?? 0;
 
   return (
-    <article className="overflow-hidden rounded-2xl border border-neutral-100 bg-white shadow-sm">
+    <article className="overflow-hidden rounded-2xl border border-neutral-100 bg-neutral-50 shadow-sm">
       <div className="h-1 bg-p-green" aria-hidden />
 
       <header className="flex flex-wrap items-center gap-2 border-b border-neutral-100 bg-neutral-50/60 px-3 py-2.5 sm:px-4">

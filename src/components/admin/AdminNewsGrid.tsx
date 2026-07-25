@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useRouter } from "next/navigation";
 import { Badge } from "@/components/atoms/Badge";
@@ -28,7 +28,7 @@ export function AdminNewsGrid({ items, onDelete, onSetFeatured }: AdminNewsGridP
       {items.map((item) => (
         <article
           key={item.id}
-          className="group flex flex-col overflow-hidden rounded-2xl border border-neutral-100 bg-white shadow-sm transition-all hover:border-brand-blue/20 hover:shadow-md"
+          className="group flex flex-col overflow-hidden rounded-2xl border border-neutral-100 bg-neutral-50 shadow-sm transition-all hover:border-brand-blue/20 hover:shadow-md"
         >
           <div className="relative">
             <NewsCover

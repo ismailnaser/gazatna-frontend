@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { Badge } from "@/components/atoms/Badge";
@@ -68,7 +68,7 @@ export function TeacherClassQuizCard({
   const maxScore = quiz.maxScore ?? quizTotalPoints(quiz.questions);
 
   return (
-    <article className="overflow-hidden rounded-2xl border border-neutral-100 bg-white shadow-sm">
+    <article className="overflow-hidden rounded-2xl border border-neutral-100 bg-neutral-50 shadow-sm">
       <div className="h-1 bg-brand-blue" aria-hidden />
 
       <header className="flex flex-wrap items-center gap-2 border-b border-neutral-100 bg-neutral-50/60 px-3 py-2.5 sm:px-4">
@@ -145,7 +145,7 @@ export function TeacherClassQuizCard({
       {isOpen && (
         <div className="space-y-3 border-t border-neutral-100 bg-neutral-50/80 px-3 py-4 sm:px-4">
           {quiz.questions.map((q, i) => (
-            <div key={q.id} className="rounded-xl border border-neutral-100 bg-white p-3">
+            <div key={q.id} className="rounded-xl border border-neutral-100 bg-neutral-50 p-3">
               <p className="text-sm font-semibold text-p-black">
                 {i + 1}. {q.prompt}
               </p>

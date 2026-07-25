@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
@@ -41,6 +41,7 @@ type BlockedStudent = {
   paidFees: number;
   currentInstallment: {
     order: number;
+    name?: string;
     amount: number;
     remaining?: number;
     endDate: string | null;
@@ -82,6 +83,13 @@ function installmentOrderLabel(order: number) {
   return order === 1 ? "الأولى" : `رقم ${order}`;
 }
 
+function installmentName(s: BlockedStudent): string {
+  const name = s.currentInstallment?.name?.trim();
+  if (name) return name;
+  const order = installmentOrder(s);
+  return `الدفعة ${order}`;
+}
+
 function classLabel(grade: string, section?: string) {
   if (!grade) return "—";
   return section ? `${grade} / ${section}` : grade;
@@ -113,7 +121,7 @@ function StatChip({
   };
 
   return (
-    <div className="flex min-w-0 flex-1 items-center gap-2.5 rounded-xl border border-neutral-100 bg-white px-3 py-2.5 shadow-sm">
+    <div className="flex min-w-0 flex-1 items-center gap-2.5 rounded-xl border border-neutral-100 bg-neutral-50 px-3 py-2.5 shadow-sm">
       <span
         className={cn(
           "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg",
@@ -280,7 +288,7 @@ export default function AdminNotificationsPage() {
         ) : null}
       </div>
 
-      <section className="overflow-hidden rounded-2xl border border-neutral-100 bg-white shadow-sm">
+      <section className="overflow-hidden rounded-2xl border border-neutral-100 bg-neutral-50 shadow-sm">
         <header className="space-y-3 border-b border-neutral-100 bg-neutral-50/70 px-3 py-3 sm:px-4 sm:py-4">
           <div>
             <h2 className="text-sm font-bold text-p-black">
@@ -374,12 +382,14 @@ export default function AdminNotificationsPage() {
                               {due} ₪
                             </p>
                             <p className="mt-1 text-xs text-p-black/50">
-                              دفعة {installmentOrderLabel(order)} فقط
+                              {s.currentInstallment?.name?.trim()
+                                ? `«${s.currentInstallment.name.trim()}» فقط`
+                                : `دفعة ${installmentOrderLabel(order)} فقط`}
                             </p>
                           </td>
                           <td className={NOTIFICATIONS_TD}>
                             <p className="font-medium leading-snug text-p-black">
-                              الدفعة {order}
+                              {installmentName(s)}
                             </p>
                             <p className="mt-0.5 text-sm text-p-black/70" dir="ltr">
                               {s.currentInstallment?.amount ?? s.installmentAmount ?? due} ₪

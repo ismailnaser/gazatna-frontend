@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { Badge } from "@/components/atoms/Badge";
@@ -32,7 +32,7 @@ export function QuizSubmissionsGradeList({
   }
 
   return (
-    <div className={cn("overflow-x-auto rounded-xl border border-neutral-100 bg-white", className)}>
+    <div className={cn("overflow-x-auto rounded-xl border border-neutral-100 bg-neutral-50", className)}>
       <table className="w-full min-w-[520px] text-sm">
         <thead>
           <tr className="border-b border-neutral-100 bg-neutral-50 text-xs text-p-black/60">

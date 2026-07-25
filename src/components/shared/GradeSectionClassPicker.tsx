@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useMemo } from "react";
 import { cn } from "@/lib/utils";
@@ -146,7 +146,7 @@ export function GradeSectionClassPicker({
           const selectedCount = countSelectedInGrade(group.sections, value);
 
           return (
-            <div key={group.grade} className="rounded-xl border border-neutral-100 bg-white p-3">
+            <div key={group.grade} className="rounded-xl border border-neutral-100 bg-neutral-50 p-3">
               <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
                 <p className="text-sm font-bold text-p-black">{group.grade}</p>
                 {showBulkActions && mode === "multiple" ? (

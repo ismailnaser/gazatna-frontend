@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { Button } from "@/components/atoms/Button";
 import { Badge } from "@/components/atoms/Badge";
@@ -20,7 +20,7 @@ export function AdminNewsListItem({
   onSetFeatured,
 }: AdminNewsListItemProps) {
   return (
-    <article className="flex gap-4 rounded-2xl border border-neutral-100 bg-white p-4 shadow-sm">
+    <article className="flex gap-4 rounded-2xl border border-neutral-100 bg-neutral-50 p-4 shadow-sm">
       <NewsCover
         imageUrl={item.imageUrl}
         gradient={item.gradient}

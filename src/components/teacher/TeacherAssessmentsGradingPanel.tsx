@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
@@ -33,7 +33,7 @@ function AssessmentRow({
   return (
     <Link
       href={href}
-      className="flex items-center justify-between gap-3 rounded-xl border border-neutral-100 bg-white px-3 py-3 transition-colors hover:border-brand-blue/20 hover:bg-brand-blue/5"
+      className="flex items-center justify-between gap-3 rounded-xl border border-neutral-100 bg-neutral-50 px-3 py-3 transition-colors hover:border-brand-blue/20 hover:bg-brand-blue/5"
     >
       <div className="flex min-w-0 items-start gap-3">
         <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-neutral-50 text-brand-blue">

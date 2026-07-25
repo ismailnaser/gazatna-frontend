@@ -1,4 +1,4 @@
-import { Calendar } from "lucide-react";
+﻿import { Calendar } from "lucide-react";
 import { formatMetaDate } from "@/lib/dateDisplay";
 import { cn } from "@/lib/utils";
 
@@ -16,7 +16,7 @@ export function DateMetaChip({
   return (
     <div
       className={cn(
-        "flex min-w-0 flex-1 items-center gap-2 rounded-xl border border-neutral-100 bg-white shadow-sm",
+        "flex min-w-0 flex-1 items-center gap-2 rounded-xl border border-neutral-100 bg-neutral-50 shadow-sm",
         compact ? "px-2.5 py-2" : "px-3 py-2.5"
       )}
     >

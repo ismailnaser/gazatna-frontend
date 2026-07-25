@@ -138,6 +138,7 @@ export function buildInstallments(
 
     rows.push({
       order: index + 1,
+      name: prev?.name?.trim() || `دفعة ${index + 1}`,
       amount: amounts[index] ?? 0,
       startDate,
       endDate,
@@ -366,24 +367,28 @@ export function validateFeePlanForm(
 
   for (let index = 0; index < rows.length; index += 1) {
     const row = rows[index];
-    const label = `الدفعة ${index + 1}`;
+    const label = row.name?.trim() || `الدفعة ${index + 1}`;
+
+    if (!row.name?.trim()) {
+      return `يرجى إدخال اسم الدفعة ${index + 1}`;
+    }
 
     if (!row.startDate || !row.endDate) {
-      return `يجب تحديد بداية ونهاية ${label}`;
+      return `يجب تحديد بداية ونهاية «${label}»`;
     }
 
     if (row.endDate < row.startDate) {
-      return `تاريخ نهاية ${label} يجب أن يكون بعد تاريخ البداية`;
+      return `تاريخ نهاية «${label}» يجب أن يكون بعد تاريخ البداية`;
     }
 
     if (row.startDate < period.start || row.endDate > period.end) {
-      return `مواعيد ${label} يجب أن تقع ضمن فترة ${period.label} (${period.start} — ${period.end})`;
+      return `مواعيد «${label}» يجب أن تقع ضمن فترة ${period.label} (${period.start} — ${period.end})`;
     }
 
     if (previousEnd) {
       const minStart = dayAfter(previousEnd);
       if (row.startDate < minStart) {
-        return `بداية ${label} يجب أن تكون بعد انتهاء الدفعة السابقة (${previousEnd})`;
+        return `بداية «${label}» يجب أن تكون بعد انتهاء الدفعة السابقة (${previousEnd})`;
       }
     }
 
@@ -401,6 +406,7 @@ export function formatPlanPayload(form: FeePlanFormState) {
   const count = Number(form.installmentsCount) || form.installments.length || 1;
   const installments = form.installments.slice(0, count).map((row, index) => ({
     order: index + 1,
+    name: (row.name ?? "").trim() || `دفعة ${index + 1}`,
     amount: Math.round(Number(row.amount)),
     startDate: row.startDate || null,
     endDate: row.endDate || null,

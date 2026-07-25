@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
@@ -85,6 +85,7 @@ function mapAdmission(row: Record<string, unknown>): AdminAdmissionRow {
     grade: String(row.grade ?? ""),
     parentName: String(row.parentName ?? ""),
     phone: String(row.phone ?? ""),
+    address: row.address ? String(row.address) : "",
     email: String(row.email ?? ""),
     notes: String(row.notes ?? ""),
     status: (row.status as AdminAdmissionRow["status"]) ?? "pending",
@@ -113,7 +114,7 @@ function StatChip({
   };
 
   return (
-    <div className="flex min-w-0 flex-1 items-center gap-2.5 rounded-xl border border-neutral-100 bg-white px-3 py-2.5 shadow-sm">
+    <div className="flex min-w-0 flex-1 items-center gap-2.5 rounded-xl border border-neutral-100 bg-neutral-50 px-3 py-2.5 shadow-sm">
       <span
         className={cn(
           "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg",
@@ -190,6 +191,7 @@ export default function AdminAdmissionsPage() {
         row.nationalId,
         row.parentName,
         row.phone,
+        row.address,
         row.email,
         row.grade,
         row.notes,
@@ -459,9 +461,14 @@ export default function AdminAdmissionsPage() {
                   </p>
                 ) : null}
                 <p>
-                  <span className="text-p-black/55">الهاتف:</span>{" "}
+                  <span className="text-p-black/55">جوال ولي الأمر:</span>{" "}
                   <span dir="ltr">{approveTarget.phone}</span>
                 </p>
+                {approveTarget.address ? (
+                  <p>
+                    <span className="text-p-black/55">العنوان:</span> {approveTarget.address}
+                  </p>
+                ) : null}
                 <p>
                   <span className="text-p-black/55">المرحلة المطلوبة:</span> {approveTarget.grade}
                 </p>

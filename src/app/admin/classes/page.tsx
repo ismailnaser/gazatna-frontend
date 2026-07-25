@@ -453,7 +453,7 @@ export default function AdminClassesPage() {
                 <div
                   key={g.id}
                   className={[
-                    "rounded-2xl border bg-white transition-shadow",
+                    "rounded-2xl border bg-neutral-50 transition-shadow",
                     isDragging ? "border-dashed border-neutral-300 opacity-60" : "border-neutral-100",
                     isDropTarget ? "ring-2 ring-p-green ring-offset-2" : "",
                   ].join(" ")}
@@ -647,7 +647,7 @@ export default function AdminClassesPage() {
                             <div className="overflow-x-auto rounded-xl bg-white">
                               <table className="w-full text-sm">
                                 <thead>
-                                  <tr className="border-b border-neutral-100 bg-white text-p-black/60">
+                                  <tr className="border-b border-neutral-100 bg-neutral-50 text-p-black/60">
                                     <th className="px-4 py-3 text-start font-semibold">الطالب</th>
                                     <th className="px-4 py-3 text-start font-semibold">رقم الطالب</th>
                                     <th className="px-4 py-3 text-start font-semibold">رقم الهوية</th>

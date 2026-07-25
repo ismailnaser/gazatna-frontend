@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
@@ -112,7 +112,7 @@ export function StudentSearchSelect({
       )}
 
       {open && !selected && (
-        <ul className="absolute z-20 mt-1 max-h-56 w-full overflow-auto rounded-xl border border-neutral-100 bg-white py-1 shadow-lg">
+        <ul className="absolute z-20 mt-1 max-h-56 w-full overflow-auto rounded-xl border border-neutral-100 bg-neutral-50 py-1 shadow-lg">
           {filtered.length === 0 ? (
             <li className="px-4 py-3 text-sm text-p-black/50">لا توجد نتائج</li>
           ) : (

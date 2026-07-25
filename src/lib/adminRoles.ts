@@ -43,7 +43,7 @@ export type AdminRole = (typeof ADMIN_ROLES)[number];
 
 export type UserRole = AdminRole | "teacher" | "parent";
 
-export type AdminAnalyticsTab = "grades" | "fees";
+export type AdminAnalyticsTab = "students" | "grades" | "fees";
 
 export const adminRoleLabels: Record<AdminRole, string> = {
   admin: "إدارة كلية",
@@ -96,6 +96,7 @@ const roleNavPaths: Record<AdminRole, string[]> = {
   admin: allAdminNav.map((item) => item.href),
   admin_students: [
     "/admin",
+    "/admin/analytics",
     "/admin/students",
     "/admin/admissions",
     "/admin/schedules",
@@ -120,8 +121,8 @@ const roleNavPaths: Record<AdminRole, string[]> = {
 };
 
 const roleAnalyticsTabs: Record<AdminRole, AdminAnalyticsTab[]> = {
-  admin: ["grades", "fees"],
-  admin_students: [],
+  admin: ["students", "grades", "fees"],
+  admin_students: ["students"],
   admin_academics: ["grades"],
   admin_finance: ["fees"],
   admin_content: [],

@@ -10,6 +10,7 @@ export type InstallmentStatus =
 
 export type FeeInstallmentItem = {
   order: number;
+  name?: string;
   amount: number;
   startDate: string | null;
   endDate: string | null;
@@ -22,6 +23,7 @@ export type FeeInstallmentItem = {
 export type FeeInstallmentNotification = {
   id: string;
   order: number;
+  name?: string;
   amount: number;
   remaining: number;
   startDate: string;
@@ -81,12 +83,19 @@ export type ManualPaymentLog = {
   reviewedByName: string;
 };
 
+export function installmentLabel(inst: { order: number; name?: string | null }): string {
+  const name = inst.name?.trim();
+  return name || `دفعة ${inst.order}`;
+}
+
 export function mapFeePlan(raw: Record<string, unknown>): FeePlan {
   const installments = Array.isArray(raw.installments)
     ? raw.installments.map((row) => {
         const inst = row as Record<string, unknown>;
+        const order = Number(inst.order);
         return {
-          order: Number(inst.order),
+          order,
+          name: inst.name != null && String(inst.name).trim() ? String(inst.name).trim() : `دفعة ${order}`,
           amount: Number(inst.amount),
           startDate: inst.startDate != null ? String(inst.startDate) : null,
           endDate: inst.endDate != null ? String(inst.endDate) : null,
@@ -139,19 +148,24 @@ export function mapManualPaymentLog(raw: Record<string, unknown>): ManualPayment
 
 export function mapFeeStatus(raw: Record<string, unknown> | null | undefined): FeeStatus | null {
   if (!raw) return null;
-  const mapInst = (inst: Record<string, unknown>): FeeInstallmentItem => ({
-    order: Number(inst.order),
-    amount: Number(inst.amount),
-    startDate: inst.startDate != null ? String(inst.startDate) : null,
-    endDate: inst.endDate != null ? String(inst.endDate) : null,
-    scheduled: inst.scheduled != null ? Boolean(inst.scheduled) : undefined,
-    status: inst.status ? (inst.status as InstallmentStatus) : undefined,
-    paidToward: inst.paidToward != null ? Number(inst.paidToward) : undefined,
-    remaining: inst.remaining != null ? Number(inst.remaining) : undefined,
-  });
+  const mapInst = (inst: Record<string, unknown>): FeeInstallmentItem => {
+    const order = Number(inst.order);
+    return {
+      order,
+      name: inst.name != null && String(inst.name).trim() ? String(inst.name).trim() : `دفعة ${order}`,
+      amount: Number(inst.amount),
+      startDate: inst.startDate != null ? String(inst.startDate) : null,
+      endDate: inst.endDate != null ? String(inst.endDate) : null,
+      scheduled: inst.scheduled != null ? Boolean(inst.scheduled) : undefined,
+      status: inst.status ? (inst.status as InstallmentStatus) : undefined,
+      paidToward: inst.paidToward != null ? Number(inst.paidToward) : undefined,
+      remaining: inst.remaining != null ? Number(inst.remaining) : undefined,
+    };
+  };
   const mapNotification = (n: Record<string, unknown>): FeeInstallmentNotification => ({
     id: String(n.id),
     order: Number(n.order),
+    name: n.name != null ? String(n.name) : undefined,
     amount: Number(n.amount),
     remaining: Number(n.remaining),
     startDate: String(n.startDate),

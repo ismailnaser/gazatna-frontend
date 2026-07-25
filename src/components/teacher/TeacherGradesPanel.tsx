@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Alert } from "@/components/atoms/Alert";
@@ -71,7 +71,7 @@ function GradeSubjectMultiSelect({
         <p className="mt-0.5 text-sm font-semibold text-p-black">اختر المادة أو أكثر</p>
       </div>
 
-      <div className="rounded-xl border border-neutral-100 bg-white p-3">
+      <div className="rounded-xl border border-neutral-100 bg-neutral-50 p-3">
         {options.length > 1 ? (
           <div className="mb-3 flex flex-wrap gap-2 text-xs">
             <button
@@ -475,7 +475,7 @@ export function TeacherGradesPanel() {
             </Card>
           ) : null}
 
-          <section className="overflow-hidden rounded-2xl border border-neutral-100 bg-white shadow-sm">
+          <section className="overflow-hidden rounded-2xl border border-neutral-100 bg-neutral-50 shadow-sm">
             <header className="border-b border-neutral-100 bg-neutral-50/70 px-3 py-3 sm:px-4">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div>

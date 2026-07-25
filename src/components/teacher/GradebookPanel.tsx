@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import { Alert } from "@/components/atoms/Alert";
@@ -29,7 +29,7 @@ function StatChip({
   value: string | number;
 }) {
   return (
-    <div className="flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-xl border border-neutral-100 bg-white px-1.5 py-2.5 text-center shadow-sm sm:flex-row sm:items-center sm:gap-2.5 sm:px-3 sm:py-2.5 sm:text-start">
+    <div className="flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-xl border border-neutral-100 bg-neutral-50 px-1.5 py-2.5 text-center shadow-sm sm:flex-row sm:items-center sm:gap-2.5 sm:px-3 sm:py-2.5 sm:text-start">
       <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-p-green/10 text-p-green sm:h-9 sm:w-9">
         <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
       </span>
@@ -131,7 +131,7 @@ export function GradebookPanel({ classId }: { classId: string }) {
         <StatChip icon={StickyNote} label="ملاحظات" value={stats.noted} />
       </section>
 
-      <section className="overflow-hidden rounded-2xl border border-neutral-100 bg-white shadow-sm">
+      <section className="overflow-hidden rounded-2xl border border-neutral-100 bg-neutral-50 shadow-sm">
         <header className="border-b border-neutral-100 bg-neutral-50/70 px-3 py-3 sm:px-4">
           <h2 className="text-sm font-bold text-p-black">إدخال الدرجات</h2>
           <p className="mt-0.5 text-xs text-p-black/50">

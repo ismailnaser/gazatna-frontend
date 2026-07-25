@@ -339,6 +339,9 @@ export type AdminStudent = {
   classId?: string;
   studentNumber?: string;
   nationalId?: string;
+  parentPhone?: string;
+  address?: string;
+  evaluation?: string;
   username?: string;
   generatedPassword?: string;
   paymentStatus: PaymentStatus;

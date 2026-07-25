@@ -56,8 +56,8 @@ export function AdminGradeSchemePanel() {
         setComponents(buildDefaultGradeSchemeComponents());
         setHasSavedScheme(false);
       }
-    } catch {
-      setError("تعذّر تحميل تقسيمة العلامات");
+    } catch (err) {
+      setError(parseApiError(err) || "تعذّر تحميل تقسيمة العلامات");
     } finally {
       setLoading(false);
     }

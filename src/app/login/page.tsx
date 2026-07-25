@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -54,7 +54,7 @@ export default function LoginPage() {
 
         <form
           onSubmit={handleSubmit}
-          className="rounded-2xl border border-neutral-100 bg-white p-6 shadow-sm"
+          className="rounded-2xl border border-neutral-100 bg-neutral-50 p-6 shadow-sm"
         >
           {error && (
             <Alert variant="error" className="mb-4">

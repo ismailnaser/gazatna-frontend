@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { Calendar } from "lucide-react";
 import { Badge } from "@/components/atoms/Badge";
@@ -16,7 +16,7 @@ type AdminFeaturedNewsCardProps = {
 
 export function AdminFeaturedNewsCard({ item, onEdit, onDelete }: AdminFeaturedNewsCardProps) {
   return (
-    <article className="overflow-hidden rounded-2xl border border-neutral-100 bg-white shadow-sm">
+    <article className="overflow-hidden rounded-2xl border border-neutral-100 bg-neutral-50 shadow-sm">
       <NewsCover
         imageUrl={item.imageUrl}
         gradient={item.gradient}

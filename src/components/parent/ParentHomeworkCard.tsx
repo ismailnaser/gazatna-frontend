@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import { Badge } from "@/components/atoms/Badge";
@@ -173,7 +173,7 @@ export function ParentHomeworkCard({
   }
 
   return (
-    <article className="overflow-hidden rounded-2xl border border-neutral-100 bg-white shadow-sm">
+    <article className="overflow-hidden rounded-2xl border border-neutral-100 bg-neutral-50 shadow-sm">
       <header className="flex flex-wrap items-center gap-2 border-b border-neutral-100 bg-neutral-50/60 px-3 py-3 sm:px-4">
         {submission ? (
           <Badge variant="success">

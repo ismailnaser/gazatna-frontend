@@ -15,6 +15,7 @@ export type AdminAdmissionRow = {
   grade: string;
   parentName: string;
   phone: string;
+  address: string;
   email: string;
   notes: string;
   status: "pending" | "approved" | "rejected";

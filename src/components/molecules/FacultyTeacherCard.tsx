@@ -1,4 +1,4 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 import { ArrowLeft, Briefcase, GraduationCap } from "lucide-react";
 import { ExpandableText } from "@/components/molecules/ExpandableText";
 import { resolveMediaUrl } from "@/lib/media";
@@ -73,7 +73,7 @@ export function FacultyTeacherCard({ teacher }: { teacher: TeacherProfile }) {
 
 export function FacultyTeacherCardSkeleton() {
   return (
-    <div className="overflow-hidden rounded-3xl border border-neutral-100 bg-white shadow-sm">
+    <div className="overflow-hidden rounded-3xl border border-neutral-100 bg-neutral-50 shadow-sm">
       <div className="aspect-[4/5] animate-pulse bg-neutral-200" />
       <div className="space-y-3 p-5 sm:p-6">
         <div className="h-5 w-3/4 animate-pulse rounded bg-neutral-200" />

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { Badge } from "@/components/atoms/Badge";
 import { Button } from "@/components/atoms/Button";
@@ -39,7 +39,7 @@ export function AdminSubjectsGrid({
       {subjects.map((subject) => (
         <article
           key={subject.id}
-          className="group overflow-hidden rounded-2xl border border-neutral-100 bg-white shadow-sm transition-all hover:border-brand-blue/20 hover:shadow-md"
+          className="group overflow-hidden rounded-2xl border border-neutral-100 bg-neutral-50 shadow-sm transition-all hover:border-brand-blue/20 hover:shadow-md"
         >
           <button
             type="button"

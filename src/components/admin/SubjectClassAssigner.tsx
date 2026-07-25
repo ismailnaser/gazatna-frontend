@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useRef } from "react";
 import { cn } from "@/lib/utils";
@@ -131,7 +131,7 @@ export function SubjectClassAssigner({
         const gradeSomeSelected = gradeIds.some((classId) => selected.has(classId));
 
         return (
-          <div key={group.grade} className="rounded-xl border border-neutral-100 bg-white p-3">
+          <div key={group.grade} className="rounded-xl border border-neutral-100 bg-neutral-50 p-3">
             <div className="mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-neutral-50 pb-3">
               <p className="text-sm font-bold text-p-black">{group.grade}</p>
               <label className="flex cursor-pointer items-center gap-2 text-xs font-semibold text-p-black/65">

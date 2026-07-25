@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { Badge } from "@/components/atoms/Badge";
 import { Button } from "@/components/atoms/Button";
@@ -26,7 +26,7 @@ export function AdminContactMessageCard({
   const { date, time } = formatMetaDate(message.createdAt);
 
   return (
-    <article className="overflow-hidden rounded-2xl border border-neutral-100 bg-white shadow-sm transition-all hover:border-brand-blue/15 hover:shadow-md">
+    <article className="overflow-hidden rounded-2xl border border-neutral-100 bg-neutral-50 shadow-sm transition-all hover:border-brand-blue/15 hover:shadow-md">
       <div className="flex items-start gap-3 border-b border-neutral-50 bg-neutral-50/60 px-4 py-3 sm:px-5">
         <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-brand-blue/10 text-base font-bold text-brand-blue">
           {contactInitial(message.name)}

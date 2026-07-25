@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Alert } from "@/components/atoms/Alert";
@@ -36,7 +36,7 @@ function FormSection({
   children: React.ReactNode;
 }) {
   return (
-    <section className="overflow-hidden rounded-2xl border border-neutral-100 bg-white shadow-sm">
+    <section className="overflow-hidden rounded-2xl border border-neutral-100 bg-neutral-50 shadow-sm">
       <header className="border-b border-neutral-100 bg-neutral-50/70 px-3 py-2.5 sm:px-4">
         <h3 className="text-sm font-bold text-p-black">{title}</h3>
         {description ? <p className="mt-0.5 text-xs text-p-black/50">{description}</p> : null}
@@ -288,7 +288,7 @@ export function AdminScheduleFormPanel({
   }
 
   return (
-    <div className="mb-4 overflow-hidden rounded-2xl border border-neutral-100 bg-white shadow-sm">
+    <div className="mb-4 overflow-hidden rounded-2xl border border-neutral-100 bg-neutral-50 shadow-sm">
       <header className="flex items-start justify-between gap-3 border-b border-neutral-100 bg-neutral-50/70 px-4 py-4 sm:px-5">
         <div>
           <p className="text-xs font-semibold text-brand-blue">

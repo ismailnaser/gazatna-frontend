@@ -1,6 +1,7 @@
 import { Alert } from "@/components/atoms/Alert";
 import { Badge } from "@/components/atoms/Badge";
 import type { FeeInstallmentItem, FeeInstallmentNotification, InstallmentStatus } from "@/types/finance";
+import { installmentLabel } from "@/types/finance";
 import { Calendar, CreditCard } from "lucide-react";
 
 const statusLabels: Record<InstallmentStatus, string> = {
@@ -39,7 +40,7 @@ export function InstallmentNotifications({
             <CreditCard className="mt-0.5 h-5 w-5 shrink-0" />
             <div>
               <p className="font-semibold text-p-black">
-                إشعار دفعة {notice.order} — {notice.remaining} ₪
+                إشعار {installmentLabel(notice)} — {notice.remaining} ₪
               </p>
               <p className="mt-1 text-sm text-p-black/70">
                 المبلغ الكلي: {notice.amount} ₪ — من {notice.startDate} إلى {notice.endDate}
@@ -79,7 +80,7 @@ export function InstallmentSchedule({
             </span>
             <div>
               <div className="flex flex-wrap items-center gap-2">
-                <p className="font-semibold text-p-black">الدفعة {inst.order}</p>
+                <p className="font-semibold text-p-black">{installmentLabel(inst)}</p>
                 {inst.status && (
                   <Badge variant={statusVariants[inst.status]}>{statusLabels[inst.status]}</Badge>
                 )}

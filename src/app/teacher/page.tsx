@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo } from "react";
 import { Card } from "@/components/atoms/Card";
@@ -56,7 +56,7 @@ function TeacherClassCard({
   studentCount: number;
 }) {
   return (
-    <article className="overflow-hidden rounded-2xl border border-neutral-100 bg-white shadow-sm">
+    <article className="overflow-hidden rounded-2xl border border-neutral-100 bg-neutral-50 shadow-sm">
       <div className="h-1 bg-brand-teal/80" />
       <div className="p-3.5 sm:p-4">
         <div className="flex min-w-0 items-center gap-3">

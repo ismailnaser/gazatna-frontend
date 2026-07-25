@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { NewsImageCarousel } from "@/components/molecules/NewsImageCarousel";
@@ -8,7 +8,7 @@ export function NewsListItem({ item }: { item: PublicNewsItem }) {
   const slideUrls = newsSlideUrls(item);
 
   return (
-    <article className="flex gap-4 rounded-2xl border border-neutral-100 bg-white p-4 shadow-sm transition-shadow hover:shadow-md">
+    <article className="flex gap-4 rounded-2xl border border-neutral-100 bg-neutral-50 p-4 shadow-sm transition-shadow hover:shadow-md">
       <NewsImageCarousel
         images={slideUrls}
         gradient={item.gradient}

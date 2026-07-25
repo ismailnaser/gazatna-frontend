@@ -71,7 +71,7 @@ function TeacherAlertItem({
           ? "border-neutral-200 bg-neutral-50 hover:bg-neutral-100"
           : alert.needsGrading
             ? "border-amber-200 bg-white hover:bg-amber-50/50"
-            : "border-neutral-100 bg-white hover:bg-neutral-50"
+            : "border-neutral-100 bg-neutral-50 hover:bg-neutral-100"
       )}
     >
       <div

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { Badge } from "@/components/atoms/Badge";
@@ -76,7 +76,7 @@ export function TeacherQuizGroupCard({
   const endAt = group.endAt || group.dueDate;
 
   return (
-    <article className="overflow-hidden rounded-2xl border border-neutral-100 bg-white shadow-sm">
+    <article className="overflow-hidden rounded-2xl border border-neutral-100 bg-neutral-50 shadow-sm">
       <div className="h-1 bg-brand-blue" aria-hidden />
 
       <header className="flex flex-wrap items-center gap-2 border-b border-neutral-100 bg-neutral-50/60 px-3 py-2.5 sm:px-4">
@@ -181,7 +181,7 @@ export function TeacherQuizGroupCard({
               {group.questions.map((q, i) => (
                 <div
                   key={q.id}
-                  className="rounded-xl border border-neutral-100 bg-white px-3 py-2.5 text-sm"
+                  className="rounded-xl border border-neutral-100 bg-neutral-50 px-3 py-2.5 text-sm"
                 >
                   <p className="font-medium text-p-black">
                     {i + 1}. {q.prompt}
@@ -200,7 +200,7 @@ export function TeacherQuizGroupCard({
               {group.targets.map((target) => (
                 <div
                   key={target.id}
-                  className="flex items-center justify-between rounded-xl border border-neutral-100 bg-white px-3 py-2.5 text-sm"
+                  className="flex items-center justify-between rounded-xl border border-neutral-100 bg-neutral-50 px-3 py-2.5 text-sm"
                 >
                   <span className="font-medium text-p-black">{target.className}</span>
                   <span className="text-xs text-p-black/50">

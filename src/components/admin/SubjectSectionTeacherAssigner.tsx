@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useMemo } from "react";
 import { cn } from "@/lib/utils";
@@ -99,7 +99,7 @@ export function SubjectSectionTeacherAssigner({
       </div>
 
       {groups.map((group) => (
-        <div key={group.grade} className="rounded-xl border border-neutral-100 bg-white p-3">
+        <div key={group.grade} className="rounded-xl border border-neutral-100 bg-neutral-50 p-3">
           <p className="mb-3 text-sm font-bold text-p-black">{group.grade}</p>
           <div className="space-y-2">
             {group.sections.map((schoolClass) => {

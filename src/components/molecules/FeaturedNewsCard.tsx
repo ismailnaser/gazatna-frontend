@@ -1,4 +1,4 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 import { Calendar } from "lucide-react";
 import { Button } from "@/components/atoms/Button";
 import { NewsImageCarousel } from "@/components/molecules/NewsImageCarousel";
@@ -9,7 +9,7 @@ export function FeaturedNewsCard({ item }: { item: PublicNewsItem }) {
   const slideUrls = newsSlideUrls(item);
 
   return (
-    <article className="overflow-hidden rounded-2xl border border-neutral-100 bg-white shadow-sm transition-shadow hover:shadow-md">
+    <article className="overflow-hidden rounded-2xl border border-neutral-100 bg-neutral-50 shadow-sm transition-shadow hover:shadow-md">
       <NewsImageCarousel
         images={slideUrls}
         gradient={item.gradient}

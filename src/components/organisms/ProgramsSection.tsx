@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
@@ -88,7 +88,7 @@ export function ProgramsSection() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.4, delay: i * 0.06 }}
-              className="flex flex-col overflow-hidden rounded-2xl border border-neutral-100 bg-white shadow-sm transition-shadow hover:shadow-md"
+              className="flex flex-col overflow-hidden rounded-2xl border border-neutral-100 bg-neutral-50 shadow-sm transition-shadow hover:shadow-md"
             >
               <div
                 className={[

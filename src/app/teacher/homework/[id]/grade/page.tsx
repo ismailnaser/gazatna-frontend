@@ -37,7 +37,7 @@ function MetaChip({
   value: string | number;
 }) {
   return (
-    <div className="flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-xl border border-neutral-100 bg-white px-1.5 py-2.5 text-center shadow-sm sm:flex-row sm:items-center sm:gap-2.5 sm:px-3 sm:py-2.5 sm:text-start">
+    <div className="flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-xl border border-neutral-100 bg-neutral-50 px-1.5 py-2.5 text-center shadow-sm sm:flex-row sm:items-center sm:gap-2.5 sm:px-3 sm:py-2.5 sm:text-start">
       <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand-orange/10 text-brand-orange sm:h-9 sm:w-9">
         <Icon className="h-4 w-4 sm:h-4 sm:w-4" />
       </span>
@@ -135,7 +135,7 @@ export default function TeacherHomeworkGradePage({
     return (
       <div className="space-y-4">
         <div className="h-4 w-28 animate-pulse rounded bg-neutral-200" />
-        <article className="overflow-hidden rounded-2xl border border-neutral-100 bg-white shadow-sm">
+        <article className="overflow-hidden rounded-2xl border border-neutral-100 bg-neutral-50 shadow-sm">
           <div className="h-1 bg-brand-orange/40" aria-hidden />
           <div className="space-y-4 p-3 sm:p-4">
             <div className="space-y-2">
@@ -152,7 +152,7 @@ export default function TeacherHomeworkGradePage({
             </div>
           </div>
         </article>
-        <section className="overflow-hidden rounded-2xl border border-neutral-100 bg-white shadow-sm">
+        <section className="overflow-hidden rounded-2xl border border-neutral-100 bg-neutral-50 shadow-sm">
           <header className="border-b border-neutral-100 bg-neutral-50/70 px-3 py-3 sm:px-4">
             <div className="h-4 w-32 animate-pulse rounded bg-neutral-200" />
             <div className="mt-2 h-3 w-20 animate-pulse rounded bg-neutral-100" />
@@ -186,7 +186,7 @@ export default function TeacherHomeworkGradePage({
       {error && <Alert variant="error">{error}</Alert>}
       {success && <Alert variant="success">{success}</Alert>}
 
-      <article className="overflow-hidden rounded-2xl border border-neutral-100 bg-white shadow-sm">
+      <article className="overflow-hidden rounded-2xl border border-neutral-100 bg-neutral-50 shadow-sm">
         <div className="h-1 bg-brand-orange" aria-hidden />
 
         <header className="flex flex-wrap items-center gap-2 border-b border-neutral-100 bg-neutral-50/60 px-3 py-2.5 sm:px-4">
@@ -275,7 +275,7 @@ export default function TeacherHomeworkGradePage({
             section.submissions.length === 0 ? null : (
               <section
                 key={section.id}
-                className="overflow-hidden rounded-2xl border border-neutral-100 bg-white shadow-sm"
+                className="overflow-hidden rounded-2xl border border-neutral-100 bg-neutral-50 shadow-sm"
               >
                 <header className="flex items-center justify-between gap-2 border-b border-neutral-100 bg-neutral-50/70 px-3 py-3 sm:px-4">
                   <div>

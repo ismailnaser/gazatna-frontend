@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import { Alert } from "@/components/atoms/Alert";
@@ -57,6 +57,7 @@ export default function RegisterPage() {
       grade: String(form.get("grade") ?? ""),
       parentName: String(form.get("parentName") ?? ""),
       phone: String(form.get("phone") ?? ""),
+      address: String(form.get("address") ?? "").trim(),
       email: String(form.get("email") ?? ""),
       notes: String(form.get("notes") ?? ""),
     };
@@ -85,7 +86,7 @@ export default function RegisterPage() {
     >
       <form
         onSubmit={handleSubmit}
-        className="mx-auto max-w-xl space-y-4 rounded-2xl border border-neutral-100 bg-white p-6 shadow-sm"
+        className="mx-auto max-w-xl space-y-4 rounded-2xl border border-neutral-100 bg-neutral-50 p-6 shadow-sm"
       >
         {error && <Alert variant="error">{error}</Alert>}
         <Input label="اسم الطالب" name="studentName" required />
@@ -109,7 +110,8 @@ export default function RegisterPage() {
           ]}
         />
         <Input label="اسم ولي الأمر" name="parentName" required />
-        <Input label="رقم الهاتف" name="phone" type="tel" required />
+        <Input label="رقم جوال ولي الأمر" name="phone" type="tel" required dir="ltr" />
+        <Input label="العنوان" name="address" required placeholder="المدينة / الحي" />
         <Input label="البريد الإلكتروني" name="email" type="email" required />
         {reg.showNotes && (
           <Textarea label="ملاحظات إضافية (اختياري)" name="notes" />
