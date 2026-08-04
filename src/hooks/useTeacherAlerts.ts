@@ -4,6 +4,10 @@ import { useCallback, useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import type { TeacherAlert } from "@/types";
 
+/**
+ * Teacher alerts: load once on mount, refresh on window focus.
+ * No background polling — repeated /teacher/alerts/ calls were stressing the server.
+ */
 export function useTeacherAlerts() {
   const [alerts, setAlerts] = useState<TeacherAlert[]>([]);
   const [loading, setLoading] = useState(true);
@@ -20,12 +24,12 @@ export function useTeacherAlerts() {
   }, []);
 
   useEffect(() => {
-    refresh();
-    const interval = setInterval(refresh, 60_000);
-    const onFocus = () => refresh();
+    void refresh();
+    const onFocus = () => {
+      void refresh();
+    };
     window.addEventListener("focus", onFocus);
     return () => {
-      clearInterval(interval);
       window.removeEventListener("focus", onFocus);
     };
   }, [refresh]);

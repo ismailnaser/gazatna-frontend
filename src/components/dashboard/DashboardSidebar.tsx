@@ -24,6 +24,8 @@ export function DashboardSidebar({ role }: { role: UserRole }) {
 
   const basePath = isAdminRole(role) ? "/admin" : `/${role}`;
 
+  // Fetch badge counts once per session role — not on every route change
+  // (pathname-triggered analytics/alerts were hammering the API on shared hosting).
   useEffect(() => {
     if (!isAdminRole(role)) return;
     api
@@ -34,7 +36,7 @@ export function DashboardSidebar({ role }: { role: UserRole }) {
         setPendingPayments(Number.isFinite(count) ? count : 0);
       })
       .catch(() => setPendingPayments(0));
-  }, [role, pathname]);
+  }, [role]);
 
   useEffect(() => {
     if (role !== "teacher") return;
@@ -44,7 +46,7 @@ export function DashboardSidebar({ role }: { role: UserRole }) {
         setPendingSubmissions(countPendingTeacherAlerts(data as TeacherAlert[]));
       })
       .catch(() => setPendingSubmissions(0));
-  }, [role, pathname]);
+  }, [role]);
 
   return (
     <aside className="hidden w-56 shrink-0 border-s border-neutral-200 bg-white md:block">
