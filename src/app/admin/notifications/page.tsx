@@ -224,7 +224,9 @@ export default function AdminNotificationsPage() {
     setSuccess("");
     try {
       const result = await api.grantStudentFeeAccess(accessTarget.id, Number(accessDays));
+      const unlockedId = accessTarget.id;
       setSuccess(`تم فتح الوصول للطالب حتى ${new Date(result.accessOverrideUntil).toLocaleString("ar")}`);
+      setBlocked((prev) => prev.filter((s) => s.id !== unlockedId));
       setAccessTarget(null);
       setAccessDays("1");
     } catch (e) {

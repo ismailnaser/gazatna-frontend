@@ -102,14 +102,17 @@ export default function AdminAnalyticsDetailsPage() {
     return Array.from(new Set(names));
   }, [grades]);
 
-  async function load() {
+  async function load(next?: { gradeLevel?: string; from?: string; to?: string }) {
+    const nextGrade = next?.gradeLevel ?? gradeLevel;
+    const nextFrom = next?.from ?? from;
+    const nextTo = next?.to ?? to;
     setLoading(true);
     setError("");
     try {
       const res = (await api.getAdminAnalyticsDetails({
-        gradeLevel: gradeLevel || undefined,
-        from: from || undefined,
-        to: to || undefined,
+        gradeLevel: nextGrade || undefined,
+        from: nextFrom || undefined,
+        to: nextTo || undefined,
       })) as AnalyticsDetails;
       setData(res);
     } catch (e) {
@@ -222,7 +225,7 @@ export default function AdminAnalyticsDetailsPage() {
               setGradeLevel("");
               setFrom("");
               setTo("");
-              setTimeout(load, 0);
+              void load({ gradeLevel: "", from: "", to: "" });
             }}
           >
             إعادة تعيين

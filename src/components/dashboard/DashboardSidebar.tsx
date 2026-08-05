@@ -6,17 +6,21 @@ import { useEffect, useState } from "react";
 import { getDashboardNav } from "@/data/navigation";
 import { api } from "@/lib/api";
 import { countPendingTeacherAlerts } from "@/lib/teacherAlerts";
-import { useParentGradesNotification } from "@/hooks/useParentGradesNotification";
 import { cn } from "@/lib/utils";
 import { isAdminRole } from "@/lib/adminRoles";
 import type { UserRole, TeacherAlert } from "@/types";
 
-export function DashboardSidebar({ role }: { role: UserRole }) {
+export function DashboardSidebar({
+  role,
+  newGradesCount = 0,
+}: {
+  role: UserRole;
+  newGradesCount?: number;
+}) {
   const pathname = usePathname();
   const items = getDashboardNav(role);
   const [pendingPayments, setPendingPayments] = useState(0);
   const [pendingSubmissions, setPendingSubmissions] = useState(0);
-  const newGradesCount = useParentGradesNotification(role, pathname);
 
   const uniqueItems = items.filter(
     (item, index, arr) => arr.findIndex((i) => i.href === item.href) === index

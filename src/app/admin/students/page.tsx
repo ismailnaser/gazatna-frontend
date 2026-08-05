@@ -121,6 +121,7 @@ export default function AdminStudentsPage() {
     setSuccess("");
     try {
       const updated = (await api.updateAdminStudent(student.id, {
+        isActive: nextActive,
         is_active: nextActive,
       })) as Record<string, unknown>;
       const mapped = mapAdminStudent(updated);
@@ -339,6 +340,7 @@ export default function AdminStudentsPage() {
         address: String(form.get("address") ?? "").trim(),
         evaluation: String(form.get("evaluation") ?? "").trim(),
         classId: Number(classId),
+        isActive: form.get("isActive") === "true",
         is_active: form.get("isActive") === "true",
       })) as Record<string, unknown>;
       setStudents((prev) =>
@@ -423,6 +425,7 @@ export default function AdminStudentsPage() {
 
         {editing ? (
           <AdminStudentFormPanel
+            key={editing.id}
             mode="edit"
             editing={editing}
             classes={classes}

@@ -4,14 +4,18 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { getDashboardNav } from "@/data/navigation";
-import { useParentGradesNotification } from "@/hooks/useParentGradesNotification";
 import { cn } from "@/lib/utils";
 import type { UserRole } from "@/types";
 import { LayoutGrid, MoreHorizontal, X } from "lucide-react";
 
-export function MobileNav({ role }: { role: UserRole }) {
+export function MobileNav({
+  role,
+  newGradesCount = 0,
+}: {
+  role: UserRole;
+  newGradesCount?: number;
+}) {
   const pathname = usePathname();
-  const newGradesCount = useParentGradesNotification(role, pathname);
   const items = getDashboardNav(role).filter(
     (item, index, arr) => arr.findIndex((i) => i.href === item.href) === index
   );

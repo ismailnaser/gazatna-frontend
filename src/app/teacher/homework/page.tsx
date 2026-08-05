@@ -19,7 +19,7 @@ import { Plus } from "lucide-react";
 export default function TeacherHomeworkPage() {
   const { user } = useAuth();
   const { getTeacherClassesByUserId, currentTeacher, loading } = useSchool();
-  const { getHomeworkByTeacher, deleteHomework, getHomeworkSubmissions, homeworkSubmissions } =
+  const { getHomeworkByTeacher, deleteHomework, getHomeworkSubmissions } =
     useAssignments();
   const { alerts, refresh } = useTeacherAlerts();
 
@@ -48,9 +48,6 @@ export default function TeacherHomeworkPage() {
     return () => clearTimeout(t);
   }, [saved]);
 
-  useEffect(() => {
-    refresh();
-  }, [homeworkSubmissions.length, saved, refresh]);
 
   const homeworkAlerts = useMemo(
     () => alerts.filter((a) => a.type === "homework_submission"),

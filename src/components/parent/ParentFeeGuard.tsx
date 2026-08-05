@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Alert } from "@/components/atoms/Alert";
@@ -13,19 +13,62 @@ export function ParentFeeGuard({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [feeStatus, setFeeStatus] = useState<FeeStatus | null>(null);
   const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    api
-      .getParentFees()
-      .then((data) => setFeeStatus(mapFeeStatus(data.feeStatus as Record<string, unknown>)))
-      .catch(() => setFeeStatus(null))
-      .finally(() => setLoading(false));
-  }, [pathname]);
+  const [loadError, setLoadError] = useState(false);
+  const prevOnFeesRef = useRef(false);
 
   const onFeesPage = pathname === "/parent/fees" || pathname.startsWith("/parent/fees/");
 
+  const loadStatus = useCallback(async () => {
+    try {
+      const data = await api.getParentFees();
+      setFeeStatus(mapFeeStatus(data.feeStatus as Record<string, unknown>));
+      setLoadError(false);
+    } catch {
+      setFeeStatus(null);
+      setLoadError(true);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadStatus();
+    const onFocus = () => {
+      void loadStatus();
+    };
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
+  }, [loadStatus]);
+
+  useEffect(() => {
+    if (prevOnFeesRef.current && !onFeesPage) {
+      void loadStatus();
+    }
+    prevOnFeesRef.current = onFeesPage;
+  }, [onFeesPage, loadStatus]);
+
   if (loading) {
-    return <>{children}</>;
+    return <p className="py-16 text-center text-sm text-p-black/50">جاري التحقق من حالة الرسوم...</p>;
+  }
+
+  if (loadError && !onFeesPage) {
+    return (
+      <div className="flex min-h-[60vh] flex-col items-center justify-center px-4 text-center">
+        <h2 className="text-xl font-bold text-p-black">تعذر التحقق من الرسوم</h2>
+        <p className="mt-3 max-w-md text-sm leading-relaxed text-p-black/70">
+          لا يمكن فتح باقي الصفحات قبل التأكد من حالة الرسوم. حاول مرة أخرى أو راجع صفحة المالية.
+        </p>
+        <div className="mt-6 flex flex-wrap justify-center gap-3">
+          <Button type="button" onClick={() => void loadStatus()}>
+            إعادة المحاولة
+          </Button>
+          <Button href="/parent/fees" variant="outline">
+            <CreditCard className="h-4 w-4" />
+            صفحة المالية
+          </Button>
+        </div>
+      </div>
+    );
   }
 
   if (feeStatus?.blocked && !onFeesPage) {

@@ -154,6 +154,7 @@ export default function AdminDashboard() {
         )}
       </div>
 
+      {canOpenFeesAnalytics && (
       <div className="mb-8">
         <Card>
           <h3 className="mb-4 font-bold text-p-black">تحصيل الرسوم الشهري</h3>
@@ -164,6 +165,7 @@ export default function AdminDashboard() {
           )}
         </Card>
       </div>
+      )}
 
       <Card>
         <h3 className="mb-4 flex items-center gap-2 font-bold text-p-black">
@@ -172,65 +174,44 @@ export default function AdminDashboard() {
         </h3>
         {data.urgentTasks.length > 0 ? (
           <ul className="space-y-2">
-            {data.urgentTasks.map((task) => (
+            {data.urgentTasks.map((task) => {
+              const href =
+                task.type === "finance"
+                  ? "/admin/finance"
+                  : task.type === "admissions"
+                    ? "/admin/admissions"
+                    : task.type === "messages"
+                      ? "/admin/messages"
+                      : task.type === "fees_blocked"
+                        ? "/admin/notifications?type=fees_blocked"
+                        : task.type === "students_inactive"
+                          ? canOpenNotifications
+                            ? "/admin/notifications?type=students_inactive"
+                            : "/admin/students"
+                          : "";
+              const pathForAccess = href.split("?")[0];
+              const canOpen =
+                Boolean(href) &&
+                user &&
+                isAdminRole(user.role) &&
+                canAccessAdminPath(user.role, pathForAccess);
+              return (
               <li key={task.id}>
-                {task.type === "finance" ? (
+                {canOpen ? (
                   <Link
-                    href="/admin/finance"
+                    href={href}
                     className="block rounded-lg bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800 hover:bg-amber-100"
                   >
                     {task.text}
                   </Link>
-                ) : task.type === "admissions" ? (
-                  <Link
-                    href="/admin/admissions"
-                    className="block rounded-lg bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800 hover:bg-amber-100"
-                  >
-                    {task.text}
-                  </Link>
-                ) : task.type === "messages" ? (
-                  <Link
-                    href="/admin/messages"
-                    className="block rounded-lg bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800 hover:bg-amber-100"
-                  >
-                    {task.text}
-                  </Link>
-                ) : task.type === "fees_blocked" ? (
-                  canOpenNotifications ? (
-                  <Link
-                    href="/admin/notifications?type=fees_blocked"
-                    className="block rounded-lg bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800 hover:bg-amber-100"
-                  >
-                    {task.text}
-                  </Link>
-                  ) : (
-                  <div className="rounded-lg bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">
-                    {task.text}
-                  </div>
-                  )
-                ) : task.type === "students_inactive" ? (
-                  canOpenNotifications ? (
-                  <Link
-                    href="/admin/notifications?type=students_inactive"
-                    className="block rounded-lg bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800 hover:bg-amber-100"
-                  >
-                    {task.text}
-                  </Link>
-                  ) : (
-                  <Link
-                    href="/admin/students"
-                    className="block rounded-lg bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800 hover:bg-amber-100"
-                  >
-                    {task.text}
-                  </Link>
-                  )
                 ) : (
                   <div className="rounded-lg bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">
                     {task.text}
                   </div>
                 )}
               </li>
-            ))}
+              );
+            })}
           </ul>
         ) : (
           <p className="text-sm text-neutral-500">لا توجد إشعارات مهمة حالياً.</p>

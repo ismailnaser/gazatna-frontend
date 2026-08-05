@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import { Card } from "@/components/atoms/Card";
 import { AcademicPeriodBanner } from "@/components/shared/AcademicPeriodBanner";
 import { TeacherSubmissionAlerts } from "@/components/teacher/TeacherSubmissionAlerts";
@@ -79,13 +79,9 @@ function TeacherClassCard({
 export default function TeacherDashboard() {
   const { user } = useAuth();
   const { getTeacherClassesByUserId } = useSchool();
-  const { getHomeworkByClass, getQuizzesByClass, homeworkSubmissions } = useAssignments();
+  const { getHomeworkByClass, getQuizzesByClass } = useAssignments();
   const classes = user ? getTeacherClassesByUserId(user.id) : [];
   const { alerts, refresh } = useTeacherAlerts();
-
-  useEffect(() => {
-    refresh();
-  }, [homeworkSubmissions.length, refresh]);
 
   const totals = useMemo(() => {
     let students = 0;

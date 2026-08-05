@@ -40,6 +40,7 @@ export default function TeacherQuizzesPage() {
   );
 
   useEffect(() => {
+    if (!saved) return;
     refreshAlerts();
   }, [saved, refreshAlerts]);
 

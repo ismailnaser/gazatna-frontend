@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import { useParentGradesNotification } from "@/hooks/useParentGradesNotification";
 import { DashboardHeader } from "./DashboardHeader";
 import { DashboardLoadingState } from "./DashboardLoadingState";
 import { DashboardSidebar } from "./DashboardSidebar";
@@ -31,7 +32,9 @@ export function DashboardShell({
 }) {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
   const fallbackRole = areaFallbackRole(area);
+  const newGradesCount = useParentGradesNotification(user?.role ?? fallbackRole, pathname);
 
   useEffect(() => {
     if (!loading && (!user || !canAccess(user.role, area))) {
@@ -44,7 +47,7 @@ export function DashboardShell({
       <div className="flex min-h-screen flex-col bg-white">
         <DashboardHeader />
         <div className="flex flex-1">
-          <DashboardSidebar role={user?.role ?? fallbackRole} />
+          <DashboardSidebar role={user?.role ?? fallbackRole} newGradesCount={newGradesCount} />
           <main className="flex-1 overflow-auto p-4 pb-[calc(4.5rem+env(safe-area-inset-bottom,0px))] sm:px-6 sm:pt-6 md:pb-6 lg:p-8">
             <DashboardLoadingState
               message="جاري تحميل حسابك..."
@@ -52,7 +55,7 @@ export function DashboardShell({
             />
           </main>
         </div>
-        <MobileNav role={user?.role ?? fallbackRole} />
+        <MobileNav role={user?.role ?? fallbackRole} newGradesCount={newGradesCount} />
       </div>
     );
   }
@@ -73,12 +76,12 @@ export function DashboardShell({
     <div className="flex min-h-screen flex-col bg-white">
       <DashboardHeader />
       <div className="flex flex-1">
-        <DashboardSidebar role={user.role} />
+        <DashboardSidebar role={user.role} newGradesCount={newGradesCount} />
         <main className="flex-1 overflow-auto p-4 pb-[calc(4.5rem+env(safe-area-inset-bottom,0px))] sm:px-6 sm:pt-6 md:pb-6 lg:p-8">
           {children}
         </main>
       </div>
-      <MobileNav role={user.role} />
+      <MobileNav role={user.role} newGradesCount={newGradesCount} />
     </div>
   );
 }
