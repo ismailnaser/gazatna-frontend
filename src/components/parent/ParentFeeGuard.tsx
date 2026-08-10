@@ -9,16 +9,29 @@ import { api } from "@/lib/api";
 import { mapFeeStatus, type FeeStatus } from "@/types/finance";
 import { CreditCard, Lock } from "lucide-react";
 
+/** Cap focus refetch so a dying backend is not hammered into NPROC collapse. */
+const FOCUS_REFETCH_MIN_MS = 60_000;
+
 export function ParentFeeGuard({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [feeStatus, setFeeStatus] = useState<FeeStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
   const prevOnFeesRef = useRef(false);
+  const lastFetchAtRef = useRef(0);
+  const inFlightRef = useRef(false);
 
   const onFeesPage = pathname === "/parent/fees" || pathname.startsWith("/parent/fees/");
 
-  const loadStatus = useCallback(async () => {
+  const loadStatus = useCallback(async (opts?: { force?: boolean }) => {
+    const force = opts?.force === true;
+    const now = Date.now();
+    if (inFlightRef.current) return;
+    if (!force && lastFetchAtRef.current > 0 && now - lastFetchAtRef.current < FOCUS_REFETCH_MIN_MS) {
+      return;
+    }
+    inFlightRef.current = true;
+    lastFetchAtRef.current = now;
     try {
       const data = await api.getParentFees();
       setFeeStatus(mapFeeStatus(data.feeStatus as Record<string, unknown>));
@@ -27,12 +40,13 @@ export function ParentFeeGuard({ children }: { children: React.ReactNode }) {
       setFeeStatus(null);
       setLoadError(true);
     } finally {
+      inFlightRef.current = false;
       setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    void loadStatus();
+    void loadStatus({ force: true });
     const onFocus = () => {
       void loadStatus();
     };
@@ -42,7 +56,7 @@ export function ParentFeeGuard({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (prevOnFeesRef.current && !onFeesPage) {
-      void loadStatus();
+      void loadStatus({ force: true });
     }
     prevOnFeesRef.current = onFeesPage;
   }, [onFeesPage, loadStatus]);
@@ -59,7 +73,7 @@ export function ParentFeeGuard({ children }: { children: React.ReactNode }) {
           لا يمكن فتح باقي الصفحات قبل التأكد من حالة الرسوم. حاول مرة أخرى أو راجع صفحة المالية.
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-3">
-          <Button type="button" onClick={() => void loadStatus()}>
+          <Button type="button" onClick={() => void loadStatus({ force: true })}>
             إعادة المحاولة
           </Button>
           <Button href="/parent/fees" variant="outline">
