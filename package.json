@@ -8,6 +8,7 @@
     "build:cpanel": "NODE_OPTIONS=--max-old-space-size=768 next build",
     "pack:cpanel": "powershell -ExecutionPolicy Bypass -File ./scripts/pack-cpanel-build.ps1",
     "start": "next start",
+    "start:cpanel": "node server.js",
     "lint": "eslint",
     "pwa:icons": "node scripts/generate-pwa-icons.mjs",
     "guide:pdf": "node scripts/ui-guide/generate.mjs",

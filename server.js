@@ -1,10 +1,36 @@
 /**
  * cPanel Setup Node.js App entry point.
  * Set "Application startup file" to: server.js
+ * (or scripts/start-cpanel.sh if your panel accepts shell startup files)
  *
  * Proxies /backend/* to the local web stack so Django/Passenger can answer
  * when Node owns the domain root.
  */
+const { execSync } = require("child_process");
+const path = require("path");
+
+// Shared hosting: duplicate lsnode workers (~43 threads each) exhaust NPROC.
+function cleanupStaleLsnodeWorkers() {
+  if (process.env.GHAZATNA_SKIP_LSNODE_CLEANUP === "1") return;
+
+  const appDir = __dirname;
+  const script = path.join(appDir, "scripts", "kill-stale-lsnode.sh");
+  try {
+    execSync(`bash "${script}"`, {
+      stdio: "ignore",
+      timeout: 8000,
+      env: { ...process.env, APP_DIR: appDir },
+    });
+  } catch {
+    // pgrep/kill may be unavailable — non-fatal
+  }
+}
+
+if (process.env.NODE_ENV === "production") {
+  cleanupStaleLsnodeWorkers();
+}
+
+process.env.UV_THREADPOOL_SIZE = process.env.UV_THREADPOOL_SIZE || "4";
 const http = require("http");
 const https = require("https");
 const { parse } = require("url");

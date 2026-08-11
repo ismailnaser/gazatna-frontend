@@ -41,6 +41,10 @@ Copy-Item -Recurse (Join-Path $root "public") (Join-Path $stage "public")
 Copy-Item (Join-Path $root "package.json") $stage
 Copy-Item (Join-Path $root "package-lock.json") $stage
 Copy-Item (Join-Path $root "next.config.ts") $stage
+Copy-Item (Join-Path $root "server.js") $stage
+New-Item -ItemType Directory -Path (Join-Path $stage "scripts") -Force | Out-Null
+Copy-Item (Join-Path $root "scripts\kill-stale-lsnode.sh") (Join-Path $stage "scripts\kill-stale-lsnode.sh")
+Copy-Item (Join-Path $root "scripts\start-cpanel.sh") (Join-Path $stage "scripts\start-cpanel.sh")
 if (Test-Path (Join-Path $root ".env.production")) {
   Copy-Item (Join-Path $root ".env.production") $stage
 }
