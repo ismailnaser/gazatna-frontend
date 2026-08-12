@@ -59,6 +59,8 @@
   "/parent/quizzes/page": "app/parent/quizzes/page.js",
   "/parent/schedules/page": "app/parent/schedules/page.js",
   "/parent/subjects/page": "app/parent/subjects/page.js",
+  "/robots.txt/route": "app/robots.txt/route.js",
+  "/sitemap.xml/route": "app/sitemap.xml/route.js",
   "/teacher/announcements/edit/[id]/page": "app/teacher/announcements/edit/[id]/page.js",
   "/teacher/announcements/new/page": "app/teacher/announcements/new/page.js",
   "/teacher/announcements/page": "app/teacher/announcements/page.js",

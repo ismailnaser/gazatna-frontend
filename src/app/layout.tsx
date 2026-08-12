@@ -15,10 +15,42 @@ const cairo = Cairo({
 });
 
 export const metadata: Metadata = {
-  title: "مدرسة غزتنا الخاصة | Ghazzatuna Private School",
+  title: {
+    default: "مدرسة غزتنا الخاصة | Ghazzatuna Private School",
+    template: "%s | مدرسة غزتنا الخاصة",
+  },
   description:
-    "منصة تعليمية رقمية لمدرسة غزتنا — تعليم متميز، أخبار، برامج أكاديمية، وتسجيل إلكتروني.",
+    "مدرسة غزتنا الخاصة — منصة تعليمية رقمية متكاملة. تعليم متميز، أخبار، برامج أكاديمية، وتسجيل إلكتروني. غزتنا، فلسطين.",
+  keywords: [
+    "مدرسة غزتنا الخاصة",
+    "غزتنا",
+    "Ghazzatuna",
+    "Ghazatna",
+    "مدرسة خاصة",
+    "تعليم فلسطين",
+    "تسجيل إلكتروني",
+    "منصة تعليمية",
+  ],
   applicationName: "غزتنا",
+  metadataBase: new URL("https://gzs.edu.ps"),
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    type: "website",
+    locale: "ar_PS",
+    url: "https://gzs.edu.ps",
+    siteName: "مدرسة غزتنا الخاصة",
+    title: "مدرسة غزتنا الخاصة | Ghazzatuna Private School",
+    description:
+      "مدرسة غزتنا الخاصة — منصة تعليمية رقمية متكاملة. تعليم متميز، أخبار، برامج أكاديمية، وتسجيل إلكتروني.",
+    images: [{ url: "/images/pwa-icon-512.png", width: 512, height: 512, alt: "مدرسة غزتنا" }],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true },
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",

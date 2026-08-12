@@ -59,6 +59,8 @@
   "/parent/quizzes/page": "/parent/quizzes",
   "/parent/schedules/page": "/parent/schedules",
   "/parent/subjects/page": "/parent/subjects",
+  "/robots.txt/route": "/robots.txt",
+  "/sitemap.xml/route": "/sitemap.xml",
   "/teacher/announcements/edit/[id]/page": "/teacher/announcements/edit/[id]",
   "/teacher/announcements/new/page": "/teacher/announcements/new",
   "/teacher/announcements/page": "/teacher/announcements",

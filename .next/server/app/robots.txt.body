@@ -1,0 +1,9 @@
+User-Agent: *
+Allow: /
+Disallow: /admin
+Disallow: /teacher
+Disallow: /parent
+Disallow: /login
+Disallow: /api
+
+Sitemap: https://gzs.edu.ps/sitemap.xml
