@@ -81,7 +81,6 @@ function proxyBackend(req, res) {
   delete headers["accept-encoding"];
   headers.host = publicHost;
   headers["x-ghazatna-proxy"] = PROXY_MARK;
-  // Help some reverse proxies preserve original scheme/path.
   headers["x-forwarded-proto"] = useTls ? "https" : "http";
   headers["x-forwarded-host"] = publicHost;
 
@@ -94,10 +93,6 @@ function proxyBackend(req, res) {
     rejectUnauthorized: false,
     servername: useTls ? publicHost : undefined,
   };
-
-  console.log(
-    `[backend-proxy] ${req.method} ${req.url} -> ${useTls ? "https" : "http"}://${proxyHost}:${proxyPort}`
-  );
 
   const upstream = transport.request(opts, (upRes) => {
     res.writeHead(upRes.statusCode || 502, upRes.headers);

@@ -15,7 +15,31 @@ const TOKEN_KEY = "ghazatna_access";
 const REFRESH_KEY = "ghazatna_refresh";
 const USER_KEY = "ghazatna_auth";
 
-const DEFAULT_TIMEOUT_MS = 15000;
+const DEFAULT_TIMEOUT_MS = 25000;
+/** Shared hosting drops bodies when too many Django requests overlap. */
+const API_MAX_CONCURRENT = 2;
+
+let apiInflight = 0;
+const apiWaiters: Array<() => void> = [];
+
+function acquireApiSlot(): Promise<void> {
+  if (apiInflight < API_MAX_CONCURRENT) {
+    apiInflight += 1;
+    return Promise.resolve();
+  }
+  return new Promise((resolve) => {
+    apiWaiters.push(() => {
+      apiInflight += 1;
+      resolve();
+    });
+  });
+}
+
+function releaseApiSlot(): void {
+  apiInflight -= 1;
+  const next = apiWaiters.shift();
+  if (next) next();
+}
 
 function mergeAbortSignals(signals: Array<AbortSignal | undefined>): AbortSignal | undefined {
   const active = signals.filter(Boolean) as AbortSignal[];
@@ -62,6 +86,11 @@ export function getAccessToken(): string | null {
   return sessionStorage.getItem(TOKEN_KEY);
 }
 
+export function getRefreshToken(): string | null {
+  if (typeof window === "undefined") return null;
+  return sessionStorage.getItem(REFRESH_KEY);
+}
+
 export function setTokens(access: string, refresh: string) {
   sessionStorage.setItem(TOKEN_KEY, access);
   sessionStorage.setItem(REFRESH_KEY, refresh);
@@ -89,18 +118,67 @@ export function setStoredUser<T>(user: T) {
   sessionStorage.setItem(USER_KEY, JSON.stringify(user));
 }
 
+async function parseResponseJson<T>(res: Response): Promise<T> {
+  const text = await res.text();
+  if (!text.trim()) {
+    throw new Error("empty_response");
+  }
+  try {
+    return JSON.parse(text) as T;
+  } catch {
+    throw new Error("invalid_json");
+  }
+}
+
+function isRetriableFetchError(err: unknown): boolean {
+  if (!(err instanceof Error)) return false;
+  const message = err.message.toLowerCase();
+  return (
+    message === "empty_response" ||
+    message === "invalid_json" ||
+    message === "timeout" ||
+    message.includes("timeout") ||
+    message.includes("failed to fetch") ||
+    message.includes("networkerror") ||
+    message.includes("load failed")
+  );
+}
+
+let refreshInFlight: Promise<string | null> | null = null;
+
 async function refreshAccessToken(): Promise<string | null> {
-  const refresh = sessionStorage.getItem(REFRESH_KEY);
-  if (!refresh) return null;
-  const res = await fetchWithTimeout(`${API_BASE}/auth/token/refresh/`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ refresh }),
+  if (refreshInFlight) return refreshInFlight;
+
+  const pending = (async () => {
+    const refresh = sessionStorage.getItem(REFRESH_KEY);
+    if (!refresh) return null;
+    try {
+      const res = await fetchWithTimeout(`${API_BASE}/auth/token/refresh/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ refresh }),
+      });
+      if (!res.ok) {
+        const text = await res.text();
+        if (!text.trim()) return null;
+        return null;
+      }
+      const data = await parseResponseJson<{ access?: string; refresh?: string }>(res);
+      if (!data.access) return null;
+      sessionStorage.setItem(TOKEN_KEY, data.access);
+      if (data.refresh) {
+        sessionStorage.setItem(REFRESH_KEY, data.refresh);
+      }
+      return data.access;
+    } catch {
+      return null;
+    }
+  })();
+
+  refreshInFlight = pending.finally(() => {
+    refreshInFlight = null;
   });
-  if (!res.ok) return null;
-  const data = await res.json();
-  sessionStorage.setItem(TOKEN_KEY, data.access);
-  return data.access;
+  return refreshInFlight;
 }
 
 const API_FIELD_LABELS: Record<string, string> = {
@@ -173,13 +251,25 @@ async function parseFailedResponse(res: Response): Promise<string> {
           : res.status === 404
             ? "العنصر غير موجود أو تم حذفه مسبقاً."
             : "حدث خطأ في الاتصال بالخادم";
-  const err = await res.json().catch(() => null);
+  const text = await res.text();
+  if (!text.trim()) {
+    throw new Error("empty_response");
+  }
+  let err: unknown = null;
+  try {
+    err = JSON.parse(text);
+  } catch {
+    throw new Error("invalid_json");
+  }
   return localizeApiErrorMessage(formatApiError(err, fallback));
 }
 
 export function formatClientFetchError(err: unknown, fallback: string): string {
   if (!(err instanceof Error)) return fallback;
   const message = err.message.toLowerCase();
+  if (message === "empty_response" || message === "invalid_json") {
+    return "تعذر قراءة استجابة الخادم. أعد تحميل الصفحة.";
+  }
   if (message === "timeout" || message.includes("timeout")) {
     return "انتهت مهلة الاتصال بالخادم. تحقق أن الخادم الخلفي يعمل ثم أعد المحاولة.";
   }
@@ -237,32 +327,56 @@ export async function apiFetch<T>(
   if (token) headers.Authorization = `Bearer ${token}`;
 
   const timeoutMs = method === "GET" ? DEFAULT_TIMEOUT_MS : 30000;
+  const maxAttempts = method === "GET" ? 3 : 2;
 
+  await acquireApiSlot();
   try {
-    let res = await fetchWithTimeout(`${API_BASE}${path}`, { ...options, headers }, timeoutMs);
+    let lastErr: unknown;
 
-    if (res.status === 401 && token) {
-      const newToken = await refreshAccessToken();
-      if (newToken) {
-        headers.Authorization = `Bearer ${newToken}`;
-        res = await fetchWithTimeout(`${API_BASE}${path}`, { ...options, headers }, timeoutMs);
+    for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+      if (attempt > 0) {
+        await new Promise((resolve) => setTimeout(resolve, 400 * attempt));
+      }
+
+      try {
+        let res = await fetchWithTimeout(`${API_BASE}${path}`, { ...options, headers }, timeoutMs);
+
+        if (res.status === 401 && token) {
+          const peek = await res.clone().text();
+          if (!peek.trim()) {
+            throw new Error("empty_response");
+          }
+          const newToken = await refreshAccessToken();
+          if (newToken) {
+            headers.Authorization = `Bearer ${newToken}`;
+            res = await fetchWithTimeout(`${API_BASE}${path}`, { ...options, headers }, timeoutMs);
+          }
+        }
+
+        if (!res.ok) {
+          throw new Error(await parseFailedResponse(res));
+        }
+
+        if (res.status === 204) return undefined as T;
+        const data = await parseResponseJson<T>(res);
+
+        if (isCacheableGet(path, method)) {
+          writeApiCache(cacheKey, data, getCacheTtl(path));
+        }
+
+        return data;
+      } catch (err) {
+        lastErr = err;
+        if (attempt + 1 < maxAttempts && isRetriableFetchError(err)) {
+          continue;
+        }
+        throw new Error(formatClientFetchError(err, "تعذر الاتصال بالخادم. حاول مرة أخرى."));
       }
     }
 
-    if (!res.ok) {
-      throw new Error(await parseFailedResponse(res));
-    }
-
-    if (res.status === 204) return undefined as T;
-    const data = (await res.json()) as T;
-
-    if (isCacheableGet(path, method)) {
-      writeApiCache(cacheKey, data, getCacheTtl(path));
-    }
-
-    return data;
-  } catch (err) {
-    throw new Error(formatClientFetchError(err, "تعذر الاتصال بالخادم. حاول مرة أخرى."));
+    throw new Error(formatClientFetchError(lastErr, "تعذر الاتصال بالخادم. حاول مرة أخرى."));
+  } finally {
+    releaseApiSlot();
   }
 }
 
@@ -284,25 +398,30 @@ async function apiFormFetch<T>(
   }
 
   let token = getAccessToken();
-  let res = await send(token);
+  await acquireApiSlot();
+  try {
+    let res = await send(token);
 
-  if (res.status === 401 && token) {
-    const newToken = await refreshAccessToken();
-    if (newToken) {
-      res = await send(newToken);
+    if (res.status === 401 && token) {
+      const newToken = await refreshAccessToken();
+      if (newToken) {
+        res = await send(newToken);
+      }
     }
-  }
 
-  if (path.startsWith("/admin/site-settings")) {
-    invalidateApiCache("/site-settings");
-  }
+    if (path.startsWith("/admin/site-settings")) {
+      invalidateApiCache("/site-settings");
+    }
 
-  if (!res.ok) {
-    throw new Error(await parseFailedResponse(res));
-  }
+    if (!res.ok) {
+      throw new Error(await parseFailedResponse(res));
+    }
 
-  if (res.status === 204) return undefined as T;
-  return res.json() as Promise<T>;
+    if (res.status === 204) return undefined as T;
+    return parseResponseJson<T>(res);
+  } finally {
+    releaseApiSlot();
+  }
 }
 
 type Paginated<T> = {
