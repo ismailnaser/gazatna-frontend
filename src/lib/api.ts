@@ -293,6 +293,10 @@ async function apiFormFetch<T>(
     }
   }
 
+  if (path.startsWith("/admin/site-settings")) {
+    invalidateApiCache("/site-settings");
+  }
+
   if (!res.ok) {
     throw new Error(await parseFailedResponse(res));
   }
@@ -336,7 +340,9 @@ export const api = {
   getSiteSettings: () => apiFetch<unknown>("/site-settings/"),
   getAdminSiteSettings: () => apiFetch<unknown>("/admin/site-settings/"),
   updateAdminSiteSettings: (data: unknown) =>
-    apiFetch<unknown>("/admin/site-settings/", { method: "PATCH", body: JSON.stringify(data) }),
+    data instanceof FormData
+      ? apiFormFetch<unknown>("/admin/site-settings/", data, "PATCH")
+      : apiFetch<unknown>("/admin/site-settings/", { method: "PATCH", body: JSON.stringify(data) }),
 
   submitAdmissionApplication: (data: unknown) =>
     apiFetch<unknown>("/admissions/", { method: "POST", body: JSON.stringify(data) }),

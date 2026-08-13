@@ -315,11 +315,11 @@ self.__SERVER_FILES_MANIFEST={
       "afterFiles": [
         {
           "source": "/api/:path*",
-          "destination": "https://django.gzs.edu.ps/api/:path*"
+          "destination": "http://127.0.0.1:8000/api/:path*"
         },
         {
           "source": "/media/:path*",
-          "destination": "https://django.gzs.edu.ps/media/:path*"
+          "destination": "http://127.0.0.1:8000/media/:path*"
         }
       ],
       "fallback": []

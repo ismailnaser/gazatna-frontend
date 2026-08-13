@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import Image from "next/image";
 import { Button } from "@/components/atoms/Button";
 import { api } from "@/lib/api";
+import { resolveMediaUrl } from "@/lib/media";
 
 type HeroSettings = {
   welcome: string;
@@ -13,6 +13,10 @@ type HeroSettings = {
   description: string;
   ctaPrimary: string;
   ctaSecondary: string;
+  imageUrl?: string | null;
+  imageHeight: string;
+  imageObjectFit: "cover" | "contain";
+  imageObjectPosition: string;
 };
 
 const DEFAULT: HeroSettings = {
@@ -23,7 +27,13 @@ const DEFAULT: HeroSettings = {
     "من أصالة الانتماء إلى ريادة المستقبل — منصة تعليمية حديثة تجمع بين التميز الأكاديمي والتقنية، لبناء جيل واعٍ ومبدع في غزة",
   ctaPrimary: "ابدأ رحلتك",
   ctaSecondary: "تعرّف علينا",
+  imageUrl: null,
+  imageHeight: "100dvh",
+  imageObjectFit: "cover",
+  imageObjectPosition: "center top",
 };
+
+const FALLBACK_IMAGE = "/images/hero-illustration.jpg";
 
 export function Hero() {
   const [hero, setHero] = useState<HeroSettings>(DEFAULT);
@@ -33,37 +43,60 @@ export function Hero() {
       .getSiteSettings()
       .then((res) => {
         const s = res as { hero?: Partial<HeroSettings> };
-        if (s.hero) setHero({ ...DEFAULT, ...s.hero });
+        if (s.hero) {
+          setHero({
+            ...DEFAULT,
+            ...s.hero,
+            imageHeight: s.hero.imageHeight || DEFAULT.imageHeight,
+            imageObjectFit: s.hero.imageObjectFit === "contain" ? "contain" : "cover",
+            imageObjectPosition: s.hero.imageObjectPosition || DEFAULT.imageObjectPosition,
+          });
+        }
       })
       .catch(() => {});
   }, []);
 
+  const imageSrc = resolveMediaUrl(hero.imageUrl) || FALLBACK_IMAGE;
+  const title = hero.schoolName.trim() || DEFAULT.schoolName;
+  const titleParts = title.split(/\s+/);
+  const firstWord = titleParts[0] ?? title;
+  const restTitle = titleParts.slice(1).join(" ");
+
   return (
-    <section id="الرئيسية" className="relative min-h-dvh overflow-hidden">
-      <Image
-        src="/images/hero-illustration.jpg"
+    <section
+      id="الرئيسية"
+      className="relative overflow-hidden bg-hero"
+      style={{ minHeight: hero.imageHeight || "100dvh" }}
+    >
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={imageSrc}
         alt=""
-        fill
-        priority
-        className="object-cover object-top sm:object-center"
-        sizes="100vw"
         aria-hidden
+        className="absolute inset-0 h-full w-full"
+        style={{
+          objectFit: hero.imageObjectFit,
+          objectPosition: hero.imageObjectPosition,
+        }}
       />
 
-      <div className="relative z-10 flex min-h-dvh w-full flex-col items-start px-6 sm:px-10 lg:px-16">
+      <div
+        className="relative z-10 flex w-full flex-col items-start px-6 sm:px-10 lg:px-16"
+        style={{ minHeight: hero.imageHeight || "100dvh" }}
+      >
         <div aria-hidden className="hero-content-offset w-full shrink-0" />
 
         <motion.div
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="max-w-2xl text-start"
+          className="max-w-2xl pb-16 text-start"
         >
           <p className="text-xl font-medium text-brand-black sm:text-2xl">{hero.welcome}</p>
 
           <h1 className="mt-3 text-5xl font-extrabold leading-tight sm:text-6xl lg:text-7xl">
-            <span className="text-brand-black">مدرسة </span>
-            <span className="text-brand-orange">غَزتنا</span>
+            <span className="text-brand-black">{firstWord} </span>
+            {restTitle ? <span className="text-brand-orange">{restTitle}</span> : null}
           </h1>
           <div className="mt-4 h-1.5 w-56 rounded-full bg-brand-blue sm:w-72" />
 

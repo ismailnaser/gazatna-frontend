@@ -8,19 +8,28 @@ import { Card } from "@/components/atoms/Card";
 import { Input } from "@/components/atoms/Input";
 import { Textarea } from "@/components/atoms/Textarea";
 import { PageHeader } from "@/components/molecules/PageHeader";
+import { FileUploadField } from "@/components/molecules/FileUploadField";
+import { Select } from "@/components/atoms/Select";
 import { api } from "@/lib/api";
+import { resolveMediaUrl } from "@/lib/media";
 import type { Grade } from "@/types/teacher";
 import { Check } from "lucide-react";
 
+type HeroSettings = {
+  welcome: string;
+  schoolName: string;
+  tagline: string;
+  description: string;
+  ctaPrimary: string;
+  ctaSecondary: string;
+  imageUrl?: string | null;
+  imageHeight: string;
+  imageObjectFit: "cover" | "contain";
+  imageObjectPosition: string;
+};
+
 type SiteSettings = {
-  hero: {
-    welcome: string;
-    schoolName: string;
-    tagline: string;
-    description: string;
-    ctaPrimary: string;
-    ctaSecondary: string;
-  };
+  hero: HeroSettings;
   about: {
     description: string;
     vision: string;
@@ -49,6 +58,25 @@ const TABS: { id: Tab; label: string }[] = [
   { id: "programs", label: "البرامج التعليمية" },
 ];
 
+const HERO_HEIGHT_OPTIONS = [
+  { value: "100dvh", label: "كامل الشاشة (100dvh)" },
+  { value: "90vh", label: "90% من الشاشة" },
+  { value: "80vh", label: "80% من الشاشة" },
+  { value: "700px", label: "700 بكسل" },
+  { value: "600px", label: "600 بكسل" },
+  { value: "500px", label: "500 بكسل" },
+];
+
+const HERO_POSITION_OPTIONS = [
+  { value: "center top", label: "أعلى الوسط" },
+  { value: "center center", label: "الوسط" },
+  { value: "center bottom", label: "أسفل الوسط" },
+  { value: "right top", label: "أعلى اليمين" },
+  { value: "left top", label: "أعلى اليسار" },
+  { value: "right center", label: "يمين الوسط" },
+  { value: "left center", label: "يسار الوسط" },
+];
+
 export default function AdminSitePage() {
   const [tab, setTab] = useState<Tab>("hero");
   const [settings, setSettings] = useState<SiteSettings | null>(null);
@@ -57,6 +85,17 @@ export default function AdminSitePage() {
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
+  const [pendingHeroImage, setPendingHeroImage] = useState<File | null>(null);
+  const [heroImagePreview, setHeroImagePreview] = useState<string | null>(null);
+  const [removeHeroImage, setRemoveHeroImage] = useState(false);
+
+  useEffect(() => {
+    return () => {
+      if (heroImagePreview?.startsWith("blob:")) {
+        URL.revokeObjectURL(heroImagePreview);
+      }
+    };
+  }, [heroImagePreview]);
 
   useEffect(() => {
     Promise.all([
@@ -64,7 +103,16 @@ export default function AdminSitePage() {
       api.getAdminGrades(),
     ])
       .then(([settingsRes, gradesRes]) => {
-        setSettings(settingsRes as SiteSettings);
+        const raw = settingsRes as SiteSettings;
+        setSettings({
+          ...raw,
+          hero: {
+            ...raw.hero,
+            imageHeight: raw.hero?.imageHeight || "100dvh",
+            imageObjectFit: raw.hero?.imageObjectFit || "cover",
+            imageObjectPosition: raw.hero?.imageObjectPosition || "center top",
+          },
+        });
         setGrades(gradesRes as Grade[]);
       })
       .catch(() => setError("تعذر تحميل الإعدادات"))
@@ -77,8 +125,35 @@ export default function AdminSitePage() {
     setError("");
     setSuccess("");
     try {
-      const updated = (await api.updateAdminSiteSettings(settings)) as SiteSettings;
-      setSettings(updated);
+      let updated: SiteSettings;
+      if (pendingHeroImage || removeHeroImage) {
+        const fd = new FormData();
+        fd.append("hero", JSON.stringify(settings.hero));
+        fd.append("about", JSON.stringify(settings.about));
+        fd.append("contact", JSON.stringify(settings.contact));
+        fd.append("registration", JSON.stringify(settings.registration));
+        fd.append("programs", JSON.stringify(settings.programs ?? []));
+        if (pendingHeroImage) fd.append("heroImage", pendingHeroImage);
+        if (removeHeroImage) fd.append("removeHeroImage", "true");
+        updated = (await api.updateAdminSiteSettings(fd)) as SiteSettings;
+      } else {
+        updated = (await api.updateAdminSiteSettings(settings)) as SiteSettings;
+      }
+      setSettings({
+        ...updated,
+        hero: {
+          ...updated.hero,
+          imageHeight: updated.hero?.imageHeight || "100dvh",
+          imageObjectFit: updated.hero?.imageObjectFit || "cover",
+          imageObjectPosition: updated.hero?.imageObjectPosition || "center top",
+        },
+      });
+      setPendingHeroImage(null);
+      setRemoveHeroImage(false);
+      if (heroImagePreview?.startsWith("blob:")) {
+        URL.revokeObjectURL(heroImagePreview);
+      }
+      setHeroImagePreview(null);
       setSuccess("تم حفظ الإعدادات بنجاح.");
     } catch (e) {
       setError(e instanceof Error ? e.message : "تعذر حفظ الإعدادات");
@@ -155,6 +230,90 @@ export default function AdminSitePage() {
           <div className="grid gap-4 sm:grid-cols-2">
             <Input label="نص الزر الأول (CTA)" value={settings.hero.ctaPrimary} onChange={(e) => setHero("ctaPrimary", e.target.value)} />
             <Input label="نص الزر الثاني" value={settings.hero.ctaSecondary} onChange={(e) => setHero("ctaSecondary", e.target.value)} />
+          </div>
+
+          <div className="border-t border-neutral-100 pt-4">
+            <h3 className="mb-3 font-bold text-p-black">صورة الصفحة الرئيسية</h3>
+            <p className="mb-3 text-sm text-p-black/60">
+              الصورة تظهر في خلفية الهيرو على الموقع. إذا لم ترفع صورة تُستخدم الصورة الافتراضية.
+            </p>
+            {(heroImagePreview || (settings.hero.imageUrl && !removeHeroImage)) && (
+              <div className="mb-4 overflow-hidden rounded-xl border border-neutral-200 bg-neutral-50">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={heroImagePreview || resolveMediaUrl(settings.hero.imageUrl) || ""}
+                  alt="معاينة صورة الهيرو"
+                  className="max-h-64 w-full"
+                  style={{
+                    objectFit: settings.hero.imageObjectFit || "cover",
+                    objectPosition: settings.hero.imageObjectPosition || "center top",
+                  }}
+                />
+              </div>
+            )}
+            <FileUploadField
+              preset="image"
+              label="رفع صورة جديدة"
+              selectedFileName={pendingHeroImage?.name}
+              onChange={(files) => {
+                const file = files?.[0] ?? null;
+                setPendingHeroImage(file);
+                setRemoveHeroImage(false);
+                setHeroImagePreview((prev) => {
+                  if (prev?.startsWith("blob:")) URL.revokeObjectURL(prev);
+                  return file ? URL.createObjectURL(file) : null;
+                });
+              }}
+            />
+            {(settings.hero.imageUrl || pendingHeroImage) && !removeHeroImage && (
+              <button
+                type="button"
+                className="mt-2 text-sm font-semibold text-p-red hover:underline"
+                onClick={() => {
+                  setPendingHeroImage(null);
+                  setRemoveHeroImage(true);
+                  setHeroImagePreview((prev) => {
+                    if (prev?.startsWith("blob:")) URL.revokeObjectURL(prev);
+                    return null;
+                  });
+                }}
+              >
+                حذف الصورة والرجوع للافتراضية
+              </button>
+            )}
+            <div className="mt-4 grid gap-4 sm:grid-cols-2">
+              <Select
+                label="ارتفاع قسم الهيرو"
+                options={HERO_HEIGHT_OPTIONS}
+                value={
+                  HERO_HEIGHT_OPTIONS.some((o) => o.value === settings.hero.imageHeight)
+                    ? settings.hero.imageHeight
+                    : "100dvh"
+                }
+                onChange={(e) => setHero("imageHeight", e.target.value)}
+              />
+              <Input
+                label="ارتفاع مخصص (اختياري)"
+                placeholder="مثال: 750px أو 85vh"
+                value={settings.hero.imageHeight}
+                onChange={(e) => setHero("imageHeight", e.target.value)}
+              />
+              <Select
+                label="طريقة عرض الصورة"
+                options={[
+                  { value: "cover", label: "ملء الإطار (قص الزوائد)" },
+                  { value: "contain", label: "إظهار الصورة كاملة" },
+                ]}
+                value={settings.hero.imageObjectFit || "cover"}
+                onChange={(e) => setHero("imageObjectFit", e.target.value)}
+              />
+              <Select
+                label="موضع الصورة داخل الإطار"
+                options={HERO_POSITION_OPTIONS}
+                value={settings.hero.imageObjectPosition || "center top"}
+                onChange={(e) => setHero("imageObjectPosition", e.target.value)}
+              />
+            </div>
           </div>
         </Card>
       )}
