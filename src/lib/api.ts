@@ -293,6 +293,8 @@ function rebuildFormData(entries: [string, FormDataEntryValue][]): FormData {
   return body;
 }
 
+let inflightGets = new Map<string, Promise<unknown>>();
+
 export async function apiFetch<T>(
   path: string,
   options: RequestInit = {}
@@ -303,7 +305,32 @@ export async function apiFetch<T>(
   if (isCacheableGet(path, method)) {
     const cached = readApiCache<T>(cacheKey);
     if (cached !== null) return cached;
-  } else if (method !== "GET") {
+  }
+
+  if (method === "GET") {
+    const pending = inflightGets.get(cacheKey);
+    if (pending) return pending as Promise<T>;
+  }
+
+  const request = apiFetchOnce<T>(path, options, cacheKey, method);
+  if (method === "GET") {
+    inflightGets.set(cacheKey, request);
+    void request.finally(() => {
+      if (inflightGets.get(cacheKey) === request) {
+        inflightGets.delete(cacheKey);
+      }
+    });
+  }
+  return request;
+}
+
+async function apiFetchOnce<T>(
+  path: string,
+  options: RequestInit,
+  cacheKey: string,
+  method: string
+): Promise<T> {
+  if (method !== "GET") {
     if (path.startsWith("/content/") || path.startsWith("/admin/content/")) {
       invalidateApiCache("/content/");
     }
@@ -315,6 +342,14 @@ export async function apiFetch<T>(
     }
     if (path.startsWith("/admin/finance") || path.includes("/fee-access")) {
       invalidateApiCache("/admin/analytics");
+    }
+    if (path.startsWith("/admin/classes")) invalidateApiCache("/admin/classes");
+    if (path.startsWith("/admin/grades")) invalidateApiCache("/admin/grades");
+    if (path.startsWith("/admin/subjects")) invalidateApiCache("/admin/subjects");
+    if (path.startsWith("/admin/teachers")) invalidateApiCache("/admin/teachers");
+    if (path.startsWith("/admin/students")) invalidateApiCache("/admin/students");
+    if (path.startsWith("/admin/users") || path.startsWith("/auth/users")) {
+      invalidateApiCache("/admin/users");
     }
   }
 

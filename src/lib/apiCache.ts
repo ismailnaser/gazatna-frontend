@@ -9,10 +9,19 @@ const CACHEABLE_PREFIXES = [
   "/site-settings",
   "/academic-context/",
   "/admin/analytics",
+  "/admin/classes",
+  "/admin/grades",
+  "/admin/subjects",
+  "/admin/teachers",
+  "/admin/students",
+  "/admin/users",
 ];
 
 function cacheTtlFor(path: string): number {
-  if (path.startsWith("/admin/analytics") || path.startsWith("/academic-context")) {
+  if (
+    path.startsWith("/admin/") ||
+    path.startsWith("/academic-context")
+  ) {
     return AUTH_TTL_MS;
   }
   return PUBLIC_TTL_MS;

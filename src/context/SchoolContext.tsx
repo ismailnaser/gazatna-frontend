@@ -223,7 +223,7 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
       initialLoadDoneRef.current = true;
       setLoading(false);
     }
-  }, [user]);
+  }, [user?.id, user?.role]);
 
   useEffect(() => {
     refresh();
