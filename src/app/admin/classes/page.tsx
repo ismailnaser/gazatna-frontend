@@ -37,7 +37,12 @@ function mapStudent(s: Record<string, unknown>): AdminStudent {
 
 export default function AdminClassesPage() {
   const { user } = useAuth();
-  const { refresh } = useSchool();
+  const {
+    refresh,
+    classes: schoolClasses,
+    grades: schoolGrades,
+    teachers: schoolTeachers,
+  } = useSchool();
   const [pageClasses, setPageClasses] = useState<SchoolClass[]>([]);
   const [classError, setClassError] = useState("");
   const [classSuccess, setClassSuccess] = useState("");
@@ -95,30 +100,30 @@ export default function AdminClassesPage() {
 
   useEffect(() => {
     mountedRef.current = true;
-    void reloadAll();
     return () => {
       mountedRef.current = false;
     };
-  }, [reloadAll]);
+  }, []);
 
   useEffect(() => {
-    let mounted = true;
-    api.getAdminTeachers()
-      .then((data) => {
-        if (!mounted) return;
-        const list = (data as Array<Record<string, unknown>>).map((t) => ({
-          id: String(t.id),
-          name: String(t.name),
-          homeroomClassId:
-            t.homeroomClassId != null ? String(t.homeroomClassId) : null,
-        }));
-        setTeachers(list.sort((a, b) => a.name.localeCompare(b.name, "ar")));
-      })
-      .catch(() => setTeachers([]));
-    return () => {
-      mounted = false;
-    };
-  }, []);
+    if (schoolGrades.length && schoolClasses.length) {
+      setGrades(sortGrades(schoolGrades));
+      setPageClasses(schoolClasses);
+      setLoadingGrades(false);
+      return;
+    }
+    void reloadAll();
+  }, [reloadAll, schoolGrades, schoolClasses]);
+
+  useEffect(() => {
+    if (!schoolTeachers.length) return;
+    const list = schoolTeachers.map((t) => ({
+      id: String(t.id),
+      name: String(t.name),
+      homeroomClassId: t.homeroomClassId != null ? String(t.homeroomClassId) : null,
+    }));
+    setTeachers(list.sort((a, b) => a.name.localeCompare(b.name, "ar")));
+  }, [schoolTeachers]);
 
   async function handleGradeDrop(e: React.DragEvent<HTMLDivElement>, toId: string) {
     e.preventDefault();

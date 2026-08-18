@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { Alert } from "@/components/atoms/Alert";
 import { Badge } from "@/components/atoms/Badge";
 import { Card } from "@/components/atoms/Card";
+import { PageBusy } from "@/components/molecules/PageHeader";
 import { QUESTION_TYPE_OPTIONS } from "@/components/teacher/QuizForm";
 import { api } from "@/lib/api";
 import {
@@ -66,7 +67,7 @@ export function ParentQuizReviewClient({ quizId }: { quizId: string }) {
   }, [quizId]);
 
   if (loading) {
-    return <p className="text-neutral-500">جاري التحميل...</p>;
+    return <PageBusy title="مراجعة الاختبار" />;
   }
 
   if (error || !quiz || !submission) {

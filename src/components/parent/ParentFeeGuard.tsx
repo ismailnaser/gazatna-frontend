@@ -17,7 +17,6 @@ export function ParentFeeGuard({ children }: { children: React.ReactNode }) {
   const [feeStatus, setFeeStatus] = useState<FeeStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
-  const prevOnFeesRef = useRef(false);
   const lastFetchAtRef = useRef(0);
   const inFlightRef = useRef(false);
 
@@ -54,15 +53,13 @@ export function ParentFeeGuard({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener("focus", onFocus);
   }, [loadStatus]);
 
-  useEffect(() => {
-    if (prevOnFeesRef.current && !onFeesPage) {
-      void loadStatus({ force: true });
-    }
-    prevOnFeesRef.current = onFeesPage;
-  }, [onFeesPage, loadStatus]);
-
-  if (loading) {
-    return <p className="py-16 text-center text-sm text-p-black/50">جاري التحقق من حالة الرسوم...</p>;
+  if (loading && !feeStatus) {
+    return (
+      <div className="space-y-3">
+        <div className="h-24 animate-pulse rounded-2xl bg-neutral-100" />
+        <div className="h-24 animate-pulse rounded-2xl bg-neutral-100" />
+      </div>
+    );
   }
 
   if (loadError && !onFeesPage) {

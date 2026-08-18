@@ -7,7 +7,7 @@ import { Button } from "@/components/atoms/Button";
 import { Card } from "@/components/atoms/Card";
 import { Input } from "@/components/atoms/Input";
 import { Textarea } from "@/components/atoms/Textarea";
-import { PageHeader } from "@/components/molecules/PageHeader";
+import { PageBusy, PageHeader } from "@/components/molecules/PageHeader";
 import { FileUploadField } from "@/components/molecules/FileUploadField";
 import { Select } from "@/components/atoms/Select";
 import { api } from "@/lib/api";
@@ -191,7 +191,14 @@ export default function AdminSitePage() {
     });
   }
 
-  if (loading) return <p className="text-neutral-500">جاري التحميل...</p>;
+  if (loading) {
+    return (
+      <PageBusy
+        title="إعدادات الموقع"
+        description="تحكم في محتوى الصفحة الرئيسية، من نحن، التواصل، وفورم التسجيل"
+      />
+    );
+  }
   if (!settings) return <Alert variant="error">{error || "تعذر تحميل الإعدادات"}</Alert>;
 
   return (

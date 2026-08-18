@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { AdminNewsForm } from "@/components/admin/AdminNewsForm";
-import { PageHeader } from "@/components/molecules/PageHeader";
+import { PageBusy, PageHeader } from "@/components/molecules/PageHeader";
 import { api } from "@/lib/api";
 import { mapNewsItem } from "@/types/news";
 
@@ -24,7 +24,12 @@ export default function AdminNewNewsPage() {
   }, []);
 
   if (loading) {
-    return <p className="text-neutral-500">جاري التحميل...</p>;
+    return (
+      <PageBusy
+        title="إضافة خبر جديد"
+        description="أنشئ خبراً أو فعالية أو إنجازاً لعرضه في الموقع العام"
+      />
+    );
   }
 
   return (

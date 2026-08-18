@@ -33,26 +33,6 @@ export function LatestNews() {
   const featured = filtered.find((item) => item.featured) ?? filtered[0];
   const listItems = filtered.filter((item) => item.id !== featured?.id);
 
-  if (loading) {
-    return (
-      <section className="bg-white py-16 sm:py-20">
-        <div className="mx-auto max-w-7xl px-4 text-center text-neutral-500 sm:px-6 lg:px-8">
-          جاري تحميل الأخبار...
-        </div>
-      </section>
-    );
-  }
-
-  if (items.length === 0) {
-    return (
-      <section className="bg-white py-16 sm:py-20">
-        <div className="mx-auto max-w-7xl px-4 text-center text-neutral-500 sm:px-6 lg:px-8">
-          لا توجد أخبار حالياً.
-        </div>
-      </section>
-    );
-  }
-
   return (
     <section className="bg-white py-16 sm:py-20">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -65,6 +45,14 @@ export function LatestNews() {
           </Link>
         </div>
 
+        {loading ? (
+          <div className="grid gap-6 lg:grid-cols-5">
+            <div className="h-40 animate-pulse rounded-2xl bg-neutral-100 lg:col-span-2" />
+            <div className="h-72 animate-pulse rounded-2xl bg-neutral-100 lg:col-span-3" />
+          </div>
+        ) : items.length === 0 ? (
+          <p className="text-center text-neutral-500">لا توجد أخبار حالياً.</p>
+        ) : (
         <div className="flex flex-col gap-8 lg:grid lg:grid-cols-5 lg:gap-10">
           <motion.div
             initial={{ opacity: 0, y: 16 }}
@@ -110,6 +98,7 @@ export function LatestNews() {
             ))}
           </motion.div>
         </div>
+        )}
       </div>
     </section>
   );

@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Alert } from "@/components/atoms/Alert";
 import { Button } from "@/components/atoms/Button";
 import { Card } from "@/components/atoms/Card";
-import { PageHeader } from "@/components/molecules/PageHeader";
+import { PageBusy, PageHeader } from "@/components/molecules/PageHeader";
 import {
   isParentFeeRestricted,
   ParentAccessBlockedCard,
@@ -161,7 +161,7 @@ export default function ParentGradesPage() {
   }
 
   if (loading) {
-    return <p className="text-neutral-500">جاري التحميل...</p>;
+    return <PageBusy title="العلامات" description="كشف علامات الطالب لجميع المواد" />;
   }
 
   if (!student) {

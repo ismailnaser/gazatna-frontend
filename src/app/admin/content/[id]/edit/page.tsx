@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { Alert } from "@/components/atoms/Alert";
 import { Button } from "@/components/atoms/Button";
 import { AdminNewsForm } from "@/components/admin/AdminNewsForm";
-import { PageHeader } from "@/components/molecules/PageHeader";
+import { PageBusy, PageHeader } from "@/components/molecules/PageHeader";
 import { api } from "@/lib/api";
 import { mapNewsItem, type PublicNewsItem } from "@/types/news";
 
@@ -32,7 +32,7 @@ export default function AdminEditNewsPage() {
   }, [id]);
 
   if (loading) {
-    return <p className="text-neutral-500">جاري التحميل...</p>;
+    return <PageBusy title="تعديل الخبر" />;
   }
 
   if (error || !item) {

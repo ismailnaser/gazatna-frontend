@@ -138,7 +138,7 @@ function GradeSubjectMultiSelect({
 }
 
 export function TeacherGradesPanel() {
-  const { classes, currentTeacher, loading: schoolLoading, refresh } = useSchool();
+  const { classes, currentTeacher, loading: schoolLoading } = useSchool();
 
   function showSuccessMessage(message: string, scroll = true) {
     setError("");
@@ -151,10 +151,6 @@ export function TeacherGradesPanel() {
     setSuccess("");
     setScrollFeedback(false);
   }
-
-  useEffect(() => {
-    void refresh();
-  }, [refresh]);
 
   const teachableClassIdSet = useMemo(() => {
     if (currentTeacher?.teachableClassIds?.length) {

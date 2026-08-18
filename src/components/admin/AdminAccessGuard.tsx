@@ -17,7 +17,13 @@ export function AdminAccessGuard({ children }: { children: React.ReactNode }) {
     }
   }, [user, loading, pathname, router]);
 
-  if (loading || !user || !isAdminRole(user.role)) {
+  if (loading && !user) {
+    return (
+      <div className="py-10 text-center text-sm text-neutral-500">جاري التحقق من الصلاحية...</div>
+    );
+  }
+
+  if (!user || !isAdminRole(user.role)) {
     return null;
   }
 

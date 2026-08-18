@@ -12,22 +12,22 @@ import { getDashboardPath } from "@/lib/auth";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login, user, loading } = useAuth();
+  const { login, user } = useAuth();
 
   useEffect(() => {
-    if (!loading && user) {
+    if (user) {
       router.replace(getDashboardPath(user.role));
     }
-  }, [user, loading, router]);
+  }, [user, router]);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  if (loading || user) {
+  if (user) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-white">
-        <p className="text-p-black/50">جاري التحميل...</p>
+        <p className="text-p-black/50">جاري التحويل...</p>
       </div>
     );
   }

@@ -367,9 +367,11 @@ async function apiFetchOnce<T>(
   if (method !== "GET") {
     if (path.startsWith("/content/") || path.startsWith("/admin/content/")) {
       invalidateApiCache("/content/");
+      invalidateApiCache("/admin/content");
     }
     if (path.startsWith("/admin/site-settings")) {
       invalidateApiCache("/site-settings");
+      invalidateApiCache("/admin/site-settings");
     }
     if (path.startsWith("/admin/academic-years") || path.includes("term-end") || path.includes("rollover")) {
       invalidateApiCache("/academic-context");
@@ -380,6 +382,8 @@ async function apiFetchOnce<T>(
     }
     if (path.startsWith("/admin/finance") || path.includes("/fee-access")) {
       invalidateApiCache("/admin/analytics");
+      invalidateApiCache("/admin/finance");
+      invalidateApiCache("/parent/fees");
     }
     if (path.startsWith("/admin/classes")) invalidateApiCache("/admin/classes");
     if (path.startsWith("/admin/grades")) invalidateApiCache("/admin/grades");
@@ -388,7 +392,11 @@ async function apiFetchOnce<T>(
     if (path.startsWith("/admin/students")) invalidateApiCache("/admin/students");
     if (path.startsWith("/admin/users") || path.startsWith("/auth/users")) {
       invalidateApiCache("/admin/users");
+      invalidateApiCache("/auth/users");
     }
+    if (path.startsWith("/admin/staff-types")) invalidateApiCache("/admin/staff-types");
+    if (path.startsWith("/teacher/")) invalidateApiCache("/teacher/");
+    if (path.startsWith("/parent/")) invalidateApiCache("/parent/");
   }
 
   const headers: Record<string, string> = {
@@ -484,6 +492,13 @@ async function apiFormFetch<T>(
 
     if (path.startsWith("/admin/site-settings")) {
       invalidateApiCache("/site-settings");
+      invalidateApiCache("/admin/site-settings");
+    }
+    if (path.startsWith("/parent/")) invalidateApiCache("/parent/");
+    if (path.startsWith("/teacher/")) invalidateApiCache("/teacher/");
+    if (path.startsWith("/admin/content/") || path.startsWith("/content/")) {
+      invalidateApiCache("/content/");
+      invalidateApiCache("/admin/content");
     }
 
     if (!res.ok) {

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { Alert } from "@/components/atoms/Alert";
 import { HomeworkForm, type HomeworkFormData } from "@/components/teacher/HomeworkForm";
-import { PageHeader } from "@/components/molecules/PageHeader";
+import { PageBusy, PageHeader } from "@/components/molecules/PageHeader";
 import { useAssignments } from "@/context/AssignmentsContext";
 import { useAuth } from "@/context/AuthContext";
 import { useSchool } from "@/context/SchoolContext";
@@ -42,7 +42,7 @@ export function TeacherHomeworkEditor({ mode, homeworkId }: Props) {
   }, [mode, homeworkId, items]);
 
   if (loading) {
-    return <p className="text-neutral-500">جاري التحميل...</p>;
+    return <PageBusy title={mode === "create" ? "واجب جديد" : "تعديل الواجب"} />;
   }
 
   if (!teacher) {

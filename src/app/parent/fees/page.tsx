@@ -7,7 +7,7 @@ import { Card } from "@/components/atoms/Card";
 import { Input } from "@/components/atoms/Input";
 import { NumberFieldWithKeypad } from "@/components/teacher/NumberFieldWithKeypad";
 import { Textarea } from "@/components/atoms/Textarea";
-import { PageHeader } from "@/components/molecules/PageHeader";
+import { PageBusy, PageHeader } from "@/components/molecules/PageHeader";
 import { ParentNoStudentCard } from "@/components/parent/ParentAccessCards";
 import { FileUploadField } from "@/components/molecules/FileUploadField";
 import { StatusBadge } from "@/components/molecules/StatusBadge";
@@ -84,7 +84,7 @@ export default function ParentFeesPage() {
   }
 
   if (loading) {
-    return <p className="text-neutral-500">جاري التحميل...</p>;
+    return <PageBusy title="المالية" description="رصيد الحساب، جدول الأقساط، وإشعارات الدفع" />;
   }
 
   if (!student) {

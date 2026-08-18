@@ -5,6 +5,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useRef,
   useState,
 } from "react";
 import { api } from "@/lib/api";
@@ -92,13 +93,14 @@ export function AssignmentsProvider({ children }: { children: React.ReactNode })
     quizSubmissions: [],
   });
   const [loading, setLoading] = useState(true);
+  const hasDataRef = useRef(false);
 
   const refresh = useCallback(async () => {
-    if (!user) {
+    if (!user || (user.role !== "teacher" && user.role !== "parent")) {
       setLoading(false);
       return;
     }
-    setLoading(true);
+    if (!hasDataRef.current) setLoading(true);
     try {
       if (user.role === "teacher") {
         const [homework, quizzes, assessments] = await Promise.all([
@@ -129,6 +131,7 @@ export function AssignmentsProvider({ children }: { children: React.ReactNode })
           quizSubmissions: subs.quizzes,
         });
       }
+      hasDataRef.current = true;
     } catch {
       setState({
         homework: [],
@@ -139,7 +142,7 @@ export function AssignmentsProvider({ children }: { children: React.ReactNode })
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user?.id, user?.role]);
 
   useEffect(() => {
     refresh();

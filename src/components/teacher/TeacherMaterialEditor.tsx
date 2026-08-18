@@ -9,7 +9,7 @@ import {
   MaterialForm,
   type MaterialFormData,
 } from "@/components/teacher/MaterialForm";
-import { PageHeader } from "@/components/molecules/PageHeader";
+import { PageBusy, PageHeader } from "@/components/molecules/PageHeader";
 import { useAuth } from "@/context/AuthContext";
 import { useSchool } from "@/context/SchoolContext";
 import { api } from "@/lib/api";
@@ -56,7 +56,7 @@ export function TeacherMaterialEditor({ mode, materialId }: Props) {
   }, [mode, materialId, items]);
 
   if (loading || (mode === "edit" && !loaded)) {
-    return <p className="text-neutral-500">جاري التحميل...</p>;
+    return <PageBusy title={mode === "create" ? "مرفق جديد" : "تعديل المرفق"} />;
   }
 
   if (!teacher) {

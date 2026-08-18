@@ -15,15 +15,44 @@ const CACHEABLE_PREFIXES = [
   "/admin/teachers",
   "/admin/students",
   "/admin/users",
+  "/auth/users",
   "/admin/academic-years",
   "/admin/schedules",
   "/admin/finance",
+  "/admin/site-settings",
+  "/admin/content",
+  "/admin/staff-types",
+  "/admin/admissions",
+  "/admin/messages",
+  "/admin/notifications",
+  "/teacher/profile",
+  "/teacher/classes",
+  "/teacher/homework",
+  "/teacher/quizzes",
+  "/teacher/assessments",
+  "/teacher/materials",
+  "/teacher/announcements",
+  "/teacher/alerts",
+  "/teacher/schedules",
+  "/parent/student",
+  "/parent/child",
+  "/parent/fees",
+  "/parent/subjects",
+  "/parent/homework",
+  "/parent/quizzes",
+  "/parent/submissions",
+  "/parent/schedules",
+  "/parent/grades",
+  "/parent/alerts",
 ];
 
 function cacheTtlFor(path: string): number {
   if (
     path.startsWith("/admin/") ||
-    path.startsWith("/academic-context")
+    path.startsWith("/academic-context") ||
+    path.startsWith("/teacher/") ||
+    path.startsWith("/parent/") ||
+    path.startsWith("/auth/")
   ) {
     return AUTH_TTL_MS;
   }

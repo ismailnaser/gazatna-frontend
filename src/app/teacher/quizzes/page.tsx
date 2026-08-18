@@ -6,7 +6,7 @@ import { Alert } from "@/components/atoms/Alert";
 import { Button } from "@/components/atoms/Button";
 import { Card } from "@/components/atoms/Card";
 import { ConfirmDialog } from "@/components/molecules/ConfirmDialog";
-import { PageHeader } from "@/components/molecules/PageHeader";
+import { PageBusy, PageHeader } from "@/components/molecules/PageHeader";
 import { TeacherQuizGroupCard } from "@/components/teacher/TeacherQuizGroupCard";
 import { TeacherSubmissionAlerts } from "@/components/teacher/TeacherSubmissionAlerts";
 import { useAssignments } from "@/context/AssignmentsContext";
@@ -59,7 +59,7 @@ export default function TeacherQuizzesPage() {
   }, [saved]);
 
   if (loading) {
-    return <p className="text-neutral-500">جاري التحميل...</p>;
+    return <PageBusy title="الاختبارات" description="إدارة وتوزيع الاختبارات على فصولك" />;
   }
 
   if (!teacher) {

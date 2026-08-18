@@ -26,7 +26,13 @@ export function NewsDetailClient({ id }: { id: string }) {
   }, [id]);
 
   if (loading) {
-    return <p className="py-20 text-center text-neutral-500">جاري تحميل الخبر...</p>;
+    return (
+      <article className="mx-auto max-w-4xl px-4 pb-10 pt-[var(--nav-height)] sm:px-6 sm:pb-10 lg:px-8">
+        <div className="h-8 w-40 animate-pulse rounded bg-neutral-100" />
+        <div className="mt-6 h-12 w-3/4 animate-pulse rounded bg-neutral-100" />
+        <div className="mt-8 h-56 animate-pulse rounded-2xl bg-neutral-100 sm:h-80" />
+      </article>
+    );
   }
 
   if (!item) {

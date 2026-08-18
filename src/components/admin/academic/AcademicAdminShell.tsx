@@ -81,17 +81,12 @@ export function AcademicAdminShell({ children }: { children: ReactNode }) {
     }
   }, [loading, sidebarYears, selectedYearId, setSelectedYearId]);
 
-  if (loading) {
-    return (
-      <div>
-        <p className="mb-4 text-sm text-neutral-500">جاري تحميل السنوات الدراسية...</p>
-        {children}
-      </div>
-    );
-  }
-
   return (
     <div>
+      {loading ? (
+        <p className="mb-4 text-sm text-neutral-500">جاري تحميل السنوات الدراسية...</p>
+      ) : null}
+
       {error ? (
         <Alert variant="error" className="mb-4">
           {error}

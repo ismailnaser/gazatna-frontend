@@ -5,7 +5,7 @@ import { Alert } from "@/components/atoms/Alert";
 import { Badge } from "@/components/atoms/Badge";
 import { Button } from "@/components/atoms/Button";
 import { Card } from "@/components/atoms/Card";
-import { PageHeader } from "@/components/molecules/PageHeader";
+import { PageBusy, PageHeader } from "@/components/molecules/PageHeader";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { ChevronLeft } from "lucide-react";
@@ -129,7 +129,12 @@ export default function TeacherArchivePage() {
   }
 
   if (loading) {
-    return <p className="text-neutral-500">جاري التحميل...</p>;
+    return (
+      <PageBusy
+        title="أرشيف السنوات السابقة"
+        description="عرض علامات الطلاب في الفصول المنتهية — للقراءة فقط"
+      />
+    );
   }
 
   return (

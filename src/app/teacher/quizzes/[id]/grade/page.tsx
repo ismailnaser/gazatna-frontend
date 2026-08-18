@@ -6,6 +6,7 @@ import { Alert } from "@/components/atoms/Alert";
 import { Badge } from "@/components/atoms/Badge";
 import { Button } from "@/components/atoms/Button";
 import { Card } from "@/components/atoms/Card";
+import { PageBusy } from "@/components/molecules/PageHeader";
 import { QuizSubmissionsGradeList } from "@/components/teacher/QuizSubmissionsGradeList";
 import { CollapsibleChipList } from "@/components/molecules/CollapsibleChipList";
 import { api } from "@/lib/api";
@@ -90,7 +91,7 @@ export default function TeacherQuizGradePage({
   }
 
   if (loading) {
-    return <p className="text-neutral-500">جاري التحميل...</p>;
+    return <PageBusy title="تصحيح الاختبار" />;
   }
 
   if (!item || !quiz) {

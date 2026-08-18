@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Card } from "@/components/atoms/Card";
-import { PageHeader } from "@/components/molecules/PageHeader";
+import { PageBusy, PageHeader } from "@/components/molecules/PageHeader";
 import { AcademicPeriodBanner } from "@/components/shared/AcademicPeriodBanner";
 import {
   isParentFeeRestricted,
@@ -106,7 +106,7 @@ export default function ParentDashboard() {
   }, [user]);
 
   if (loading) {
-    return <p className="text-neutral-500">جاري التحميل...</p>;
+    return <PageBusy title="الرئيسية" />;
   }
 
   if (!student) {

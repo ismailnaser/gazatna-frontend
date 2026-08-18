@@ -314,7 +314,10 @@ export default function ParentSubjectAssignmentsPage({
       />
 
       {loading ? (
-        <p className="text-neutral-500">جاري التحميل...</p>
+        <div className="space-y-3">
+          <div className="h-24 animate-pulse rounded-2xl bg-neutral-100" />
+          <div className="h-24 animate-pulse rounded-2xl bg-neutral-100" />
+        </div>
       ) : !detail || detail.items.length === 0 ? (
         <Card className="text-center text-neutral-500">
           <BookOpen className="mx-auto mb-2 h-8 w-8 text-neutral-300" />

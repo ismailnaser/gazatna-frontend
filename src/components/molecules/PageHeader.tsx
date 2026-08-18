@@ -19,3 +19,21 @@ export function PageHeader({
     </div>
   );
 }
+
+export function PageBusy({
+  title,
+  description,
+}: {
+  title: string;
+  description?: string;
+}) {
+  return (
+    <div>
+      <PageHeader title={title} description={description} className="mb-4" />
+      <div className="space-y-3">
+        <div className="h-24 animate-pulse rounded-2xl bg-neutral-100" />
+        <div className="h-24 animate-pulse rounded-2xl bg-neutral-100" />
+      </div>
+    </div>
+  );
+}

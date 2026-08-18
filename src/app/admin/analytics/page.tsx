@@ -7,6 +7,7 @@ import { Input } from "@/components/atoms/Input";
 import { PageHeader } from "@/components/molecules/PageHeader";
 import { SimpleBarChart } from "@/components/molecules/SimpleBarChart";
 import { useAuth } from "@/context/AuthContext";
+import { useSchool } from "@/context/SchoolContext";
 import { api } from "@/lib/api";
 import {
   canAccessAdminAnalyticsTab,
@@ -52,6 +53,7 @@ export default function AdminAnalyticsDetailsPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { user } = useAuth();
+  const { grades: schoolGrades } = useSchool();
 
   const allowedTabs = useMemo(() => {
     if (!user || !isAdminRole(user.role)) return [] as AdminAnalyticsTab[];
@@ -91,11 +93,15 @@ export default function AdminAnalyticsDetailsPage() {
   const [to, setTo] = useState<string>("");
 
   useEffect(() => {
+    if (schoolGrades.length) {
+      setGrades(schoolGrades);
+      return;
+    }
     api
       .getAdminGrades()
       .then((res) => setGrades((res as Grade[]) ?? []))
       .catch(() => setGrades([]));
-  }, []);
+  }, [schoolGrades]);
 
   const gradeOptions = useMemo(() => {
     const names = grades.map((g) => String((g as unknown as { name?: string }).name ?? "")).filter(Boolean);

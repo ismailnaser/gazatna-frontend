@@ -38,7 +38,10 @@ export function NewsListClient() {
       </div>
 
       {loading ? (
-        <p className="text-center text-neutral-500">جاري تحميل الأخبار...</p>
+        <div className="space-y-6">
+          <div className="h-56 animate-pulse rounded-2xl bg-neutral-100" />
+          <div className="h-32 animate-pulse rounded-2xl bg-neutral-100" />
+        </div>
       ) : filtered.length === 0 ? (
         <p className="text-center text-neutral-500">
           {items.length === 0 ? "لا توجد أخبار حالياً." : "لا توجد أخبار في هذا التصنيف."}

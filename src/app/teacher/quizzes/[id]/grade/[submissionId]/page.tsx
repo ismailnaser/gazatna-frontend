@@ -2,6 +2,7 @@
 
 import { use, useCallback, useEffect, useState } from "react";
 import { Card } from "@/components/atoms/Card";
+import { PageBusy } from "@/components/molecules/PageHeader";
 import { TeacherQuizGradeEditor } from "@/components/teacher/TeacherQuizGradeEditor";
 import { loadQuizGradingBundle } from "@/lib/teacherQuizGrading";
 import type { QuizSubmission, TeacherQuizGradingItem } from "@/types";
@@ -51,7 +52,7 @@ export default function TeacherQuizSubmissionGradePage({
   }, [load]);
 
   if (loading) {
-    return <p className="text-neutral-500">جاري التحميل...</p>;
+    return <PageBusy title="تصحيح التسليم" />;
   }
 
   if (!item?.quiz || !submission) {

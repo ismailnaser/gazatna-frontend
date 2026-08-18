@@ -51,17 +51,7 @@ export function StatsSection() {
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) {
-    return (
-      <section className="bg-white py-16 sm:py-20">
-        <div className="mx-auto max-w-7xl px-4 text-center text-neutral-500 sm:px-6 lg:px-8">
-          جاري تحميل الإحصائيات...
-        </div>
-      </section>
-    );
-  }
-
-  if (items.length === 0) {
+  if (!loading && items.length === 0) {
     return null;
   }
 
@@ -85,11 +75,19 @@ export function StatsSection() {
           </div>
         </motion.div>
 
+        {loading ? (
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="h-28 animate-pulse rounded-2xl bg-neutral-100" />
+            <div className="h-28 animate-pulse rounded-2xl bg-neutral-100" />
+            <div className="h-28 animate-pulse rounded-2xl bg-neutral-100" />
+          </div>
+        ) : items.length === 0 ? null : (
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {items.map((stat, index) => (
             <StatCard key={stat.id} {...stat} index={index} />
           ))}
         </div>
+        )}
       </div>
     </section>
   );

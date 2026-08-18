@@ -42,7 +42,7 @@ export function DashboardShell({
     }
   }, [user, loading, area, router]);
 
-  if (loading) {
+  if (loading && !user) {
     return (
       <div className="flex min-h-screen flex-col bg-white">
         <DashboardHeader />

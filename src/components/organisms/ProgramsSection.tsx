@@ -38,17 +38,7 @@ export function ProgramsSection() {
 
   const visible = useMemo(() => items, [items]);
 
-  if (loading) {
-    return (
-      <section className="bg-neutral-50 py-16 sm:py-20">
-        <div className="mx-auto max-w-7xl px-4 text-center text-neutral-500 sm:px-6 lg:px-8">
-          جاري تحميل البرامج...
-        </div>
-      </section>
-    );
-  }
-
-  if (visible.length === 0) {
+  if (!loading && visible.length === 0) {
     return null;
   }
 
@@ -80,6 +70,13 @@ export function ProgramsSection() {
           </Link>
         </motion.div>
 
+        {loading ? (
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="h-40 animate-pulse rounded-2xl bg-white" />
+            <div className="h-40 animate-pulse rounded-2xl bg-white" />
+            <div className="h-40 animate-pulse rounded-2xl bg-white" />
+          </div>
+        ) : visible.length === 0 ? null : (
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {visible.map((p, i) => (
             <motion.article
@@ -114,6 +111,7 @@ export function ProgramsSection() {
             </motion.article>
           ))}
         </div>
+        )}
       </div>
     </section>
   );

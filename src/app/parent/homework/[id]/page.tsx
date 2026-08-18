@@ -80,7 +80,10 @@ export default function ParentHomeworkDetailPage({
       </Link>
 
       {loading ? (
-        <p className="text-neutral-500">جاري التحميل...</p>
+        <div className="space-y-3">
+          <div className="h-24 animate-pulse rounded-2xl bg-neutral-100" />
+          <div className="h-24 animate-pulse rounded-2xl bg-neutral-100" />
+        </div>
       ) : !hw ? (
         <Card className="text-center text-neutral-500">الواجب غير متاح.</Card>
       ) : (

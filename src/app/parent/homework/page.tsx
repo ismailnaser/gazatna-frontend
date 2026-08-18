@@ -59,7 +59,10 @@ export default function ParentHomeworkSubjectsPage() {
       />
 
       {loading ? (
-        <p className="text-neutral-500">جاري التحميل...</p>
+        <div className="space-y-3">
+          <div className="h-24 animate-pulse rounded-2xl bg-neutral-100" />
+          <div className="h-24 animate-pulse rounded-2xl bg-neutral-100" />
+        </div>
       ) : subjects.length === 0 ? (
         <Card className="text-center text-neutral-500">لا توجد مواد أو واجبات حالياً.</Card>
       ) : (

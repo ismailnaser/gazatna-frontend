@@ -49,7 +49,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const hydrate = async () => {
       let stored = getStoredAuthUser();
       if (!stored && !hasStoredAuthTokens() && pathNeedsAuthSession(window.location.pathname)) {
-        await requestSessionFromPeers(600);
+        await requestSessionFromPeers(250);
         stored = getStoredAuthUser();
       }
       if (cancelled) return;
@@ -57,10 +57,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       stored = getStoredAuthUser();
       if (stored) {
         setUser(stored);
-        const fresh = await fetchCurrentUser();
-        if (cancelled) return;
-        if (fresh) setUser(fresh);
         setLoading(false);
+        void fetchCurrentUser().then((fresh) => {
+          if (cancelled) return;
+          if (fresh) setUser(fresh);
+        });
         return;
       }
 

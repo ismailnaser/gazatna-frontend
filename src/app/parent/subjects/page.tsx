@@ -39,7 +39,10 @@ export default function ParentSubjectsPage() {
       />
 
       {loading ? (
-        <p className="text-neutral-500">جاري التحميل...</p>
+        <div className="space-y-3">
+          <div className="h-24 animate-pulse rounded-2xl bg-neutral-100" />
+          <div className="h-24 animate-pulse rounded-2xl bg-neutral-100" />
+        </div>
       ) : !student ? (
         <ParentNoStudentCard />
       ) : isParentFeeRestricted(student as Student & ParentStudentResponse) ? (

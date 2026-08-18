@@ -6,7 +6,7 @@ import { Alert } from "@/components/atoms/Alert";
 import { Button } from "@/components/atoms/Button";
 import { Card } from "@/components/atoms/Card";
 import { ConfirmDialog } from "@/components/molecules/ConfirmDialog";
-import { PageHeader } from "@/components/molecules/PageHeader";
+import { PageBusy, PageHeader } from "@/components/molecules/PageHeader";
 import { TeacherMaterialGroupCard } from "@/components/teacher/TeacherMaterialGroupCard";
 import { useAuth } from "@/context/AuthContext";
 import { useSchool } from "@/context/SchoolContext";
@@ -41,8 +41,8 @@ export default function TeacherMaterialsPage() {
   }
 
   useEffect(() => {
-    if (teacher) load();
-  }, [teacher]);
+    load();
+  }, []);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -60,7 +60,12 @@ export default function TeacherMaterialsPage() {
   }, [saved]);
 
   if (loading || fetching) {
-    return <p className="text-neutral-500">جاري التحميل...</p>;
+    return (
+      <PageBusy
+        title="مرفقات المواد"
+        description="ارفع كتب المادة وسلايدات ومصادر تظهر للطلاب ضمن محتوى المواد"
+      />
+    );
   }
 
   if (!teacher) {

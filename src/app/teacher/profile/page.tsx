@@ -1,5 +1,6 @@
 "use client";
 
+import { PageBusy } from "@/components/molecules/PageHeader";
 import { TeacherCV } from "@/components/organisms/TeacherCV";
 import { useAuth } from "@/context/AuthContext";
 import { useSchool } from "@/context/SchoolContext";
@@ -11,9 +12,7 @@ export default function TeacherProfilePage() {
   const teacher = currentTeacher;
 
   if (loading) {
-    return (
-      <p className="text-[#1a1a1a]/50">جاري التحميل...</p>
-    );
+    return <PageBusy title="ملفي" />;
   }
 
   if (!teacher) {

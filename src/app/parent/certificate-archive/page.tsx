@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { PageHeader } from "@/components/molecules/PageHeader";
+import { PageBusy, PageHeader } from "@/components/molecules/PageHeader";
 import { ParentCertificatesPanel } from "@/components/parent/ParentCertificatesPanel";
 import { api } from "@/lib/api";
 import type { ParentCertificatesResponse } from "@/types/academic";
@@ -46,7 +46,12 @@ export default function ParentCertificateArchivePage() {
   }, [loadCertificates]);
 
   if (loading) {
-    return <p className="text-neutral-500">جاري التحميل...</p>;
+    return (
+      <PageBusy
+        title="أرشيف الشهادات"
+        description="شهادات الفصول المنتهية والسنوات المؤرشفة — للقراءة والتحميل فقط"
+      />
+    );
   }
 
   return (

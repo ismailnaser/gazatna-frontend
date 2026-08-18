@@ -137,26 +137,26 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
   const refresh = useCallback(async () => {
     const showLoading = !initialLoadDoneRef.current;
     if (!user) {
-      try {
-        const teachersData = await api.getTeachers();
-        const teachers = mapTeachers(teachersData);
-        setCurrentTeacher(null);
-        setState({ teachers, assignments: buildAssignments(teachers) });
-      } catch {
-        setCurrentTeacher(null);
-        setState({ teachers: [], assignments: {} });
-      } finally {
-        setLoading(false);
-      }
+      setCurrentTeacher(null);
+      setState({ teachers: [], assignments: {} });
+      setClasses([]);
+      setGrades([]);
+      setSubjects([]);
+      setLoading(false);
       return;
     }
 
     if (showLoading) setLoading(true);
     try {
       if (isAdminRole(user.role)) {
+        const classesPromise = api.getAdminClasses();
+        const gradesPromise = api.getAdminGrades();
+        const teachersPromise = api.getAdminTeachers();
+        const subjectsPromise = api.getAdminSubjects();
+
         const [classesResult, gradesResult] = await Promise.allSettled([
-          api.getAdminClasses(),
-          api.getAdminGrades(),
+          classesPromise,
+          gradesPromise,
         ]);
         const classesData =
           classesResult.status === "fulfilled"
@@ -170,8 +170,8 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
         setLoading(false);
 
         const [teachersResult, subjectsResult] = await Promise.allSettled([
-          api.getAdminTeachers(),
-          api.getAdminSubjects(),
+          teachersPromise,
+          subjectsPromise,
         ]);
         const teachers =
           teachersResult.status === "fulfilled" ? mapTeachers(teachersResult.value as unknown[]) : [];
@@ -213,10 +213,8 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
         setGrades([]);
         setSubjects([]);
       } else {
-        const teachersData = await api.getTeachers();
-        const teachers = mapTeachers(teachersData);
         setCurrentTeacher(null);
-        setState({ teachers, assignments: buildAssignments(teachers) });
+        setState({ teachers: [], assignments: {} });
       }
     } catch {
       setCurrentTeacher(null);

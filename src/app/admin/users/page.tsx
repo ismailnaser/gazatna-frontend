@@ -8,7 +8,7 @@ import { Button } from "@/components/atoms/Button";
 import { Card } from "@/components/atoms/Card";
 import { Input } from "@/components/atoms/Input";
 import { Select } from "@/components/atoms/Select";
-import { PageHeader } from "@/components/molecules/PageHeader";
+import { PageBusy, PageHeader } from "@/components/molecules/PageHeader";
 import { useAuth } from "@/context/AuthContext";
 import {
   adminRoleDescriptions,
@@ -224,7 +224,7 @@ export default function AdminUsersPage() {
   }
 
   if (authLoading || !user || !isSuperAdmin(user.role)) {
-    return <p className="text-neutral-500">جاري التحميل...</p>;
+    return <PageBusy title="إدارة المستخدمين" />;
   }
 
   const createRoleDescription = isAdminRole(createRole)

@@ -9,7 +9,7 @@ import {
   buildAnnouncementPayload,
   type AnnouncementFormData,
 } from "@/components/teacher/AnnouncementForm";
-import { PageHeader } from "@/components/molecules/PageHeader";
+import { PageBusy, PageHeader } from "@/components/molecules/PageHeader";
 import { useAuth } from "@/context/AuthContext";
 import { useSchool } from "@/context/SchoolContext";
 import { api } from "@/lib/api";
@@ -56,7 +56,7 @@ export function TeacherAnnouncementEditor({ mode, announcementId }: Props) {
   }, [mode, announcementId, items]);
 
   if (loading || (mode === "edit" && !loaded)) {
-    return <p className="text-neutral-500">جاري التحميل...</p>;
+    return <PageBusy title={mode === "create" ? "إعلان جديد" : "تعديل الإعلان"} />;
   }
 
   if (!teacher) {

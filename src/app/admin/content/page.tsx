@@ -6,7 +6,7 @@ import { Card } from "@/components/atoms/Card";
 import { AdminNewsGrid } from "@/components/admin/AdminNewsGrid";
 import { ConfirmDialog } from "@/components/molecules/ConfirmDialog";
 import { NewsFilterBar } from "@/components/molecules/NewsFilterBar";
-import { PageHeader } from "@/components/molecules/PageHeader";
+import { PageBusy, PageHeader } from "@/components/molecules/PageHeader";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { mapNewsItem, type NewsFilter, type PublicNewsItem } from "@/types/news";
@@ -123,7 +123,12 @@ export default function AdminContentPage() {
   }
 
   if (loading) {
-    return <p className="text-neutral-500">جاري التحميل...</p>;
+    return (
+      <PageBusy
+        title="إدارة المحتوى"
+        description="الأخبار والفعاليات والإنجازات المعروضة للجمهور"
+      />
+    );
   }
 
   return (

@@ -10,6 +10,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { usePathname } from "next/navigation";
 import { api, formatClientFetchError } from "@/lib/api";
 import { useSchool } from "@/context/SchoolContext";
 import { mapGrade, mapGrades } from "@/lib/mapSchoolClass";
@@ -179,6 +180,7 @@ export function useAcademicAdmin() {
 }
 
 export function AcademicAdminProvider({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
   const { grades: schoolGrades, subjects: schoolSubjects, loading: schoolLoading } = useSchool();
   const [years, setYears] = useState<AcademicYear[]>([]);
   const [loading, setLoading] = useState(true);
@@ -401,6 +403,10 @@ export function AcademicAdminProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!selectedYear) return;
+    if (!pathname.includes("certificate")) {
+      setLoadingCertificate(false);
+      return;
+    }
     setLoadingCertificate(true);
     api
       .getAdminCertificateConfig(selectedYear.id)
@@ -414,7 +420,7 @@ export function AcademicAdminProvider({ children }: { children: ReactNode }) {
         setCertificateDraft(defaultCertificateConfig());
       })
       .finally(() => setLoadingCertificate(false));
-  }, [selectedYear]);
+  }, [selectedYear, pathname]);
 
   async function handleSaveCertificateConfig() {
     if (!selectedYear) return;

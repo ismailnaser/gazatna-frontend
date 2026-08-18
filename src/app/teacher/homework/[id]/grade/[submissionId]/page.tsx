@@ -2,6 +2,7 @@
 
 import { use, useCallback, useEffect, useState } from "react";
 import { Card } from "@/components/atoms/Card";
+import { PageBusy } from "@/components/molecules/PageHeader";
 import { TeacherHomeworkGradeEditor } from "@/components/teacher/TeacherHomeworkGradeEditor";
 import { loadHomeworkGradingBundle } from "@/lib/teacherHomeworkGrading";
 import type { HomeworkSubmission, TeacherAssessmentItem } from "@/types";
@@ -41,7 +42,7 @@ export default function TeacherHomeworkSubmissionGradePage({
   }, [load]);
 
   if (loading) {
-    return <p className="text-neutral-500">جاري التحميل...</p>;
+    return <PageBusy title="تصحيح التسليم" />;
   }
 
   if (!item?.homework || !submission) {

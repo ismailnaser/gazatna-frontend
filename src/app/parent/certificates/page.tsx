@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { Alert } from "@/components/atoms/Alert";
-import { PageHeader } from "@/components/molecules/PageHeader";
+import { PageBusy, PageHeader } from "@/components/molecules/PageHeader";
 import { ParentCertificatesPanel } from "@/components/parent/ParentCertificatesPanel";
 import { api } from "@/lib/api";
 import type { ParentCertificatesResponse } from "@/types/academic";
@@ -62,7 +62,7 @@ export default function ParentCertificatesPage() {
   }, [loadCertificates]);
 
   if (loading) {
-    return <p className="text-neutral-500">جاري التحميل...</p>;
+    return <PageBusy title="الشهادات" description="شهادات الفصل الدراسي الحالي" />;
   }
 
   if (blocked) {
