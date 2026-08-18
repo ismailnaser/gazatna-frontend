@@ -81,31 +81,54 @@ async function fetchWithTimeout(
   }
 }
 
-export function getAccessToken(): string | null {
+function migrateSessionAuthToLocal() {
+  if (typeof window === "undefined") return;
+  for (const key of [TOKEN_KEY, REFRESH_KEY, USER_KEY]) {
+    const fromSession = sessionStorage.getItem(key);
+    if (fromSession && !localStorage.getItem(key)) {
+      localStorage.setItem(key, fromSession);
+    }
+    if (fromSession) sessionStorage.removeItem(key);
+  }
+}
+
+function authGet(key: string): string | null {
   if (typeof window === "undefined") return null;
-  return sessionStorage.getItem(TOKEN_KEY);
+  migrateSessionAuthToLocal();
+  return localStorage.getItem(key);
+}
+
+function authSet(key: string, value: string) {
+  localStorage.setItem(key, value);
+}
+
+function authRemove(key: string) {
+  localStorage.removeItem(key);
+  sessionStorage.removeItem(key);
+}
+
+export function getAccessToken(): string | null {
+  return authGet(TOKEN_KEY);
 }
 
 export function getRefreshToken(): string | null {
-  if (typeof window === "undefined") return null;
-  return sessionStorage.getItem(REFRESH_KEY);
+  return authGet(REFRESH_KEY);
 }
 
 export function setTokens(access: string, refresh: string) {
-  sessionStorage.setItem(TOKEN_KEY, access);
-  sessionStorage.setItem(REFRESH_KEY, refresh);
+  authSet(TOKEN_KEY, access);
+  authSet(REFRESH_KEY, refresh);
 }
 
 export function clearTokens() {
-  sessionStorage.removeItem(TOKEN_KEY);
-  sessionStorage.removeItem(REFRESH_KEY);
-  sessionStorage.removeItem(USER_KEY);
+  authRemove(TOKEN_KEY);
+  authRemove(REFRESH_KEY);
+  authRemove(USER_KEY);
   invalidateApiCache();
 }
 
 export function getStoredUser<T>(): T | null {
-  if (typeof window === "undefined") return null;
-  const raw = sessionStorage.getItem(USER_KEY);
+  const raw = authGet(USER_KEY);
   if (!raw) return null;
   try {
     return JSON.parse(raw) as T;
@@ -115,8 +138,10 @@ export function getStoredUser<T>(): T | null {
 }
 
 export function setStoredUser<T>(user: T) {
-  sessionStorage.setItem(USER_KEY, JSON.stringify(user));
+  authSet(USER_KEY, JSON.stringify(user));
 }
+
+export const AUTH_STORAGE_KEYS = [TOKEN_KEY, REFRESH_KEY, USER_KEY] as const;
 
 async function parseResponseJson<T>(res: Response): Promise<T> {
   const text = await res.text();
@@ -150,7 +175,7 @@ async function refreshAccessToken(): Promise<string | null> {
   if (refreshInFlight) return refreshInFlight;
 
   const pending = (async () => {
-    const refresh = sessionStorage.getItem(REFRESH_KEY);
+    const refresh = getRefreshToken();
     if (!refresh) return null;
     try {
       const res = await fetchWithTimeout(`${API_BASE}/auth/token/refresh/`, {
@@ -165,9 +190,9 @@ async function refreshAccessToken(): Promise<string | null> {
       }
       const data = await parseResponseJson<{ access?: string; refresh?: string }>(res);
       if (!data.access) return null;
-      sessionStorage.setItem(TOKEN_KEY, data.access);
+      authSet(TOKEN_KEY, data.access);
       if (data.refresh) {
-        sessionStorage.setItem(REFRESH_KEY, data.refresh);
+        authSet(REFRESH_KEY, data.refresh);
       }
       return data.access;
     } catch {

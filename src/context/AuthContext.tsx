@@ -9,6 +9,7 @@ import {
   login as authLogin,
   logout as authLogout,
 } from "@/lib/auth";
+import { AUTH_STORAGE_KEYS } from "@/lib/api";
 import type { AuthUser } from "@/types";
 
 type AuthContextValue = {
@@ -36,7 +37,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } else {
       setLoading(false);
     }
-  }, []);
+
+    const onStorage = (event: StorageEvent) => {
+      if (event.key && !AUTH_STORAGE_KEYS.includes(event.key as (typeof AUTH_STORAGE_KEYS)[number])) {
+        return;
+      }
+      const stored = getStoredAuthUser();
+      setUser(stored);
+      if (!stored) {
+        router.replace("/login");
+      }
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, [router]);
 
   const login = useCallback(
     async (username: string, password: string) => {
