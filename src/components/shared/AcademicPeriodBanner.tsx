@@ -15,10 +15,13 @@ export function AcademicPeriodBanner() {
   } | null>(null);
 
   useEffect(() => {
-    api
-      .getAcademicContext()
-      .then((raw) => setParts(formatAcademicPeriodParts(mapAcademicContext(raw as Record<string, unknown>))))
-      .catch(() => setParts(null));
+    const timer = window.setTimeout(() => {
+      api
+        .getAcademicContext()
+        .then((raw) => setParts(formatAcademicPeriodParts(mapAcademicContext(raw as Record<string, unknown>))))
+        .catch(() => setParts(null));
+    }, 350);
+    return () => window.clearTimeout(timer);
   }, []);
 
   if (!parts?.combined) return null;

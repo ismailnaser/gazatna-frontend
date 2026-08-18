@@ -13,7 +13,8 @@
           "value": "multipart/form-data;.*"
         }
       ],
-      "initialRevalidateSeconds": false,
+      "initialRevalidateSeconds": 60,
+      "initialExpireSeconds": 31536000,
       "srcRoute": "/",
       "dataRoute": "/index.rsc",
       "allowHeader": [
@@ -86,7 +87,8 @@
           "value": "multipart/form-data;.*"
         }
       ],
-      "initialRevalidateSeconds": false,
+      "initialRevalidateSeconds": 60,
+      "initialExpireSeconds": 31536000,
       "srcRoute": "/about",
       "dataRoute": "/about.rsc",
       "allowHeader": [
@@ -715,7 +717,8 @@
           "value": "multipart/form-data;.*"
         }
       ],
-      "initialRevalidateSeconds": false,
+      "initialRevalidateSeconds": 60,
+      "initialExpireSeconds": 31536000,
       "srcRoute": "/contact",
       "dataRoute": "/contact.rsc",
       "allowHeader": [
@@ -739,7 +742,8 @@
           "value": "multipart/form-data;.*"
         }
       ],
-      "initialRevalidateSeconds": false,
+      "initialRevalidateSeconds": 60,
+      "initialExpireSeconds": 31536000,
       "srcRoute": "/faculty",
       "dataRoute": "/faculty.rsc",
       "allowHeader": [
@@ -874,7 +878,8 @@
           "value": "multipart/form-data;.*"
         }
       ],
-      "initialRevalidateSeconds": false,
+      "initialRevalidateSeconds": 60,
+      "initialExpireSeconds": 31536000,
       "srcRoute": "/news",
       "dataRoute": "/news.rsc",
       "allowHeader": [
@@ -1162,7 +1167,8 @@
           "value": "multipart/form-data;.*"
         }
       ],
-      "initialRevalidateSeconds": false,
+      "initialRevalidateSeconds": 60,
+      "initialExpireSeconds": 31536000,
       "srcRoute": "/programs",
       "dataRoute": "/programs.rsc",
       "allowHeader": [
@@ -1186,7 +1192,8 @@
           "value": "multipart/form-data;.*"
         }
       ],
-      "initialRevalidateSeconds": false,
+      "initialRevalidateSeconds": 60,
+      "initialExpireSeconds": 31536000,
       "srcRoute": "/register",
       "dataRoute": "/register.rsc",
       "allowHeader": [
@@ -1268,7 +1275,8 @@
           "value": "multipart/form-data;.*"
         }
       ],
-      "initialRevalidateSeconds": false,
+      "initialRevalidateSeconds": 60,
+      "initialExpireSeconds": 31536000,
       "srcRoute": "/staff",
       "dataRoute": "/staff.rsc",
       "allowHeader": [

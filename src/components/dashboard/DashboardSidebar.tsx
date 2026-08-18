@@ -32,14 +32,17 @@ export function DashboardSidebar({
   // (pathname-triggered analytics/alerts were hammering the API on shared hosting).
   useEffect(() => {
     if (!isAdminRole(role)) return;
-    api
-      .getAdminAnalytics()
-      .then((res) => {
-        const row = res as Record<string, unknown>;
-        const count = Number(row.pendingPayments ?? 0);
-        setPendingPayments(Number.isFinite(count) ? count : 0);
-      })
-      .catch(() => setPendingPayments(0));
+    const timer = window.setTimeout(() => {
+      api
+        .getAdminAnalytics()
+        .then((res) => {
+          const row = res as Record<string, unknown>;
+          const count = Number(row.pendingPayments ?? 0);
+          setPendingPayments(Number.isFinite(count) ? count : 0);
+        })
+        .catch(() => setPendingPayments(0));
+    }, 500);
+    return () => window.clearTimeout(timer);
   }, [role]);
 
   useEffect(() => {

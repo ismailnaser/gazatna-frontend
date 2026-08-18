@@ -22,9 +22,10 @@ import {
 // Next.js rewrites `/api/*` to the backend (see `next.config.ts`).
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "/api";
 
-const DEFAULT_TIMEOUT_MS = 12000;
+const DEFAULT_TIMEOUT_MS = 10000;
 /** Shared hosting drops bodies when too many Django requests overlap. */
-const API_MAX_CONCURRENT = 3;
+const API_MAX_CONCURRENT = 2;
+const GET_MAX_ATTEMPTS = 4;
 
 let apiInflight = 0;
 const apiWaiters: Array<() => void> = [];
@@ -145,6 +146,7 @@ function isRetriableFetchError(err: unknown): boolean {
   return (
     message === "empty_response" ||
     message === "invalid_json" ||
+    message === "retry_status" ||
     message === "timeout" ||
     message.includes("timeout") ||
     message.includes("failed to fetch") ||
@@ -408,57 +410,58 @@ async function apiFetchOnce<T>(
   if (token) headers.Authorization = `Bearer ${token}`;
 
   const timeoutMs = method === "GET" ? DEFAULT_TIMEOUT_MS : 30000;
-  const maxAttempts = method === "GET" ? 2 : 2;
+  const maxAttempts = method === "GET" ? GET_MAX_ATTEMPTS : 2;
 
-  await acquireApiSlot();
-  try {
-    let lastErr: unknown;
-
-    for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
-      if (attempt > 0) {
-        await new Promise((resolve) => setTimeout(resolve, 400 * attempt));
-      }
-
-      try {
-        let res = await fetchWithTimeout(`${API_BASE}${path}`, { ...options, headers }, timeoutMs);
-
-        if (res.status === 401 && token) {
-          const peek = await res.clone().text();
-          if (!peek.trim()) {
-            throw new Error("empty_response");
-          }
-          const newToken = await refreshAccessToken();
-          if (newToken) {
-            headers.Authorization = `Bearer ${newToken}`;
-            res = await fetchWithTimeout(`${API_BASE}${path}`, { ...options, headers }, timeoutMs);
-          }
-        }
-
-        if (!res.ok) {
-          throw new Error(await parseFailedResponse(res));
-        }
-
-        if (res.status === 204) return undefined as T;
-        const data = await parseResponseJson<T>(res);
-
-        if (isCacheableGet(path, method)) {
-          writeApiCache(cacheKey, data, getCacheTtl(path));
-        }
-
-        return data;
-      } catch (err) {
-        lastErr = err;
-        if (attempt + 1 < maxAttempts && isRetriableFetchError(err)) {
-          continue;
-        }
-        throw new Error(formatClientFetchError(err, "تعذر الاتصال بالخادم. حاول مرة أخرى."));
-      }
+  let lastErr: unknown;
+  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+    if (attempt > 0) {
+      await new Promise((resolve) => setTimeout(resolve, 450 * attempt));
     }
 
-    throw new Error(formatClientFetchError(lastErr, "تعذر الاتصال بالخادم. حاول مرة أخرى."));
-  } finally {
-    releaseApiSlot();
+    await acquireApiSlot();
+    try {
+      let res = await fetchWithTimeout(`${API_BASE}${path}`, { ...options, headers }, timeoutMs);
+
+      if (res.status === 401 && token) {
+        const peek = await res.clone().text();
+        if (!peek.trim()) {
+          throw new Error("empty_response");
+        }
+        const newToken = await refreshAccessToken();
+        if (newToken) {
+          headers.Authorization = `Bearer ${newToken}`;
+          res = await fetchWithTimeout(`${API_BASE}${path}`, { ...options, headers }, timeoutMs);
+        }
+      }
+
+      if (res.status === 502 || res.status === 503 || res.status === 429) {
+        throw new Error("retry_status");
+      }
+
+      if (!res.ok) {
+        throw new Error(await parseFailedResponse(res));
+      }
+
+      if (res.status === 204) return undefined as T;
+      const data = await parseResponseJson<T>(res);
+
+      if (isCacheableGet(path, method)) {
+        writeApiCache(cacheKey, data, getCacheTtl(path));
+      }
+
+      return data;
+    } catch (err) {
+      lastErr = err;
+      if (attempt + 1 < maxAttempts && isRetriableFetchError(err)) {
+        continue;
+      }
+      throw new Error(formatClientFetchError(err, "تعذر الاتصال بالخادم. حاول مرة أخرى."));
+    } finally {
+      releaseApiSlot();
+    }
   }
+
+  throw new Error(formatClientFetchError(lastErr, "تعذر الاتصال بالخادم. حاول مرة أخرى."));
 }
 
 async function apiFormFetch<T>(

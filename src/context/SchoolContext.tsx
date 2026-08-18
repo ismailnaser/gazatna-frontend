@@ -149,14 +149,9 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
     if (showLoading) setLoading(true);
     try {
       if (isAdminRole(user.role)) {
-        const classesPromise = api.getAdminClasses();
-        const gradesPromise = api.getAdminGrades();
-        const teachersPromise = api.getAdminTeachers();
-        const subjectsPromise = api.getAdminSubjects();
-
         const [classesResult, gradesResult] = await Promise.allSettled([
-          classesPromise,
-          gradesPromise,
+          api.getAdminClasses(),
+          api.getAdminGrades(),
         ]);
         const classesData =
           classesResult.status === "fulfilled"
@@ -170,8 +165,8 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
         setLoading(false);
 
         const [teachersResult, subjectsResult] = await Promise.allSettled([
-          teachersPromise,
-          subjectsPromise,
+          api.getAdminTeachers(),
+          api.getAdminSubjects(),
         ]);
         const teachers =
           teachersResult.status === "fulfilled" ? mapTeachers(teachersResult.value as unknown[]) : [];

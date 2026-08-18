@@ -27,6 +27,18 @@ export function middleware(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
   const hostHeader = request.headers.get("x-forwarded-host") || request.headers.get("host") || "";
   const hostname = hostHeader.split(":")[0].toLowerCase();
+  const proto = (request.headers.get("x-forwarded-proto") || request.nextUrl.protocol.replace(":", "")).split(",")[0].trim();
+
+  if (
+    process.env.NODE_ENV === "production" &&
+    proto === "http" &&
+    (hostname === "gzs.edu.ps" || hostname === "www.gzs.edu.ps") &&
+    !pathname.startsWith("/api") &&
+    !pathname.startsWith("/media")
+  ) {
+    const host = hostname === "www.gzs.edu.ps" ? "gzs.edu.ps" : hostname;
+    return NextResponse.redirect(`https://${host}${pathname}${search}`, 308);
+  }
 
   if (
     process.env.NODE_ENV === "production" &&
@@ -52,11 +64,22 @@ export function middleware(request: NextRequest) {
   if (process.env.NODE_ENV === "development") {
     response.headers.set("Cache-Control", "no-store, no-cache, must-revalidate");
     response.headers.set("Pragma", "no-cache");
+  } else {
+    const isAppShell =
+      pathname.startsWith("/admin") ||
+      pathname.startsWith("/teacher") ||
+      pathname.startsWith("/parent") ||
+      pathname === "/login";
+    if (!isAppShell && request.method === "GET") {
+      response.headers.set("Cache-Control", "public, s-maxage=45, stale-while-revalidate=180");
+    }
   }
 
   return response;
 }
 
 export const config = {
-  matcher: ["/((?!sw.js|pwa-bootstrap.js|manifest.webmanifest|images/).*)"],
+  matcher: [
+    "/((?!_next/static|_next/image|favicon.ico|sw.js|pwa-bootstrap.js|manifest.webmanifest|images/|.*\\.(?:ico|png|jpg|jpeg|gif|webp|svg|woff2?)$).*)",
+  ],
 };
