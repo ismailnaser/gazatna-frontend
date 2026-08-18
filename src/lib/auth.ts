@@ -1,4 +1,5 @@
 import { api, clearTokens, getStoredUser, setStoredUser, setTokens } from "@/lib/api";
+import { isAdminRole } from "@/lib/adminRoles";
 import type { AuthUser, UserRole } from "@/types";
 
 export async function login(username: string, password: string): Promise<AuthUser | null> {
@@ -30,9 +31,6 @@ export async function fetchCurrentUser(): Promise<AuthUser | null> {
     return getStoredAuthUser();
   }
 }
-
-import { isAdminRole } from "@/lib/adminRoles";
-import type { UserRole } from "@/types";
 
 export function getDashboardPath(role: UserRole): string {
   if (isAdminRole(role)) return "/admin";

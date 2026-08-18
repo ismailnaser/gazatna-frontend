@@ -6,14 +6,21 @@ import {
   readApiCache,
   writeApiCache,
 } from "@/lib/apiCache";
+import {
+  AUTH_STORAGE_KEYS,
+  REFRESH_KEY,
+  TOKEN_KEY,
+  USER_KEY,
+  authGet,
+  authRemove,
+  authSet,
+  broadcastAuthLogout,
+  syncAuthToPeers,
+} from "@/lib/authStorage";
 
 // Use same-origin `/api` so it works when opened via LAN IP too.
 // Next.js rewrites `/api/*` to the backend (see `next.config.ts`).
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "/api";
-
-const TOKEN_KEY = "ghazatna_access";
-const REFRESH_KEY = "ghazatna_refresh";
-const USER_KEY = "ghazatna_auth";
 
 const DEFAULT_TIMEOUT_MS = 12000;
 /** Shared hosting drops bodies when too many Django requests overlap. */
@@ -81,32 +88,6 @@ async function fetchWithTimeout(
   }
 }
 
-function migrateSessionAuthToLocal() {
-  if (typeof window === "undefined") return;
-  for (const key of [TOKEN_KEY, REFRESH_KEY, USER_KEY]) {
-    const fromSession = sessionStorage.getItem(key);
-    if (fromSession && !localStorage.getItem(key)) {
-      localStorage.setItem(key, fromSession);
-    }
-    if (fromSession) sessionStorage.removeItem(key);
-  }
-}
-
-function authGet(key: string): string | null {
-  if (typeof window === "undefined") return null;
-  migrateSessionAuthToLocal();
-  return localStorage.getItem(key);
-}
-
-function authSet(key: string, value: string) {
-  localStorage.setItem(key, value);
-}
-
-function authRemove(key: string) {
-  localStorage.removeItem(key);
-  sessionStorage.removeItem(key);
-}
-
 export function getAccessToken(): string | null {
   return authGet(TOKEN_KEY);
 }
@@ -118,12 +99,14 @@ export function getRefreshToken(): string | null {
 export function setTokens(access: string, refresh: string) {
   authSet(TOKEN_KEY, access);
   authSet(REFRESH_KEY, refresh);
+  syncAuthToPeers();
 }
 
 export function clearTokens() {
   authRemove(TOKEN_KEY);
   authRemove(REFRESH_KEY);
   authRemove(USER_KEY);
+  broadcastAuthLogout();
   invalidateApiCache();
 }
 
@@ -139,9 +122,10 @@ export function getStoredUser<T>(): T | null {
 
 export function setStoredUser<T>(user: T) {
   authSet(USER_KEY, JSON.stringify(user));
+  syncAuthToPeers();
 }
 
-export const AUTH_STORAGE_KEYS = [TOKEN_KEY, REFRESH_KEY, USER_KEY] as const;
+export { AUTH_STORAGE_KEYS };
 
 async function parseResponseJson<T>(res: Response): Promise<T> {
   const text = await res.text();
@@ -171,10 +155,34 @@ function isRetriableFetchError(err: unknown): boolean {
 
 let refreshInFlight: Promise<string | null> | null = null;
 
+function accessTokenLooksValid(token: string): boolean {
+  try {
+    const payloadPart = token.split(".")[1];
+    if (!payloadPart) return false;
+    const json = atob(payloadPart.replace(/-/g, "+").replace(/_/g, "/"));
+    const payload = JSON.parse(json) as { exp?: number };
+    return typeof payload.exp === "number" && payload.exp * 1000 > Date.now() + 5000;
+  } catch {
+    return false;
+  }
+}
+
+async function withRefreshLock<T>(fn: () => Promise<T>): Promise<T> {
+  const locks = typeof navigator !== "undefined" ? navigator.locks : undefined;
+  if (locks?.request) {
+    return locks.request("ghazatna-token-refresh", fn);
+  }
+  return fn();
+}
+
 async function refreshAccessToken(): Promise<string | null> {
   if (refreshInFlight) return refreshInFlight;
 
-  const pending = (async () => {
+  const pending = withRefreshLock(async () => {
+    const currentAccess = getAccessToken();
+    if (currentAccess && accessTokenLooksValid(currentAccess)) {
+      return currentAccess;
+    }
     const refresh = getRefreshToken();
     if (!refresh) return null;
     try {
@@ -194,11 +202,12 @@ async function refreshAccessToken(): Promise<string | null> {
       if (data.refresh) {
         authSet(REFRESH_KEY, data.refresh);
       }
+      syncAuthToPeers();
       return data.access;
     } catch {
       return null;
     }
-  })();
+  });
 
   refreshInFlight = pending.finally(() => {
     refreshInFlight = null;

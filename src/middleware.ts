@@ -25,6 +25,18 @@ function getBackendOrigin(): string {
 
 export function middleware(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
+  const hostHeader = request.headers.get("x-forwarded-host") || request.headers.get("host") || "";
+  const hostname = hostHeader.split(":")[0].toLowerCase();
+
+  if (
+    process.env.NODE_ENV === "production" &&
+    hostname === "www.gzs.edu.ps" &&
+    !pathname.startsWith("/api") &&
+    !pathname.startsWith("/media")
+  ) {
+    return NextResponse.redirect(`https://gzs.edu.ps${pathname}${search}`, 308);
+  }
+
   const backend = getBackendOrigin();
 
   if (pathname === "/api" || pathname.startsWith("/api/")) {

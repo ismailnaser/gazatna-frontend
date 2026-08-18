@@ -9,7 +9,14 @@ import {
   login as authLogin,
   logout as authLogout,
 } from "@/lib/auth";
-import { AUTH_STORAGE_KEYS } from "@/lib/api";
+import {
+  AUTH_STORAGE_KEYS,
+  ensureAuthSync,
+  hasStoredAuthTokens,
+  pathNeedsAuthSession,
+  requestSessionFromPeers,
+  subscribeAuthSync,
+} from "@/lib/authStorage";
 import type { AuthUser } from "@/types";
 
 type AuthContextValue = {
@@ -21,22 +28,66 @@ type AuthContextValue = {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
+function parseStoredUser(raw: string | null): AuthUser | null {
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw) as AuthUser;
+  } catch {
+    return null;
+  }
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
-    const stored = getStoredAuthUser();
-    if (stored) {
-      setUser(stored);
-      fetchCurrentUser().then((fresh) => {
+    let cancelled = false;
+    ensureAuthSync();
+
+    const hydrate = async () => {
+      let stored = getStoredAuthUser();
+      if (!stored && !hasStoredAuthTokens() && pathNeedsAuthSession(window.location.pathname)) {
+        await requestSessionFromPeers(600);
+        stored = getStoredAuthUser();
+      }
+      if (cancelled) return;
+
+      stored = getStoredAuthUser();
+      if (stored) {
+        setUser(stored);
+        const fresh = await fetchCurrentUser();
+        if (cancelled) return;
         if (fresh) setUser(fresh);
         setLoading(false);
-      });
-    } else {
+        return;
+      }
+
+      if (hasStoredAuthTokens()) {
+        const fresh = await fetchCurrentUser();
+        if (cancelled) return;
+        setUser(fresh);
+        setLoading(false);
+        return;
+      }
+
       setLoading(false);
-    }
+    };
+
+    void hydrate();
+
+    const unsubscribe = subscribeAuthSync((userJson) => {
+      const next = parseStoredUser(userJson);
+      setUser(next);
+      if (next) {
+        setLoading(false);
+        return;
+      }
+      if (pathNeedsAuthSession(window.location.pathname) && window.location.pathname !== "/login") {
+        router.replace("/login");
+      }
+    });
 
     const onStorage = (event: StorageEvent) => {
       if (event.key && !AUTH_STORAGE_KEYS.includes(event.key as (typeof AUTH_STORAGE_KEYS)[number])) {
@@ -44,12 +95,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       const stored = getStoredAuthUser();
       setUser(stored);
-      if (!stored) {
+      if (stored) {
+        setLoading(false);
+        return;
+      }
+      if (pathNeedsAuthSession(window.location.pathname) && window.location.pathname !== "/login") {
         router.replace("/login");
       }
     };
     window.addEventListener("storage", onStorage);
-    return () => window.removeEventListener("storage", onStorage);
+
+    return () => {
+      cancelled = true;
+      unsubscribe();
+      window.removeEventListener("storage", onStorage);
+    };
   }, [router]);
 
   const login = useCallback(
