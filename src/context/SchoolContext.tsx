@@ -154,28 +154,33 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
     if (showLoading) setLoading(true);
     try {
       if (isAdminRole(user.role)) {
-        const [teachersResult, classesResult, subjectsResult, gradesResult] = await Promise.allSettled([
-          api.getAdminTeachers(),
+        const [classesResult, gradesResult] = await Promise.allSettled([
           api.getAdminClasses(),
-          api.getAdminSubjects(),
           api.getAdminGrades(),
         ]);
-        const teachers =
-          teachersResult.status === "fulfilled" ? mapTeachers(teachersResult.value as unknown[]) : [];
         const classesData =
           classesResult.status === "fulfilled"
             ? mapSchoolClasses(classesResult.value as unknown[])
             : [];
+        const gradesData =
+          gradesResult.status === "fulfilled" ? mapGrades(gradesResult.value as unknown[]) : [];
+        setClasses(classesData);
+        setGrades(gradesData);
+        initialLoadDoneRef.current = true;
+        setLoading(false);
+
+        const [teachersResult, subjectsResult] = await Promise.allSettled([
+          api.getAdminTeachers(),
+          api.getAdminSubjects(),
+        ]);
+        const teachers =
+          teachersResult.status === "fulfilled" ? mapTeachers(teachersResult.value as unknown[]) : [];
         const subjectsData =
           subjectsResult.status === "fulfilled"
             ? (subjectsResult.value as Subject[]).map(normalizeSubject)
             : [];
-        const gradesData =
-          gradesResult.status === "fulfilled" ? mapGrades(gradesResult.value as unknown[]) : [];
         setCurrentTeacher(null);
         setState({ teachers, assignments: buildAssignments(teachers) });
-        setClasses(classesData);
-        setGrades(gradesData);
         setSubjects(subjectsData);
       } else if (user.role === "teacher") {
         const [classesResult, profileResult] = await Promise.allSettled([

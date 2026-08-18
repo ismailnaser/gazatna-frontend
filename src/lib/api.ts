@@ -15,9 +15,9 @@ const TOKEN_KEY = "ghazatna_access";
 const REFRESH_KEY = "ghazatna_refresh";
 const USER_KEY = "ghazatna_auth";
 
-const DEFAULT_TIMEOUT_MS = 25000;
+const DEFAULT_TIMEOUT_MS = 12000;
 /** Shared hosting drops bodies when too many Django requests overlap. */
-const API_MAX_CONCURRENT = 2;
+const API_MAX_CONCURRENT = 3;
 
 let apiInflight = 0;
 const apiWaiters: Array<() => void> = [];
@@ -339,6 +339,10 @@ async function apiFetchOnce<T>(
     }
     if (path.startsWith("/admin/academic-years") || path.includes("term-end") || path.includes("rollover")) {
       invalidateApiCache("/academic-context");
+      invalidateApiCache("/admin/academic-years");
+    }
+    if (path.startsWith("/admin/schedules")) {
+      invalidateApiCache("/admin/schedules");
     }
     if (path.startsWith("/admin/finance") || path.includes("/fee-access")) {
       invalidateApiCache("/admin/analytics");
@@ -362,7 +366,7 @@ async function apiFetchOnce<T>(
   if (token) headers.Authorization = `Bearer ${token}`;
 
   const timeoutMs = method === "GET" ? DEFAULT_TIMEOUT_MS : 30000;
-  const maxAttempts = method === "GET" ? 3 : 2;
+  const maxAttempts = method === "GET" ? 2 : 2;
 
   await acquireApiSlot();
   try {

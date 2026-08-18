@@ -54,10 +54,6 @@ export default function AdminDashboard() {
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) {
-    return <p className="text-neutral-500">جاري التحميل...</p>;
-  }
-
   return (
     <div>
       <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
@@ -94,7 +90,7 @@ export default function AdminDashboard() {
                 المسجلون خلال السنة
                 {data.academicYear ? ` ${data.academicYear}` : ""}
               </p>
-              <p className="text-3xl font-bold text-p-black">{data.registeredStudents ?? 0}</p>
+              <p className="text-3xl font-bold text-p-black">{loading ? "…" : (data.registeredStudents ?? 0)}</p>
               <p className={`mt-0.5 text-xs font-semibold ${growthClass}`}>
                 ازدياد عن السنة السابقة: {growthLabel}
               </p>
@@ -110,7 +106,7 @@ export default function AdminDashboard() {
                 عدد الطلاب المسجلين خلال السنة الدراسية
                 {data.academicYear ? ` ${data.academicYear}` : ""}
               </p>
-              <p className="text-3xl font-bold text-p-black">{data.registeredStudents ?? 0}</p>
+              <p className="text-3xl font-bold text-p-black">{loading ? "…" : (data.registeredStudents ?? 0)}</p>
             </div>
           </Card>
         )}
@@ -129,7 +125,7 @@ export default function AdminDashboard() {
           </span>
           <div>
             <p className="text-sm text-p-black/50">معدل درجات المدرسة</p>
-            <p className="text-3xl font-bold text-p-black">{data.avgGrade}%</p>
+            <p className="text-3xl font-bold text-p-black">{loading ? "…" : `${data.avgGrade}%`}</p>
           </div>
         </Card>
         )}
@@ -148,7 +144,7 @@ export default function AdminDashboard() {
           </span>
           <div>
             <p className="text-sm text-p-black/50">نسبة الرسوم المحصلة</p>
-            <p className="text-3xl font-bold text-p-black">{data.feesCollected}%</p>
+            <p className="text-3xl font-bold text-p-black">{loading ? "…" : `${data.feesCollected}%`}</p>
           </div>
         </Card>
         )}

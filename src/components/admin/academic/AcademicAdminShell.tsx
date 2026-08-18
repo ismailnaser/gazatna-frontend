@@ -82,7 +82,12 @@ export function AcademicAdminShell({ children }: { children: ReactNode }) {
   }, [loading, sidebarYears, selectedYearId, setSelectedYearId]);
 
   if (loading) {
-    return <p className="text-neutral-500">جاري التحميل...</p>;
+    return (
+      <div>
+        <p className="mb-4 text-sm text-neutral-500">جاري تحميل السنوات الدراسية...</p>
+        {children}
+      </div>
+    );
   }
 
   return (

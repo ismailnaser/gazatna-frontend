@@ -13,6 +13,7 @@ import { AdminFeePlanFormPanel } from "@/components/admin/AdminFeePlanFormPanel"
 import { AdminFeePlansTable } from "@/components/admin/AdminFeePlansTable";
 import { StatusBadge } from "@/components/molecules/StatusBadge";
 import { StudentSearchSelect } from "@/components/molecules/StudentSearchSelect";
+import { useSchool } from "@/context/SchoolContext";
 import { api } from "@/lib/api";
 import type { PaymentStatus } from "@/types";
 import {
@@ -38,6 +39,7 @@ import { Check, ClipboardList, Image, Plus, RotateCcw, Unlock, Wallet, X } from 
 type Tab = "payments" | "manual" | "plans" | "access";
 
 export default function AdminFinancePage() {
+  const { grades: schoolGrades } = useSchool();
   const [tab, setTab] = useState<Tab>("payments");
   const [notices, setNotices] = useState<FinanceNotice[]>([]);
   const [plans, setPlans] = useState<FeePlan[]>([]);
@@ -102,7 +104,6 @@ export default function AdminFinancePage() {
       api.getAdminFeePlans().then((data) =>
         setPlans((data as Array<Record<string, unknown>>).map(mapFeePlan))
       ),
-      api.getAdminGrades().then((data) => setGrades(data as Grade[])),
       api.getAdminAcademicYears().then((data) =>
         setAcademicYears(
           (data as Array<Record<string, unknown>>).map(mapAcademicYear)
@@ -122,6 +123,10 @@ export default function AdminFinancePage() {
     ]).catch(() => setError("تعذر تحميل بيانات المالية"));
     loadManualLogs();
   }, []);
+
+  useEffect(() => {
+    if (schoolGrades.length) setGrades(schoolGrades);
+  }, [schoolGrades]);
 
   useEffect(() => {
     if (tab === "manual") {

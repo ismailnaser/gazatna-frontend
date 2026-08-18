@@ -11,6 +11,7 @@ import { PageHeader } from "@/components/molecules/PageHeader";
 import { FileUploadField } from "@/components/molecules/FileUploadField";
 import { Select } from "@/components/atoms/Select";
 import { api } from "@/lib/api";
+import { useSchool } from "@/context/SchoolContext";
 import { resolveMediaUrl } from "@/lib/media";
 import type { Grade } from "@/types/teacher";
 import { Check } from "lucide-react";
@@ -78,6 +79,7 @@ const HERO_POSITION_OPTIONS = [
 ];
 
 export default function AdminSitePage() {
+  const { grades: schoolGrades } = useSchool();
   const [tab, setTab] = useState<Tab>("hero");
   const [settings, setSettings] = useState<SiteSettings | null>(null);
   const [grades, setGrades] = useState<Grade[]>([]);
@@ -98,11 +100,9 @@ export default function AdminSitePage() {
   }, [heroImagePreview]);
 
   useEffect(() => {
-    Promise.all([
-      api.getAdminSiteSettings(),
-      api.getAdminGrades(),
-    ])
-      .then(([settingsRes, gradesRes]) => {
+    api
+      .getAdminSiteSettings()
+      .then((settingsRes) => {
         const raw = settingsRes as SiteSettings;
         setSettings({
           ...raw,
@@ -113,11 +113,14 @@ export default function AdminSitePage() {
             imageObjectPosition: raw.hero?.imageObjectPosition || "center top",
           },
         });
-        setGrades(gradesRes as Grade[]);
       })
       .catch(() => setError("تعذر تحميل الإعدادات"))
       .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    if (schoolGrades.length) setGrades(schoolGrades);
+  }, [schoolGrades]);
 
   async function save() {
     if (!settings) return;

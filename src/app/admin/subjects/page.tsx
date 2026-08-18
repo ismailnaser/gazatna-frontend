@@ -93,6 +93,11 @@ export default function AdminSubjectsPage() {
 
   useEffect(() => {
     if (!modalSubject) return;
+    if (classes.length && grades.length) {
+      setModalClasses(classes);
+      setModalGrades(grades);
+      return;
+    }
     let active = true;
     Promise.all([api.getAdminClasses(), api.getAdminGrades()])
       .then(([classesData, gradesData]) => {

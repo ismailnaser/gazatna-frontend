@@ -11,6 +11,7 @@ import {
   type ReactNode,
 } from "react";
 import { api, formatClientFetchError } from "@/lib/api";
+import { useSchool } from "@/context/SchoolContext";
 import { mapGrade, mapGrades } from "@/lib/mapSchoolClass";
 import { buildHonorsCertificateHtml, buildStudentCertificateHtml } from "@/lib/certificateHtml";
 import { exportHonorsCertificatePdf } from "@/lib/exportHonorsCertificatePdf";
@@ -178,6 +179,7 @@ export function useAcademicAdmin() {
 }
 
 export function AcademicAdminProvider({ children }: { children: ReactNode }) {
+  const { grades: schoolGrades, subjects: schoolSubjects, loading: schoolLoading } = useSchool();
   const [years, setYears] = useState<AcademicYear[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -316,7 +318,6 @@ export function AcademicAdminProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     void reload();
-    void reloadGrades();
     api
       .getSiteSettings()
       .then((res) => {
@@ -324,6 +325,35 @@ export function AcademicAdminProvider({ children }: { children: ReactNode }) {
         if (name) setSchoolName(name);
       })
       .catch(() => {});
+  }, [reload]);
+
+  useEffect(() => {
+    if (schoolGrades.length) {
+      const mapped = [...schoolGrades].sort(
+        (a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0)
+      );
+      setGrades(mapped);
+      const drafts = buildPolicyDraftsFromGrades(mapped);
+      setPolicyDraftsByGradeId(drafts);
+      setPassMinimumCountInputs(buildPassMinimumCountInputs(drafts));
+      return;
+    }
+    if (schoolLoading) return;
+    void reloadGrades();
+  }, [schoolGrades, schoolLoading, reloadGrades]);
+
+  useEffect(() => {
+    if (schoolSubjects.length) {
+      setSubjects(
+        schoolSubjects.map((row) => ({
+          id: String(row.id),
+          name: String(row.name),
+          teacherCount: Number(row.teacherCount ?? 0),
+        }))
+      );
+      return;
+    }
+    if (schoolLoading) return;
     api
       .getAdminSubjects()
       .then((rows) => {
@@ -336,7 +366,7 @@ export function AcademicAdminProvider({ children }: { children: ReactNode }) {
         );
       })
       .catch(() => setSubjects([]));
-  }, [reload, reloadGrades]);
+  }, [schoolSubjects, schoolLoading]);
 
   useEffect(() => {
     const year = years.find((item) => item.id === selectedYearId) ?? null;

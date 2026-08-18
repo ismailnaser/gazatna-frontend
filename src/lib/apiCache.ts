@@ -15,6 +15,9 @@ const CACHEABLE_PREFIXES = [
   "/admin/teachers",
   "/admin/students",
   "/admin/users",
+  "/admin/academic-years",
+  "/admin/schedules",
+  "/admin/finance",
 ];
 
 function cacheTtlFor(path: string): number {
