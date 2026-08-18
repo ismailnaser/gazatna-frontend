@@ -13,7 +13,7 @@
           "value": "multipart/form-data;.*"
         }
       ],
-      "initialRevalidateSeconds": 60,
+      "initialRevalidateSeconds": 120,
       "initialExpireSeconds": 31536000,
       "srcRoute": "/",
       "dataRoute": "/index.rsc",
@@ -87,7 +87,7 @@
           "value": "multipart/form-data;.*"
         }
       ],
-      "initialRevalidateSeconds": 60,
+      "initialRevalidateSeconds": 120,
       "initialExpireSeconds": 31536000,
       "srcRoute": "/about",
       "dataRoute": "/about.rsc",
@@ -112,7 +112,8 @@
           "value": "multipart/form-data;.*"
         }
       ],
-      "initialRevalidateSeconds": false,
+      "initialRevalidateSeconds": 300,
+      "initialExpireSeconds": 31536000,
       "srcRoute": "/admin",
       "dataRoute": "/admin.rsc",
       "allowHeader": [
@@ -136,7 +137,8 @@
           "value": "multipart/form-data;.*"
         }
       ],
-      "initialRevalidateSeconds": false,
+      "initialRevalidateSeconds": 300,
+      "initialExpireSeconds": 31536000,
       "srcRoute": "/admin/academic-archive",
       "dataRoute": "/admin/academic-archive.rsc",
       "allowHeader": [
@@ -160,7 +162,8 @@
           "value": "multipart/form-data;.*"
         }
       ],
-      "initialRevalidateSeconds": false,
+      "initialRevalidateSeconds": 300,
+      "initialExpireSeconds": 31536000,
       "srcRoute": "/admin/academic-terms",
       "dataRoute": "/admin/academic-terms.rsc",
       "allowHeader": [
@@ -184,7 +187,8 @@
           "value": "multipart/form-data;.*"
         }
       ],
-      "initialRevalidateSeconds": false,
+      "initialRevalidateSeconds": 300,
+      "initialExpireSeconds": 31536000,
       "srcRoute": "/admin/academic-years",
       "dataRoute": "/admin/academic-years.rsc",
       "allowHeader": [
@@ -208,7 +212,8 @@
           "value": "multipart/form-data;.*"
         }
       ],
-      "initialRevalidateSeconds": false,
+      "initialRevalidateSeconds": 300,
+      "initialExpireSeconds": 31536000,
       "srcRoute": "/admin/admissions",
       "dataRoute": "/admin/admissions.rsc",
       "allowHeader": [
@@ -232,7 +237,8 @@
           "value": "multipart/form-data;.*"
         }
       ],
-      "initialRevalidateSeconds": false,
+      "initialRevalidateSeconds": 300,
+      "initialExpireSeconds": 31536000,
       "srcRoute": "/admin/analytics",
       "dataRoute": "/admin/analytics.rsc",
       "allowHeader": [
@@ -256,7 +262,8 @@
           "value": "multipart/form-data;.*"
         }
       ],
-      "initialRevalidateSeconds": false,
+      "initialRevalidateSeconds": 300,
+      "initialExpireSeconds": 31536000,
       "srcRoute": "/admin/certificate-settings",
       "dataRoute": "/admin/certificate-settings.rsc",
       "allowHeader": [
@@ -280,7 +287,8 @@
           "value": "multipart/form-data;.*"
         }
       ],
-      "initialRevalidateSeconds": false,
+      "initialRevalidateSeconds": 300,
+      "initialExpireSeconds": 31536000,
       "srcRoute": "/admin/classes",
       "dataRoute": "/admin/classes.rsc",
       "allowHeader": [
@@ -304,7 +312,8 @@
           "value": "multipart/form-data;.*"
         }
       ],
-      "initialRevalidateSeconds": false,
+      "initialRevalidateSeconds": 300,
+      "initialExpireSeconds": 31536000,
       "srcRoute": "/admin/content",
       "dataRoute": "/admin/content.rsc",
       "allowHeader": [
@@ -328,7 +337,8 @@
           "value": "multipart/form-data;.*"
         }
       ],
-      "initialRevalidateSeconds": false,
+      "initialRevalidateSeconds": 300,
+      "initialExpireSeconds": 31536000,
       "srcRoute": "/admin/content/new",
       "dataRoute": "/admin/content/new.rsc",
       "allowHeader": [
@@ -352,7 +362,8 @@
           "value": "multipart/form-data;.*"
         }
       ],
-      "initialRevalidateSeconds": false,
+      "initialRevalidateSeconds": 300,
+      "initialExpireSeconds": 31536000,
       "srcRoute": "/admin/finance",
       "dataRoute": "/admin/finance.rsc",
       "allowHeader": [
@@ -376,7 +387,8 @@
           "value": "multipart/form-data;.*"
         }
       ],
-      "initialRevalidateSeconds": false,
+      "initialRevalidateSeconds": 300,
+      "initialExpireSeconds": 31536000,
       "srcRoute": "/admin/grade-schemes",
       "dataRoute": "/admin/grade-schemes.rsc",
       "allowHeader": [
@@ -400,7 +412,8 @@
           "value": "multipart/form-data;.*"
         }
       ],
-      "initialRevalidateSeconds": false,
+      "initialRevalidateSeconds": 300,
+      "initialExpireSeconds": 31536000,
       "srcRoute": "/admin/messages",
       "dataRoute": "/admin/messages.rsc",
       "allowHeader": [
@@ -424,7 +437,8 @@
           "value": "multipart/form-data;.*"
         }
       ],
-      "initialRevalidateSeconds": false,
+      "initialRevalidateSeconds": 300,
+      "initialExpireSeconds": 31536000,
       "srcRoute": "/admin/notifications",
       "dataRoute": "/admin/notifications.rsc",
       "allowHeader": [
@@ -448,7 +462,8 @@
           "value": "multipart/form-data;.*"
         }
       ],
-      "initialRevalidateSeconds": false,
+      "initialRevalidateSeconds": 300,
+      "initialExpireSeconds": 31536000,
       "srcRoute": "/admin/promotion-policies",
       "dataRoute": "/admin/promotion-policies.rsc",
       "allowHeader": [
@@ -472,7 +487,8 @@
           "value": "multipart/form-data;.*"
         }
       ],
-      "initialRevalidateSeconds": false,
+      "initialRevalidateSeconds": 300,
+      "initialExpireSeconds": 31536000,
       "srcRoute": "/admin/schedules",
       "dataRoute": "/admin/schedules.rsc",
       "allowHeader": [
@@ -496,7 +512,8 @@
           "value": "multipart/form-data;.*"
         }
       ],
-      "initialRevalidateSeconds": false,
+      "initialRevalidateSeconds": 300,
+      "initialExpireSeconds": 31536000,
       "srcRoute": "/admin/site",
       "dataRoute": "/admin/site.rsc",
       "allowHeader": [
@@ -520,7 +537,8 @@
           "value": "multipart/form-data;.*"
         }
       ],
-      "initialRevalidateSeconds": false,
+      "initialRevalidateSeconds": 300,
+      "initialExpireSeconds": 31536000,
       "srcRoute": "/admin/students",
       "dataRoute": "/admin/students.rsc",
       "allowHeader": [
@@ -544,7 +562,8 @@
           "value": "multipart/form-data;.*"
         }
       ],
-      "initialRevalidateSeconds": false,
+      "initialRevalidateSeconds": 300,
+      "initialExpireSeconds": 31536000,
       "srcRoute": "/admin/subjects",
       "dataRoute": "/admin/subjects.rsc",
       "allowHeader": [
@@ -568,7 +587,8 @@
           "value": "multipart/form-data;.*"
         }
       ],
-      "initialRevalidateSeconds": false,
+      "initialRevalidateSeconds": 300,
+      "initialExpireSeconds": 31536000,
       "srcRoute": "/admin/teachers",
       "dataRoute": "/admin/teachers.rsc",
       "allowHeader": [
@@ -592,7 +612,8 @@
           "value": "multipart/form-data;.*"
         }
       ],
-      "initialRevalidateSeconds": false,
+      "initialRevalidateSeconds": 300,
+      "initialExpireSeconds": 31536000,
       "srcRoute": "/admin/teachers/new",
       "dataRoute": "/admin/teachers/new.rsc",
       "allowHeader": [
@@ -616,7 +637,8 @@
           "value": "multipart/form-data;.*"
         }
       ],
-      "initialRevalidateSeconds": false,
+      "initialRevalidateSeconds": 300,
+      "initialExpireSeconds": 31536000,
       "srcRoute": "/admin/term-end",
       "dataRoute": "/admin/term-end.rsc",
       "allowHeader": [
@@ -640,7 +662,8 @@
           "value": "multipart/form-data;.*"
         }
       ],
-      "initialRevalidateSeconds": false,
+      "initialRevalidateSeconds": 300,
+      "initialExpireSeconds": 31536000,
       "srcRoute": "/admin/users",
       "dataRoute": "/admin/users.rsc",
       "allowHeader": [
@@ -664,7 +687,8 @@
           "value": "multipart/form-data;.*"
         }
       ],
-      "initialRevalidateSeconds": false,
+      "initialRevalidateSeconds": 300,
+      "initialExpireSeconds": 31536000,
       "srcRoute": "/admin/year-end",
       "dataRoute": "/admin/year-end.rsc",
       "allowHeader": [
@@ -717,7 +741,7 @@
           "value": "multipart/form-data;.*"
         }
       ],
-      "initialRevalidateSeconds": 60,
+      "initialRevalidateSeconds": 120,
       "initialExpireSeconds": 31536000,
       "srcRoute": "/contact",
       "dataRoute": "/contact.rsc",
@@ -742,7 +766,7 @@
           "value": "multipart/form-data;.*"
         }
       ],
-      "initialRevalidateSeconds": 60,
+      "initialRevalidateSeconds": 120,
       "initialExpireSeconds": 31536000,
       "srcRoute": "/faculty",
       "dataRoute": "/faculty.rsc",
@@ -878,7 +902,7 @@
           "value": "multipart/form-data;.*"
         }
       ],
-      "initialRevalidateSeconds": 60,
+      "initialRevalidateSeconds": 120,
       "initialExpireSeconds": 31536000,
       "srcRoute": "/news",
       "dataRoute": "/news.rsc",
@@ -903,7 +927,8 @@
           "value": "multipart/form-data;.*"
         }
       ],
-      "initialRevalidateSeconds": false,
+      "initialRevalidateSeconds": 300,
+      "initialExpireSeconds": 31536000,
       "srcRoute": "/parent",
       "dataRoute": "/parent.rsc",
       "allowHeader": [
@@ -927,7 +952,8 @@
           "value": "multipart/form-data;.*"
         }
       ],
-      "initialRevalidateSeconds": false,
+      "initialRevalidateSeconds": 300,
+      "initialExpireSeconds": 31536000,
       "srcRoute": "/parent/archive",
       "dataRoute": "/parent/archive.rsc",
       "allowHeader": [
@@ -951,7 +977,8 @@
           "value": "multipart/form-data;.*"
         }
       ],
-      "initialRevalidateSeconds": false,
+      "initialRevalidateSeconds": 300,
+      "initialExpireSeconds": 31536000,
       "srcRoute": "/parent/assessments",
       "dataRoute": "/parent/assessments.rsc",
       "allowHeader": [
@@ -975,7 +1002,8 @@
           "value": "multipart/form-data;.*"
         }
       ],
-      "initialRevalidateSeconds": false,
+      "initialRevalidateSeconds": 300,
+      "initialExpireSeconds": 31536000,
       "srcRoute": "/parent/certificate-archive",
       "dataRoute": "/parent/certificate-archive.rsc",
       "allowHeader": [
@@ -999,7 +1027,8 @@
           "value": "multipart/form-data;.*"
         }
       ],
-      "initialRevalidateSeconds": false,
+      "initialRevalidateSeconds": 300,
+      "initialExpireSeconds": 31536000,
       "srcRoute": "/parent/certificates",
       "dataRoute": "/parent/certificates.rsc",
       "allowHeader": [
@@ -1023,7 +1052,8 @@
           "value": "multipart/form-data;.*"
         }
       ],
-      "initialRevalidateSeconds": false,
+      "initialRevalidateSeconds": 300,
+      "initialExpireSeconds": 31536000,
       "srcRoute": "/parent/fees",
       "dataRoute": "/parent/fees.rsc",
       "allowHeader": [
@@ -1047,7 +1077,8 @@
           "value": "multipart/form-data;.*"
         }
       ],
-      "initialRevalidateSeconds": false,
+      "initialRevalidateSeconds": 300,
+      "initialExpireSeconds": 31536000,
       "srcRoute": "/parent/grades",
       "dataRoute": "/parent/grades.rsc",
       "allowHeader": [
@@ -1071,7 +1102,8 @@
           "value": "multipart/form-data;.*"
         }
       ],
-      "initialRevalidateSeconds": false,
+      "initialRevalidateSeconds": 300,
+      "initialExpireSeconds": 31536000,
       "srcRoute": "/parent/homework",
       "dataRoute": "/parent/homework.rsc",
       "allowHeader": [
@@ -1095,7 +1127,8 @@
           "value": "multipart/form-data;.*"
         }
       ],
-      "initialRevalidateSeconds": false,
+      "initialRevalidateSeconds": 300,
+      "initialExpireSeconds": 31536000,
       "srcRoute": "/parent/quizzes",
       "dataRoute": "/parent/quizzes.rsc",
       "allowHeader": [
@@ -1119,7 +1152,8 @@
           "value": "multipart/form-data;.*"
         }
       ],
-      "initialRevalidateSeconds": false,
+      "initialRevalidateSeconds": 300,
+      "initialExpireSeconds": 31536000,
       "srcRoute": "/parent/schedules",
       "dataRoute": "/parent/schedules.rsc",
       "allowHeader": [
@@ -1143,7 +1177,8 @@
           "value": "multipart/form-data;.*"
         }
       ],
-      "initialRevalidateSeconds": false,
+      "initialRevalidateSeconds": 300,
+      "initialExpireSeconds": 31536000,
       "srcRoute": "/parent/subjects",
       "dataRoute": "/parent/subjects.rsc",
       "allowHeader": [
@@ -1167,7 +1202,7 @@
           "value": "multipart/form-data;.*"
         }
       ],
-      "initialRevalidateSeconds": 60,
+      "initialRevalidateSeconds": 120,
       "initialExpireSeconds": 31536000,
       "srcRoute": "/programs",
       "dataRoute": "/programs.rsc",
@@ -1192,7 +1227,7 @@
           "value": "multipart/form-data;.*"
         }
       ],
-      "initialRevalidateSeconds": 60,
+      "initialRevalidateSeconds": 120,
       "initialExpireSeconds": 31536000,
       "srcRoute": "/register",
       "dataRoute": "/register.rsc",
@@ -1275,7 +1310,7 @@
           "value": "multipart/form-data;.*"
         }
       ],
-      "initialRevalidateSeconds": 60,
+      "initialRevalidateSeconds": 120,
       "initialExpireSeconds": 31536000,
       "srcRoute": "/staff",
       "dataRoute": "/staff.rsc",
@@ -1300,7 +1335,8 @@
           "value": "multipart/form-data;.*"
         }
       ],
-      "initialRevalidateSeconds": false,
+      "initialRevalidateSeconds": 300,
+      "initialExpireSeconds": 31536000,
       "srcRoute": "/teacher",
       "dataRoute": "/teacher.rsc",
       "allowHeader": [
@@ -1324,7 +1360,8 @@
           "value": "multipart/form-data;.*"
         }
       ],
-      "initialRevalidateSeconds": false,
+      "initialRevalidateSeconds": 300,
+      "initialExpireSeconds": 31536000,
       "srcRoute": "/teacher/announcements",
       "dataRoute": "/teacher/announcements.rsc",
       "allowHeader": [
@@ -1348,7 +1385,8 @@
           "value": "multipart/form-data;.*"
         }
       ],
-      "initialRevalidateSeconds": false,
+      "initialRevalidateSeconds": 300,
+      "initialExpireSeconds": 31536000,
       "srcRoute": "/teacher/announcements/new",
       "dataRoute": "/teacher/announcements/new.rsc",
       "allowHeader": [
@@ -1372,7 +1410,8 @@
           "value": "multipart/form-data;.*"
         }
       ],
-      "initialRevalidateSeconds": false,
+      "initialRevalidateSeconds": 300,
+      "initialExpireSeconds": 31536000,
       "srcRoute": "/teacher/archive",
       "dataRoute": "/teacher/archive.rsc",
       "allowHeader": [
@@ -1396,7 +1435,8 @@
           "value": "multipart/form-data;.*"
         }
       ],
-      "initialRevalidateSeconds": false,
+      "initialRevalidateSeconds": 300,
+      "initialExpireSeconds": 31536000,
       "srcRoute": "/teacher/assessments",
       "dataRoute": "/teacher/assessments.rsc",
       "allowHeader": [
@@ -1420,7 +1460,8 @@
           "value": "multipart/form-data;.*"
         }
       ],
-      "initialRevalidateSeconds": false,
+      "initialRevalidateSeconds": 300,
+      "initialExpireSeconds": 31536000,
       "srcRoute": "/teacher/grade-entry",
       "dataRoute": "/teacher/grade-entry.rsc",
       "allowHeader": [
@@ -1444,7 +1485,8 @@
           "value": "multipart/form-data;.*"
         }
       ],
-      "initialRevalidateSeconds": false,
+      "initialRevalidateSeconds": 300,
+      "initialExpireSeconds": 31536000,
       "srcRoute": "/teacher/homework",
       "dataRoute": "/teacher/homework.rsc",
       "allowHeader": [
@@ -1468,7 +1510,8 @@
           "value": "multipart/form-data;.*"
         }
       ],
-      "initialRevalidateSeconds": false,
+      "initialRevalidateSeconds": 300,
+      "initialExpireSeconds": 31536000,
       "srcRoute": "/teacher/homework/new",
       "dataRoute": "/teacher/homework/new.rsc",
       "allowHeader": [
@@ -1492,7 +1535,8 @@
           "value": "multipart/form-data;.*"
         }
       ],
-      "initialRevalidateSeconds": false,
+      "initialRevalidateSeconds": 300,
+      "initialExpireSeconds": 31536000,
       "srcRoute": "/teacher/materials",
       "dataRoute": "/teacher/materials.rsc",
       "allowHeader": [
@@ -1516,7 +1560,8 @@
           "value": "multipart/form-data;.*"
         }
       ],
-      "initialRevalidateSeconds": false,
+      "initialRevalidateSeconds": 300,
+      "initialExpireSeconds": 31536000,
       "srcRoute": "/teacher/materials/new",
       "dataRoute": "/teacher/materials/new.rsc",
       "allowHeader": [
@@ -1540,7 +1585,8 @@
           "value": "multipart/form-data;.*"
         }
       ],
-      "initialRevalidateSeconds": false,
+      "initialRevalidateSeconds": 300,
+      "initialExpireSeconds": 31536000,
       "srcRoute": "/teacher/profile",
       "dataRoute": "/teacher/profile.rsc",
       "allowHeader": [
@@ -1564,7 +1610,8 @@
           "value": "multipart/form-data;.*"
         }
       ],
-      "initialRevalidateSeconds": false,
+      "initialRevalidateSeconds": 300,
+      "initialExpireSeconds": 31536000,
       "srcRoute": "/teacher/quizzes",
       "dataRoute": "/teacher/quizzes.rsc",
       "allowHeader": [
@@ -1588,7 +1635,8 @@
           "value": "multipart/form-data;.*"
         }
       ],
-      "initialRevalidateSeconds": false,
+      "initialRevalidateSeconds": 300,
+      "initialExpireSeconds": 31536000,
       "srcRoute": "/teacher/quizzes/new",
       "dataRoute": "/teacher/quizzes/new.rsc",
       "allowHeader": [
@@ -1612,7 +1660,8 @@
           "value": "multipart/form-data;.*"
         }
       ],
-      "initialRevalidateSeconds": false,
+      "initialRevalidateSeconds": 300,
+      "initialExpireSeconds": 31536000,
       "srcRoute": "/teacher/schedules",
       "dataRoute": "/teacher/schedules.rsc",
       "allowHeader": [

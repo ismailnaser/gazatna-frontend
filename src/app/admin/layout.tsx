@@ -1,6 +1,8 @@
 import { AdminAccessGuard } from "@/components/admin/AdminAccessGuard";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
 
+export const revalidate = 300;
+
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
     <DashboardShell area="admin">

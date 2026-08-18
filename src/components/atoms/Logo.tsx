@@ -36,7 +36,7 @@ export function Logo({
   if (!href) return content;
 
   return (
-    <Link href={href} className="inline-flex shrink-0 items-center bg-transparent">
+    <Link href={href} prefetch={false} className="inline-flex shrink-0 items-center bg-transparent">
       {content}
     </Link>
   );

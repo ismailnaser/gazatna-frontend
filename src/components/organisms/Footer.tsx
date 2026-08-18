@@ -57,6 +57,7 @@ export function Footer() {
                 <li key={link.href}>
                   <Link
                     href={link.href}
+                    prefetch={false}
                     className="text-sm text-neutral-950 transition-colors hover:text-brand-blue"
                   >
                     {link.label}
@@ -66,6 +67,7 @@ export function Footer() {
               <li>
                 <Link
                   href="/login"
+                  prefetch={false}
                   className="text-sm text-neutral-950 transition-colors hover:text-brand-blue"
                 >
                   تسجيل الدخول

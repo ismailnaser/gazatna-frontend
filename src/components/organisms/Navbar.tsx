@@ -54,6 +54,7 @@ export function Navbar() {
                 )}
                 <Link
                   href={link.href}
+                  prefetch={false}
                   className={cn(
                     "text-sm font-semibold transition-colors",
                     pathname === link.href
@@ -72,6 +73,7 @@ export function Navbar() {
         <div className="flex shrink-0 items-center justify-end gap-1.5 sm:gap-3">
           <Link
             href={authHref}
+            prefetch={false}
             className="hidden items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold text-brand-black/80 transition-colors hover:text-brand-blue lg:flex"
           >
             <AuthIcon className="h-4 w-4" />
@@ -79,6 +81,7 @@ export function Navbar() {
           </Link>
           <Link
             href={authHref}
+            prefetch={false}
             aria-label={authLabel}
             className="flex h-9 w-9 items-center justify-center rounded-lg text-brand-black/80 transition-colors hover:bg-black/5 hover:text-brand-blue lg:hidden"
           >
@@ -119,6 +122,7 @@ export function Navbar() {
                 <li key={link.href}>
                   <Link
                     href={link.href}
+                    prefetch={false}
                     onClick={() => setOpen(false)}
                     className="block rounded-lg px-3 py-2.5 text-sm font-semibold text-brand-black/80 hover:text-brand-blue"
                   >
