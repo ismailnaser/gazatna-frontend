@@ -97,10 +97,13 @@ export default function AdminAnalyticsDetailsPage() {
       setGrades(schoolGrades);
       return;
     }
-    api
-      .getAdminGrades()
-      .then((res) => setGrades((res as Grade[]) ?? []))
-      .catch(() => setGrades([]));
+    const timer = window.setTimeout(() => {
+      api
+        .getAdminGrades()
+        .then((res) => setGrades((res as Grade[]) ?? []))
+        .catch(() => setGrades([]));
+    }, 400);
+    return () => window.clearTimeout(timer);
   }, [schoolGrades]);
 
   const gradeOptions = useMemo(() => {

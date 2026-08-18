@@ -93,6 +93,7 @@ export type AdminAnalytics = {
   previousYearRegisteredStudents?: number;
   studentsGrowthPercent?: number | null;
   academicYear?: string | null;
+  academicTerm?: string | null;
   previousAcademicYear?: string | null;
   activeStudents?: number;
   totalStudents?: number;
@@ -116,6 +117,7 @@ export const emptyAdminAnalytics: AdminAnalytics = {
   previousYearRegisteredStudents: 0,
   studentsGrowthPercent: null,
   academicYear: null,
+  academicTerm: null,
   previousAcademicYear: null,
   activeStudents: 0,
   totalStudents: 0,

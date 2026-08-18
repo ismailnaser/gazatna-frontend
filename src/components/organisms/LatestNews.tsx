@@ -39,6 +39,7 @@ export function LatestNews() {
         <div className="mb-6 flex justify-end">
           <Link
             href="/news"
+            prefetch={false}
             className="text-sm font-semibold text-[var(--brand-magenta)] hover:underline"
           >
             عرض الكل

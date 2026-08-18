@@ -51,18 +51,19 @@ export default function AdminSchedulesPage() {
     setLoading(true);
     setError("");
     try {
-      const [data, contextRaw] = await Promise.all([
-        api.getAdminSchedules(tab),
-        api.getAdminScheduleRolloverContext(tab),
-      ]);
+      const data = await api.getAdminSchedules(tab);
       setSchedules((data as Array<Record<string, unknown>>).map(mapSchedule));
-      setRolloverContext(mapScheduleRolloverContext(contextRaw as Record<string, unknown>));
     } catch {
       setSchedules([]);
-      setRolloverContext(null);
       setError("تعذر تحميل الجداول");
     } finally {
       setLoading(false);
+    }
+    try {
+      const contextRaw = await api.getAdminScheduleRolloverContext(tab);
+      setRolloverContext(mapScheduleRolloverContext(contextRaw as Record<string, unknown>));
+    } catch {
+      setRolloverContext(null);
     }
   }, [tab]);
 
@@ -132,7 +133,6 @@ export default function AdminSchedulesPage() {
         setSuccess("تم إنشاء الجدول بنجاح.");
         closeForm();
       }
-      await load();
     } catch (err) {
       const message = err instanceof Error ? err.message : "فشل حفظ الجدول";
       setError(message);
@@ -150,7 +150,6 @@ export default function AdminSchedulesPage() {
       setSchedules((prev) => prev.filter((s) => s.id !== deleteTarget.id));
       setSuccess("تم حذف الجدول.");
       setDeleteTarget(null);
-      await load();
     } catch (err) {
       setError(err instanceof Error ? err.message : "فشل حذف الجدول");
     } finally {

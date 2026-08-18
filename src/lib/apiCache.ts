@@ -18,6 +18,7 @@ const CACHEABLE_PREFIXES = [
   "/auth/users",
   "/admin/academic-years",
   "/admin/schedules",
+  "/admin/grade-scheme-template",
   "/admin/finance",
   "/admin/site-settings",
   "/admin/content",
@@ -34,6 +35,7 @@ const CACHEABLE_PREFIXES = [
   "/teacher/announcements",
   "/teacher/alerts",
   "/teacher/schedules",
+  "/teacher/archive",
   "/parent/student",
   "/parent/child",
   "/parent/fees",
@@ -44,6 +46,9 @@ const CACHEABLE_PREFIXES = [
   "/parent/schedules",
   "/parent/grades",
   "/parent/alerts",
+  "/parent/certificates",
+  "/parent/archive",
+  "/parent/assessments",
 ];
 
 function cacheTtlFor(path: string): number {

@@ -8,8 +8,15 @@ import {
   useRef,
   useState,
 } from "react";
+import { usePathname } from "next/navigation";
 import { api } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
+import {
+  parentPathNeedsAssignments,
+  teacherPathNeedsAssessments,
+  teacherPathNeedsAssignmentLists,
+  yieldToPageFetch,
+} from "@/lib/pageFetchPriority";
 import type {
   Homework,
   HomeworkSubmission,
@@ -86,6 +93,7 @@ const AssignmentsContext = createContext<AssignmentsContextValue | null>(null);
 
 export function AssignmentsProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
+  const pathname = usePathname();
   const [state, setState] = useState<AssignmentsState>({
     homework: [],
     quizzes: [],
@@ -94,43 +102,107 @@ export function AssignmentsProvider({ children }: { children: React.ReactNode })
   });
   const [loading, setLoading] = useState(true);
   const hasDataRef = useRef(false);
+  const listsLoadedRef = useRef(false);
+  const assessmentsLoadedRef = useRef(false);
+  const parentLoadedRef = useRef(false);
 
-  const refresh = useCallback(async () => {
+  useEffect(() => {
+    hasDataRef.current = false;
+    listsLoadedRef.current = false;
+    assessmentsLoadedRef.current = false;
+    parentLoadedRef.current = false;
+  }, [user?.id]);
+
+  const loadAssignments = useCallback(async (force = false) => {
     if (!user || (user.role !== "teacher" && user.role !== "parent")) {
+      setLoading(false);
+      return;
+    }
+
+    await yieldToPageFetch();
+
+    if (force) {
+      listsLoadedRef.current = false;
+      assessmentsLoadedRef.current = false;
+      parentLoadedRef.current = false;
+    }
+
+    if (user.role === "teacher") {
+      const needLists = teacherPathNeedsAssignmentLists(pathname);
+      const needAssessments = teacherPathNeedsAssessments(pathname);
+      if (!needLists && !needAssessments) {
+        setLoading(false);
+        return;
+      }
+      if (listsLoadedRef.current && (!needAssessments || assessmentsLoadedRef.current)) {
+        setLoading(false);
+        return;
+      }
+      if (!hasDataRef.current) setLoading(true);
+      try {
+        const requests: Array<Promise<unknown>> = [];
+        const loadLists = needLists && !listsLoadedRef.current;
+        const loadAssessments = needAssessments && !assessmentsLoadedRef.current;
+        if (loadLists) {
+          requests.push(api.getTeacherHomework(), api.getTeacherQuizzes());
+        }
+        if (loadAssessments) {
+          requests.push(api.getTeacherAssessments());
+        }
+        const results = await Promise.all(requests);
+        let cursor = 0;
+        setState((prev) => {
+          const next = { ...prev };
+          if (loadLists) {
+            next.homework = results[cursor] as Homework[];
+            next.quizzes = (results[cursor + 1] as Quiz[]).map(normalizeQuiz);
+            cursor += 2;
+          }
+          if (loadAssessments) {
+            const assessments = results[cursor] as Array<{ submissions: HomeworkSubmission[] }>;
+            next.homeworkSubmissions = assessments.flatMap((row) => row.submissions ?? []);
+          }
+          return next;
+        });
+        if (loadLists) listsLoadedRef.current = true;
+        if (loadAssessments) assessmentsLoadedRef.current = true;
+        hasDataRef.current = true;
+      } catch {
+        setState({
+          homework: [],
+          quizzes: [],
+          homeworkSubmissions: [],
+          quizSubmissions: [],
+        });
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+
+    if (!parentPathNeedsAssignments(pathname)) {
+      setLoading(false);
+      return;
+    }
+    if (parentLoadedRef.current) {
       setLoading(false);
       return;
     }
     if (!hasDataRef.current) setLoading(true);
     try {
-      if (user.role === "teacher") {
-        const [homework, quizzes, assessments] = await Promise.all([
-          api.getTeacherHomework(),
-          api.getTeacherQuizzes(),
-          api.getTeacherAssessments(),
-        ]);
-        const submissionRows = (assessments as Array<{ submissions: HomeworkSubmission[] }>).flatMap(
-          (row) => row.submissions ?? []
-        );
-        setState((prev) => ({
-          ...prev,
-          homework: homework as Homework[],
-          quizzes: (quizzes as Quiz[]).map(normalizeQuiz),
-          homeworkSubmissions: submissionRows,
-        }));
-      } else if (user.role === "parent") {
-        const [homework, quizzes, submissions] = await Promise.all([
-          api.getParentHomework(),
-          api.getParentQuizzes(),
-          api.getParentSubmissions(),
-        ]);
-        const subs = submissions as { homework: HomeworkSubmission[]; quizzes: QuizSubmission[] };
-        setState({
-          homework: homework as Homework[],
-          quizzes: (quizzes as Quiz[]).map(normalizeQuiz),
-          homeworkSubmissions: subs.homework,
-          quizSubmissions: subs.quizzes,
-        });
-      }
+      const [homework, quizzes, submissions] = await Promise.all([
+        api.getParentHomework(),
+        api.getParentQuizzes(),
+        api.getParentSubmissions(),
+      ]);
+      const subs = submissions as { homework: HomeworkSubmission[]; quizzes: QuizSubmission[] };
+      setState({
+        homework: homework as Homework[],
+        quizzes: (quizzes as Quiz[]).map(normalizeQuiz),
+        homeworkSubmissions: subs.homework,
+        quizSubmissions: subs.quizzes,
+      });
+      parentLoadedRef.current = true;
       hasDataRef.current = true;
     } catch {
       setState({
@@ -142,11 +214,13 @@ export function AssignmentsProvider({ children }: { children: React.ReactNode })
     } finally {
       setLoading(false);
     }
-  }, [user?.id, user?.role]);
+  }, [user?.id, user?.role, pathname]);
+
+  const refresh = useCallback(() => loadAssignments(true), [loadAssignments]);
 
   useEffect(() => {
-    refresh();
-  }, [refresh]);
+    void loadAssignments(false);
+  }, [loadAssignments]);
 
   const getHomeworkByClass = useCallback(
     (classId: string) =>

@@ -61,48 +61,54 @@ export default function ParentDashboard() {
   useEffect(() => {
     if (!user) return;
 
-    Promise.all([
-      api.getParentStudent().then((s) => setStudent(s as Student)).catch(() => setStudent(null)),
-      api.getParentSubjects()
-        .then((data) => setSubjects(data as ParentSubjectSummary[]))
-        .catch(() => setSubjects([])),
-      api.getParentAlerts()
-        .then((data) => {
-          const rows = data as Array<Record<string, unknown>>;
-          const nonInstallment = rows.filter((a) => a.type !== "installment");
-          setAlerts(
-            nonInstallment.map((a) => ({
+    api
+      .getParentStudent()
+      .then((s) => setStudent(s as Student))
+      .catch(() => setStudent(null))
+      .finally(() => setLoading(false));
+
+    api
+      .getParentSubjects()
+      .then((data) => setSubjects(data as ParentSubjectSummary[]))
+      .catch(() => setSubjects([]));
+
+    api
+      .getParentAlerts()
+      .then((data) => {
+        const rows = data as Array<Record<string, unknown>>;
+        const nonInstallment = rows.filter((a) => a.type !== "installment");
+        setAlerts(
+          nonInstallment.map((a) => ({
+            id: String(a.id),
+            text: String(a.text),
+            type: String(a.type),
+            homeworkId: a.homeworkId ? String(a.homeworkId) : undefined,
+            quizId: a.quizId ? String(a.quizId) : undefined,
+            announcementId: a.announcementId ? String(a.announcementId) : undefined,
+            materialId: a.materialId ? String(a.materialId) : undefined,
+            subject: a.subject ? String(a.subject) : undefined,
+          }))
+        );
+        setInstallmentNotices(
+          rows
+            .filter((a) => a.type === "installment")
+            .map((a) => ({
               id: String(a.id),
+              order: Number(a.order),
+              amount: Number(a.amount),
+              remaining: Number(a.remaining),
+              startDate: String(a.startDate),
+              endDate: String(a.endDate),
+              status: a.status as FeeInstallmentNotification["status"],
+              type: "installment" as const,
               text: String(a.text),
-              type: String(a.type),
-              homeworkId: a.homeworkId ? String(a.homeworkId) : undefined,
-              quizId: a.quizId ? String(a.quizId) : undefined,
-              announcementId: a.announcementId ? String(a.announcementId) : undefined,
-              materialId: a.materialId ? String(a.materialId) : undefined,
-              subject: a.subject ? String(a.subject) : undefined,
             }))
-          );
-          setInstallmentNotices(
-            rows
-              .filter((a) => a.type === "installment")
-              .map((a) => ({
-                id: String(a.id),
-                order: Number(a.order),
-                amount: Number(a.amount),
-                remaining: Number(a.remaining),
-                startDate: String(a.startDate),
-                endDate: String(a.endDate),
-                status: a.status as FeeInstallmentNotification["status"],
-                type: "installment" as const,
-                text: String(a.text),
-              }))
-          );
-        })
-        .catch(() => {
-          setAlerts([]);
-          setInstallmentNotices([]);
-        }),
-    ]).finally(() => setLoading(false));
+        );
+      })
+      .catch(() => {
+        setAlerts([]);
+        setInstallmentNotices([]);
+      });
   }, [user]);
 
   if (loading) {
@@ -226,6 +232,7 @@ export default function ParentDashboard() {
             <Link
               key={row.subject}
               href={subjectContentPath(row.subject)}
+              prefetch={false}
               className="block"
             >
               <Card className="h-full p-4 transition-shadow hover:shadow-md sm:p-5">
@@ -289,7 +296,7 @@ export default function ParentDashboard() {
         </div>
       )}
 
-      <Link href="/parent/homework" className="mb-8 block">
+      <Link href="/parent/homework" prefetch={false} className="mb-8 block">
         <Card className="transition-shadow hover:shadow-md">
           <BookOpen className="mb-2 h-7 w-7 text-brand-orange" />
           <h3 className="font-bold text-neutral-950">فتح محتوى المواد</h3>
@@ -307,7 +314,7 @@ export default function ParentDashboard() {
       {installmentNotices.length > 0 && (
         <div className="mb-6">
           <InstallmentNotifications notifications={installmentNotices} />
-          <Link href="/parent/fees" className="mt-2 inline-block text-sm font-semibold text-p-green hover:underline">
+          <Link href="/parent/fees" prefetch={false} className="mt-2 inline-block text-sm font-semibold text-p-green hover:underline">
             الذهاب إلى صفحة المالية
           </Link>
         </div>

@@ -38,12 +38,15 @@ export function useTeacherAlerts() {
   }, []);
 
   useEffect(() => {
-    void refresh({ force: true });
+    const timer = window.setTimeout(() => {
+      void refresh({ force: true });
+    }, 400);
     const onFocus = () => {
       void refresh();
     };
     window.addEventListener("focus", onFocus);
     return () => {
+      window.clearTimeout(timer);
       window.removeEventListener("focus", onFocus);
     };
   }, [refresh]);

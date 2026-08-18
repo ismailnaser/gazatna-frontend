@@ -69,7 +69,11 @@ export default function AdminDashboard() {
         )}
       </div>
 
-      <AcademicPeriodBanner />
+      <AcademicPeriodBanner
+        fromParent
+        yearLabel={data.academicYear}
+        termLabel={data.academicTerm}
+      />
 
       <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {canOpenStudentsAnalytics ? (

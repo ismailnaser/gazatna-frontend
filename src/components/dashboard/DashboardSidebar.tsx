@@ -32,6 +32,7 @@ export function DashboardSidebar({
   // (pathname-triggered analytics/alerts were hammering the API on shared hosting).
   useEffect(() => {
     if (!isAdminRole(role)) return;
+    if (pathname.startsWith("/admin/analytics")) return;
     const timer = window.setTimeout(() => {
       api
         .getAdminAnalytics()
@@ -41,18 +42,21 @@ export function DashboardSidebar({
           setPendingPayments(Number.isFinite(count) ? count : 0);
         })
         .catch(() => setPendingPayments(0));
-    }, 500);
+    }, pathname === "/admin" ? 800 : 500);
     return () => window.clearTimeout(timer);
-  }, [role]);
+  }, [role, pathname]);
 
   useEffect(() => {
     if (role !== "teacher") return;
-    api
-      .getTeacherAlerts()
-      .then((data) => {
-        setPendingSubmissions(countPendingTeacherAlerts(data as TeacherAlert[]));
-      })
-      .catch(() => setPendingSubmissions(0));
+    const timer = window.setTimeout(() => {
+      api
+        .getTeacherAlerts()
+        .then((data) => {
+          setPendingSubmissions(countPendingTeacherAlerts(data as TeacherAlert[]));
+        })
+        .catch(() => setPendingSubmissions(0));
+    }, 500);
+    return () => window.clearTimeout(timer);
   }, [role]);
 
   return (

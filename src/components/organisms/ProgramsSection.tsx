@@ -64,6 +64,7 @@ export function ProgramsSection() {
           </div>
           <Link
             href="/programs"
+            prefetch={false}
             className="text-sm font-semibold text-[var(--brand-magenta)] hover:underline"
           >
             عرض الكل

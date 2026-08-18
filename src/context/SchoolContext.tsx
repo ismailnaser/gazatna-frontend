@@ -8,11 +8,40 @@ import {
   useRef,
   useState,
 } from "react";
+import { usePathname } from "next/navigation";
 import { api } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import { isAdminRole } from "@/lib/adminRoles";
 import { mapGrades, mapSchoolClasses } from "@/lib/mapSchoolClass";
+import { teacherPathNeedsSchool, yieldToPageFetch } from "@/lib/pageFetchPriority";
 import type { Grade, SchoolClass, Subject, TeacherProfile } from "@/types/teacher";
+
+function adminPathNeedsCatalog(pathname: string) {
+  if (!pathname.startsWith("/admin")) return false;
+  if (pathname === "/admin") return false;
+  if (pathname.startsWith("/admin/grade-schemes")) return false;
+  if (pathname.startsWith("/admin/analytics")) return false;
+  if (pathname.startsWith("/admin/notifications")) return false;
+  if (pathname.startsWith("/admin/users")) return false;
+  if (pathname.startsWith("/admin/content")) return false;
+  if (pathname.startsWith("/admin/messages")) return false;
+  if (pathname.startsWith("/admin/site")) return false;
+  return true;
+}
+
+function adminPathNeedsStaff(pathname: string) {
+  return (
+    pathname.startsWith("/admin/teachers") ||
+    pathname.startsWith("/admin/subjects") ||
+    pathname.startsWith("/admin/classes") ||
+    pathname.startsWith("/admin/schedules") ||
+    pathname.startsWith("/admin/academic") ||
+    pathname.startsWith("/admin/promotion-policies") ||
+    pathname.startsWith("/admin/certificate-settings") ||
+    pathname.startsWith("/admin/term-end") ||
+    pathname.startsWith("/admin/year-end")
+  );
+}
 
 type SchoolState = {
   teachers: TeacherProfile[];
@@ -118,6 +147,7 @@ function normalizeSubject(raw: Subject): Subject {
 
 export function SchoolProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
+  const pathname = usePathname();
   const [state, setState] = useState<SchoolState>({
     teachers: [],
     assignments: {},
@@ -128,9 +158,15 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
   const [currentTeacher, setCurrentTeacher] = useState<TeacherProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const initialLoadDoneRef = useRef(false);
+  const catalogLoadedRef = useRef(false);
+  const staffLoadedRef = useRef(false);
+  const teacherLoadedRef = useRef(false);
 
   useEffect(() => {
     initialLoadDoneRef.current = false;
+    catalogLoadedRef.current = false;
+    staffLoadedRef.current = false;
+    teacherLoadedRef.current = false;
     setLoading(true);
   }, [user?.id]);
 
@@ -149,35 +185,58 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
     if (showLoading) setLoading(true);
     try {
       if (isAdminRole(user.role)) {
-        const [classesResult, gradesResult] = await Promise.allSettled([
-          api.getAdminClasses(),
-          api.getAdminGrades(),
-        ]);
-        const classesData =
-          classesResult.status === "fulfilled"
-            ? mapSchoolClasses(classesResult.value as unknown[])
-            : [];
-        const gradesData =
-          gradesResult.status === "fulfilled" ? mapGrades(gradesResult.value as unknown[]) : [];
-        setClasses(classesData);
-        setGrades(gradesData);
+        await yieldToPageFetch();
+        const needCatalog = adminPathNeedsCatalog(pathname);
+        const needStaff = adminPathNeedsStaff(pathname);
+
+        if (needCatalog && !catalogLoadedRef.current) {
+          const [classesResult, gradesResult] = await Promise.allSettled([
+            api.getAdminClasses(),
+            api.getAdminGrades(),
+          ]);
+          const classesData =
+            classesResult.status === "fulfilled"
+              ? mapSchoolClasses(classesResult.value as unknown[])
+              : [];
+          const gradesData =
+            gradesResult.status === "fulfilled" ? mapGrades(gradesResult.value as unknown[]) : [];
+          setClasses(classesData);
+          setGrades(gradesData);
+          catalogLoadedRef.current = true;
+        }
+
         initialLoadDoneRef.current = true;
         setLoading(false);
 
-        const [teachersResult, subjectsResult] = await Promise.allSettled([
-          api.getAdminTeachers(),
-          api.getAdminSubjects(),
-        ]);
-        const teachers =
-          teachersResult.status === "fulfilled" ? mapTeachers(teachersResult.value as unknown[]) : [];
-        const subjectsData =
-          subjectsResult.status === "fulfilled"
-            ? (subjectsResult.value as Subject[]).map(normalizeSubject)
-            : [];
-        setCurrentTeacher(null);
-        setState({ teachers, assignments: buildAssignments(teachers) });
-        setSubjects(subjectsData);
+        if (needStaff && !staffLoadedRef.current) {
+          const [teachersResult, subjectsResult] = await Promise.allSettled([
+            api.getAdminTeachers(),
+            api.getAdminSubjects(),
+          ]);
+          const teachers =
+            teachersResult.status === "fulfilled" ? mapTeachers(teachersResult.value as unknown[]) : [];
+          const subjectsData =
+            subjectsResult.status === "fulfilled"
+              ? (subjectsResult.value as Subject[]).map(normalizeSubject)
+              : [];
+          setCurrentTeacher(null);
+          setState({ teachers, assignments: buildAssignments(teachers) });
+          setSubjects(subjectsData);
+          staffLoadedRef.current = true;
+        } else {
+          setCurrentTeacher(null);
+        }
       } else if (user.role === "teacher") {
+        await yieldToPageFetch();
+        if (!teacherPathNeedsSchool(pathname)) {
+          initialLoadDoneRef.current = true;
+          setLoading(false);
+          return;
+        }
+        if (teacherLoadedRef.current) {
+          setLoading(false);
+          return;
+        }
         const [classesResult, profileResult] = await Promise.allSettled([
           api.getTeacherClasses(),
           api.getTeacherProfile(),
@@ -201,7 +260,12 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
             ? { teachers: [resolvedTeacher], assignments: buildAssignments([resolvedTeacher]) }
             : { teachers: [], assignments: {} }
         );
+        teacherLoadedRef.current = true;
       } else if (user.role === "parent") {
+        if (initialLoadDoneRef.current) {
+          setLoading(false);
+          return;
+        }
         setCurrentTeacher(null);
         setState({ teachers: [], assignments: {} });
         setClasses([]);
@@ -221,7 +285,7 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
       initialLoadDoneRef.current = true;
       setLoading(false);
     }
-  }, [user?.id, user?.role]);
+  }, [user?.id, user?.role, pathname]);
 
   useEffect(() => {
     refresh();

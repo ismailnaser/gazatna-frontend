@@ -382,6 +382,9 @@ async function apiFetchOnce<T>(
     if (path.startsWith("/admin/schedules")) {
       invalidateApiCache("/admin/schedules");
     }
+    if (path.startsWith("/admin/grade-scheme-template")) {
+      invalidateApiCache("/admin/grade-scheme-template");
+    }
     if (path.startsWith("/admin/finance") || path.includes("/fee-access")) {
       invalidateApiCache("/admin/analytics");
       invalidateApiCache("/admin/finance");

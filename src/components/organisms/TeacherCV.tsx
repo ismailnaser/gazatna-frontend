@@ -30,6 +30,7 @@ export function TeacherCV({
     <div className="mx-auto max-w-3xl">
       <Link
         href={backHref}
+        prefetch={false}
         className="mb-6 inline-flex items-center gap-2 text-sm font-medium text-[var(--brand-teal)] hover:underline"
       >
         <ArrowRight className="h-4 w-4" />
@@ -114,6 +115,7 @@ export function TeacherCV({
                       {href ? (
                         <Link
                           href={href}
+                          prefetch={false}
                           className="block rounded-xl border border-neutral-100 bg-[var(--brand-teal)]/5 px-4 py-3 transition hover:border-[var(--brand-teal)]/30 hover:bg-[var(--brand-teal)]/10"
                         >
                           {content}

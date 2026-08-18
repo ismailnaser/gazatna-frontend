@@ -21,19 +21,22 @@ export function useParentGradesNotification(role: UserRole, pathname: string) {
     }
 
     let cancelled = false;
-    api
-      .getParentGradesNotification()
-      .then((res) => {
-        if (cancelled) return;
-        const count = Number(res.count ?? 0);
-        setNewGradesCount(Number.isFinite(count) && count > 0 ? count : 0);
-      })
-      .catch(() => {
-        if (!cancelled) setNewGradesCount(0);
-      });
+    const timer = window.setTimeout(() => {
+      api
+        .getParentGradesNotification()
+        .then((res) => {
+          if (cancelled) return;
+          const count = Number(res.count ?? 0);
+          setNewGradesCount(Number.isFinite(count) && count > 0 ? count : 0);
+        })
+        .catch(() => {
+          if (!cancelled) setNewGradesCount(0);
+        });
+    }, 600);
 
     return () => {
       cancelled = true;
+      window.clearTimeout(timer);
     };
   }, [role, onGradesPage]);
 

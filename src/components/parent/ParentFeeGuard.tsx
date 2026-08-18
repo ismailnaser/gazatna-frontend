@@ -55,10 +55,13 @@ export function ParentFeeGuard({ children }: { children: React.ReactNode }) {
 
   if (loading && !feeStatus) {
     return (
-      <div className="space-y-3">
-        <div className="h-24 animate-pulse rounded-2xl bg-neutral-100" />
-        <div className="h-24 animate-pulse rounded-2xl bg-neutral-100" />
-      </div>
+      <>
+        <div className="hidden">{children}</div>
+        <div className="space-y-3">
+          <div className="h-24 animate-pulse rounded-2xl bg-neutral-100" />
+          <div className="h-24 animate-pulse rounded-2xl bg-neutral-100" />
+        </div>
+      </>
     );
   }
 

@@ -7,7 +7,15 @@ import { formatAcademicPeriodParts } from "@/lib/academicPeriod";
 import { mapAcademicContext } from "@/types/academic";
 import { CalendarDays } from "lucide-react";
 
-export function AcademicPeriodBanner() {
+export function AcademicPeriodBanner({
+  yearLabel,
+  termLabel,
+  fromParent = false,
+}: {
+  yearLabel?: string | null;
+  termLabel?: string | null;
+  fromParent?: boolean;
+} = {}) {
   const [parts, setParts] = useState<{
     yearLabel: string | null;
     termLabel: string | null;
@@ -15,6 +23,15 @@ export function AcademicPeriodBanner() {
   } | null>(null);
 
   useEffect(() => {
+    if (fromParent) {
+      if (!yearLabel && !termLabel) {
+        setParts(null);
+        return;
+      }
+      const combined = [yearLabel, termLabel].filter(Boolean).join(" — ") || null;
+      setParts({ yearLabel: yearLabel ?? null, termLabel: termLabel ?? null, combined });
+      return;
+    }
     const timer = window.setTimeout(() => {
       api
         .getAcademicContext()
@@ -22,7 +39,7 @@ export function AcademicPeriodBanner() {
         .catch(() => setParts(null));
     }, 350);
     return () => window.clearTimeout(timer);
-  }, []);
+  }, [fromParent, yearLabel, termLabel]);
 
   if (!parts?.combined) return null;
 
