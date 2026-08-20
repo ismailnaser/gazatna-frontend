@@ -2,61 +2,31 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 /**
- * Proxy /api and /media to Django.
- * Prefer BACKEND_URL (Python App origin). Never proxy back to the public frontend host.
+ * Page middleware only (HTTPS / cache headers).
+ * /api and /media are proxied in server.js at runtime (BACKEND_URL) so response
+ * bodies are not dropped the way Edge middleware rewrites were on LiteSpeed.
  */
-function getBackendOrigin(): string {
-  const explicit = (process.env.BACKEND_URL ?? process.env.DJANGO_BACKEND_URL ?? "").trim();
-  if (explicit) {
-    return explicit.replace(/\/$/, "").replace(/\/api\/?$/, "");
-  }
-
-  const publicApi = (process.env.NEXT_PUBLIC_API_URL ?? "").trim();
-  if (
-    !publicApi ||
-    publicApi === "/api" ||
-    publicApi.startsWith("/")
-  ) {
-    return "http://127.0.0.1:8000";
-  }
-
-  return publicApi.replace(/\/api\/?$/, "");
-}
-
 export function middleware(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
   const hostHeader = request.headers.get("x-forwarded-host") || request.headers.get("host") || "";
   const hostname = hostHeader.split(":")[0].toLowerCase();
-  const proto = (request.headers.get("x-forwarded-proto") || request.nextUrl.protocol.replace(":", "")).split(",")[0].trim();
+  const proto = (
+    request.headers.get("x-forwarded-proto") || request.nextUrl.protocol.replace(":", "")
+  )
+    .split(",")[0]
+    .trim();
 
   if (
     process.env.NODE_ENV === "production" &&
     proto === "http" &&
-    (hostname === "gzs.edu.ps" || hostname === "www.gzs.edu.ps") &&
-    !pathname.startsWith("/api") &&
-    !pathname.startsWith("/media")
+    (hostname === "gzs.edu.ps" || hostname === "www.gzs.edu.ps")
   ) {
     const host = hostname === "www.gzs.edu.ps" ? "gzs.edu.ps" : hostname;
     return NextResponse.redirect(`https://${host}${pathname}${search}`, 308);
   }
 
-  if (
-    process.env.NODE_ENV === "production" &&
-    hostname === "www.gzs.edu.ps" &&
-    !pathname.startsWith("/api") &&
-    !pathname.startsWith("/media")
-  ) {
+  if (process.env.NODE_ENV === "production" && hostname === "www.gzs.edu.ps") {
     return NextResponse.redirect(`https://gzs.edu.ps${pathname}${search}`, 308);
-  }
-
-  const backend = getBackendOrigin();
-
-  if (pathname === "/api" || pathname.startsWith("/api/")) {
-    return NextResponse.rewrite(new URL(`${backend}${pathname}${search}`));
-  }
-
-  if (pathname === "/media" || pathname.startsWith("/media/")) {
-    return NextResponse.rewrite(new URL(`${backend}${pathname}${search}`));
   }
 
   const response = NextResponse.next();
@@ -70,8 +40,6 @@ export function middleware(request: NextRequest) {
       pathname.startsWith("/teacher") ||
       pathname.startsWith("/parent") ||
       pathname === "/login";
-    // Public HTML can be cached at the edge. Dashboard HTML stays uncached so a
-    // new frontend deploy cannot serve old HTML that points at deleted JS chunks.
     if (!isAppShell) {
       response.headers.set("Cache-Control", "public, s-maxage=90, stale-while-revalidate=300");
     }
@@ -82,6 +50,6 @@ export function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|sw.js|pwa-bootstrap.js|manifest.webmanifest|images/|.*\\.(?:ico|png|jpg|jpeg|gif|webp|svg|woff2?)$).*)",
+    "/((?!api/|media/|_next/static|_next/image|favicon.ico|sw.js|pwa-bootstrap.js|manifest.webmanifest|images/|.*\\.(?:ico|png|jpg|jpeg|gif|webp|svg|woff2?)$).*)",
   ],
 };

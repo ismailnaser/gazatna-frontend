@@ -421,8 +421,12 @@ async function apiFetchOnce<T>(
   let lastErr: unknown;
   for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
     if (attempt > 0) {
-      // Longer backoff so retries do not restorm the same crowded workers.
-      await new Promise((resolve) => setTimeout(resolve, 700 * attempt));
+      // Empty LiteSpeed bodies need a short retry; keep longer backoff for 502/429 storms.
+      const emptyish =
+        lastErr instanceof Error &&
+        (lastErr.message === "empty_response" || lastErr.message === "invalid_json");
+      const delayMs = emptyish ? 180 * attempt : 700 * attempt;
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
     }
 
     await acquireApiSlot();

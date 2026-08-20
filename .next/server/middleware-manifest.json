@@ -12,14 +12,14 @@
       "entrypoint": "server/edge/chunks/turbopack-node_modules_next_dist_esm_build_templates_edge-wrapper_0a9xbl8.js",
       "matchers": [
         {
-          "regexp": "^(?:\\/(_next\\/data\\/[^/]{1,}))?(?:\\/((?!_next\\/static|_next\\/image|favicon.ico|sw.js|pwa-bootstrap.js|manifest.webmanifest|images\\/|.*\\.(?:ico|png|jpg|jpeg|gif|webp|svg|woff2?)$).*))(\\.json|\\.rsc|\\.segments\\/.+\\.segment\\.rsc)?[\\/#\\?]?$",
-          "originalSource": "/((?!_next/static|_next/image|favicon.ico|sw.js|pwa-bootstrap.js|manifest.webmanifest|images/|.*\\.(?:ico|png|jpg|jpeg|gif|webp|svg|woff2?)$).*)"
+          "regexp": "^(?:\\/(_next\\/data\\/[^/]{1,}))?(?:\\/((?!api\\/|media\\/|_next\\/static|_next\\/image|favicon.ico|sw.js|pwa-bootstrap.js|manifest.webmanifest|images\\/|.*\\.(?:ico|png|jpg|jpeg|gif|webp|svg|woff2?)$).*))(\\.json|\\.rsc|\\.segments\\/.+\\.segment\\.rsc)?[\\/#\\?]?$",
+          "originalSource": "/((?!api/|media/|_next/static|_next/image|favicon.ico|sw.js|pwa-bootstrap.js|manifest.webmanifest|images/|.*\\.(?:ico|png|jpg|jpeg|gif|webp|svg|woff2?)$).*)"
         }
       ],
       "wasm": [],
       "assets": [],
       "env": {
-        "__NEXT_BUILD_ID": "oXVHTU2ItpLsAAuAkE_NL",
+        "__NEXT_BUILD_ID": "mFYFh-cGg50LFtkFHjCBt",
         "NEXT_SERVER_ACTIONS_ENCRYPTION_KEY": "VXFzX1b8X8RmkNYMNzN/empoZk64OgS7VHWfdhsVHlY=",
         "__NEXT_PREVIEW_MODE_ID": "70e5dd5bcc62b82c646c885ad09843f3",
         "__NEXT_PREVIEW_MODE_ENCRYPTION_KEY": "df4f36d38c22296ba23387585c43c9620949ba9db40456d639b188871c168733",

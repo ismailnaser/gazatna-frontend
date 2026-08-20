@@ -53,6 +53,9 @@ const nextConfig: NextConfig = {
     ];
   },
   async rewrites() {
+    // Fallback for local/dev when middleware is bypassed. Production /api is
+    // proxied at runtime by middleware (buffered fetch) using BACKEND_URL so a
+    // locally-built .next does not hardcode 127.0.0.1 into rewrites.
     return [
       {
         source: "/api/:path*",
