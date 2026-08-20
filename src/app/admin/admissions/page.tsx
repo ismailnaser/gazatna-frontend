@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
@@ -9,7 +9,7 @@ import {
   AdminAdmissionsTable,
   type AdminAdmissionRow,
 } from "@/components/admin/AdminAdmissionsTable";
-import { GradeSectionClassPicker } from "@/components/shared/GradeSectionClassPicker";
+import { GradeThenSectionSelect } from "@/components/shared/GradeThenSectionSelect";
 import { PageHeader } from "@/components/molecules/PageHeader";
 import { ExpandableText } from "@/components/molecules/ExpandableText";
 import { StatusBadge } from "@/components/molecules/StatusBadge";
@@ -395,7 +395,7 @@ export default function AdminAdmissionsPage() {
                   "inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-semibold transition-colors",
                   tab === id
                     ? "bg-brand-blue text-white"
-                    : "bg-neutral-50 text-p-black/65 hover:bg-neutral-100"
+                    : "bg-neutral-50 text-p-black/75 hover:bg-neutral-100"
                 )}
               >
                 <Icon className="h-4 w-4" />
@@ -508,13 +508,11 @@ export default function AdminAdmissionsPage() {
                     : "تواصل مع إدارة الفصول لإضافتها."}
                 </p>
               ) : (
-                <GradeSectionClassPicker
+                <GradeThenSectionSelect
                   classes={classes}
                   grades={grades}
-                  mode="single"
-                  value={classId ? [classId] : []}
-                  onChange={(ids) => setClassId(ids[0] ?? "")}
-                  label="الفصل والشعبة"
+                  value={classId}
+                  onChange={setClassId}
                   required
                 />
               )}

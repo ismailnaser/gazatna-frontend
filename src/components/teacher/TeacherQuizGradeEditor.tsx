@@ -149,12 +149,12 @@ export function TeacherQuizGradeEditor({
       </Link>
 
       <div className="mb-4">
-        <p className="text-sm text-p-black/50">{quiz.subject || "عام"}</p>
+        <p className="text-sm text-p-black/72">{quiz.subject || "عام"}</p>
         <h1 className="text-xl font-bold text-p-black">{quiz.title}</h1>
         <div className="mt-2 flex flex-wrap items-center gap-2">
           <Badge variant="default">{submission.studentName ?? "طالب"}</Badge>
           {submission.className && <Badge variant="default">{submission.className}</Badge>}
-          <span className="text-xs text-p-black/45">
+          <span className="text-xs text-p-black/70">
             سُلّم: {new Date(submission.submittedAt).toLocaleString("ar-PS")}
           </span>
         </div>
@@ -164,15 +164,15 @@ export function TeacherQuizGradeEditor({
 
       <section className="mb-4 overflow-hidden rounded-2xl border border-brand-blue/20 bg-brand-blue/5 shadow-sm">
         <header className="border-b border-brand-blue/10 bg-white/60 px-3 py-2.5 sm:px-4">
-          <p className="text-xs font-bold text-p-black/55">ملخص الدرجة</p>
+          <p className="text-xs font-bold text-p-black/75">ملخص الدرجة</p>
         </header>
         <div className="space-y-3 p-3 sm:p-4">
           <div className="flex items-center justify-between gap-3 rounded-xl bg-white px-3 py-3 shadow-sm">
             <div>
-              <p className="text-[11px] text-p-black/45">المجموع الحالي</p>
+              <p className="text-[11px] text-p-black/70">المجموع الحالي</p>
               <p className="text-2xl font-bold text-brand-blue">
                 {totalPreview}
-                <span className="ms-1 text-base font-semibold text-p-black/45">/ {maxScore}</span>
+                <span className="ms-1 text-base font-semibold text-p-black/70">/ {maxScore}</span>
               </p>
             </div>
             {manualQuestions.length === 0 && (
@@ -189,7 +189,7 @@ export function TeacherQuizGradeEditor({
                   <Sparkles className="h-4 w-4" />
                 </span>
                 <div>
-                  <p className="text-[11px] text-p-black/45">تلقائي</p>
+                  <p className="text-[11px] text-p-black/70">تلقائي</p>
                   <p className="text-sm font-bold text-p-black">{autoTotal}</p>
                 </div>
               </div>
@@ -198,7 +198,7 @@ export function TeacherQuizGradeEditor({
                   <PenLine className="h-4 w-4" />
                 </span>
                 <div>
-                  <p className="text-[11px] text-p-black/45">يدوي</p>
+                  <p className="text-[11px] text-p-black/70">يدوي</p>
                   <p className="text-sm font-bold text-p-black">{manualPreview}</p>
                 </div>
               </div>
@@ -226,12 +226,12 @@ export function TeacherQuizGradeEditor({
               </div>
               <p className="mb-3 font-medium text-p-black">{q.prompt}</p>
               <div className="mb-3 rounded-xl bg-neutral-50 p-3 text-sm text-p-black/80">
-                <p className="mb-1 text-xs font-semibold text-neutral-500">إجابة الطالب</p>
+                <p className="mb-1 text-xs font-semibold text-neutral-700">إجابة الطالب</p>
                 <p className="whitespace-pre-wrap">{formatQuizAnswer(q, answer)}</p>
               </div>
               {attachmentUrl && (
                 <div className="mb-3 rounded-xl border border-neutral-100 bg-neutral-50 p-3">
-                  <p className="mb-2 text-xs font-semibold text-neutral-500">مرفق الإجابة</p>
+                  <p className="mb-2 text-xs font-semibold text-neutral-700">مرفق الإجابة</p>
                   {isImageAttachment(attachmentUrl, attachmentName) ? (
                     <a href={attachmentUrl} target="_blank" rel="noreferrer" className="block">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -259,7 +259,7 @@ export function TeacherQuizGradeEditor({
                 </div>
               )}
               {manual && q.questionType === "term" && q.correctText && (
-                <p className="mb-3 text-xs text-neutral-500">
+                <p className="mb-3 text-xs text-neutral-700">
                   الإجابة المرجعية (للمعلم): <span className="font-medium">{q.correctText}</span>
                 </p>
               )}
@@ -298,7 +298,7 @@ export function TeacherQuizGradeEditor({
               {saving ? "جاري الحفظ..." : "حفظ التقييم وإظهار العلامة للطالب"}
             </Button>
             <SaveFeedback success={success} scrollIntoView className="mt-3" />
-            <p className="mt-3 text-xs text-neutral-500">
+            <p className="mt-3 text-xs text-neutral-700">
               بعد اكتمال التصحيح ستظهر العلامة للطالب في صفحة التقييمات ومحتوى المادة.
             </p>
           </>
@@ -310,7 +310,7 @@ export function TeacherQuizGradeEditor({
               {saving ? "جاري الحفظ..." : "حفظ التقييم وإظهار العلامة للطالب"}
             </Button>
             <SaveFeedback success={success} scrollIntoView className="mt-3" />
-            <p className="mt-3 text-xs text-neutral-500">
+            <p className="mt-3 text-xs text-neutral-700">
               أدخل درجة كل سؤال، ثم احفظ التقييم الكامل من هنا.
             </p>
           </>

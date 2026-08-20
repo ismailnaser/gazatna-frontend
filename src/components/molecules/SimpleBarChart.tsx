@@ -37,7 +37,7 @@ export function SimpleBarChart({
               }}
             />
           </div>
-          <span className="text-center text-xs leading-tight text-p-black/50">{item.label}</span>
+          <span className="text-center text-xs leading-tight text-p-black/72">{item.label}</span>
         </div>
       ))}
     </div>

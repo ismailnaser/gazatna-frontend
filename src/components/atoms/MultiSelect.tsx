@@ -75,7 +75,7 @@ export function MultiSelect({
           "focus:border-p-green focus:outline-none focus:ring-2 focus:ring-p-green/20"
         )}
       >
-        <span className={cn("truncate text-start", value.length === 0 && "text-neutral-500")}>
+        <span className={cn("truncate text-start", value.length === 0 && "text-neutral-700")}>
           {summary}
         </span>
         <ChevronDown className={cn("h-4 w-4 shrink-0 text-neutral-400 transition-transform", open && "rotate-180")} />
@@ -94,7 +94,7 @@ export function MultiSelect({
             <button
               type="button"
               onClick={clearAll}
-              className="font-semibold text-neutral-500 hover:underline"
+              className="font-semibold text-neutral-700 hover:underline"
             >
               إلغاء الكل
             </button>
@@ -125,7 +125,7 @@ export function MultiSelect({
                     <span className="min-w-0 truncate">
                       {opt.label}
                       {opt.hint ? (
-                        <span className="mt-0.5 block text-[11px] font-normal text-p-black/45">
+                        <span className="mt-0.5 block text-[11px] font-normal text-p-black/70">
                           {opt.hint}
                         </span>
                       ) : null}

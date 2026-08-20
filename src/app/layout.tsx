@@ -76,6 +76,17 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ar" dir="rtl" className={`${cairo.variable} h-full`}>
+      <head>
+        <link
+          rel="preload"
+          as="image"
+          type="image/webp"
+          href="/images/hero-illustration.webp"
+          imageSrcSet="/images/hero-illustration-828.webp 828w, /images/hero-illustration.webp 1920w"
+          imageSizes="100vw"
+          fetchPriority="high"
+        />
+      </head>
       <body className="min-h-full antialiased">
         {process.env.NODE_ENV === "production" && (
           <Script src="/pwa-bootstrap.js" strategy="beforeInteractive" />

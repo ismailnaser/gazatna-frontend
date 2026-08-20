@@ -63,7 +63,7 @@ export default function TeacherQuizzesPage() {
   }
 
   if (!teacher) {
-    return <p className="text-neutral-500">لم يتم ربط حسابك بملف معلم.</p>;
+    return <p className="text-neutral-700">لم يتم ربط حسابك بملف معلم.</p>;
   }
 
   async function toggleGradesVisible(group: QuizGroup) {
@@ -106,12 +106,12 @@ export default function TeacherQuizzesPage() {
       />
 
       {classes.length === 0 ? (
-        <Card className="text-center text-neutral-500">لا توجد فصول مسندة إليك.</Card>
+        <Card className="text-center text-neutral-700">لا توجد فصول مسندة إليك.</Card>
       ) : (
         <>
           <h2 className="mb-4 text-lg font-bold text-neutral-900">جميع الاختبارات</h2>
           {groupedItems.length === 0 ? (
-            <Card className="text-center text-neutral-500">لا توجد اختبارات بعد.</Card>
+            <Card className="text-center text-neutral-700">لا توجد اختبارات بعد.</Card>
           ) : (
             <div className="space-y-3">
               {groupedItems.map((group) => {

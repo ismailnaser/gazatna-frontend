@@ -46,7 +46,7 @@ export function TeacherCropModal({
       >
         <div className="border-b border-neutral-100 px-5 py-4">
           <p className="text-base font-bold text-p-black">قص صورة العضو</p>
-          <p className="mt-1 text-sm text-neutral-500">حرّك الصورة وحدد الإطار المربع قبل الحفظ.</p>
+          <p className="mt-1 text-sm text-neutral-700">حرّك الصورة وحدد الإطار المربع قبل الحفظ.</p>
         </div>
 
         <div className="relative h-[360px] bg-black">

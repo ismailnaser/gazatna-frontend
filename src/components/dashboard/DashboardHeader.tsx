@@ -27,13 +27,13 @@ export function DashboardHeader() {
           {user && (
             <div className="text-end">
               <p className="text-sm font-semibold text-p-black">{user.name}</p>
-              <p className="text-xs text-p-black/50">{roleLabels[user.role]}</p>
+              <p className="text-xs text-p-black/72">{roleLabels[user.role]}</p>
             </div>
           )}
           <button
             type="button"
             onClick={() => setConfirmLogout(true)}
-            className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-p-black/60 hover:bg-neutral-100"
+            className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-p-black/78 hover:bg-neutral-100"
           >
             <LogOut className="h-4 w-4" />
             <span className="hidden sm:inline">خروج</span>

@@ -26,7 +26,7 @@ export function HomeworkSubmissionsSection({
   const total = sections.reduce((sum, s) => sum + s.submissions.length, 0);
 
   if (total === 0) {
-    return <p className="text-sm text-neutral-500">لا توجد تسليمات بعد.</p>;
+    return <p className="text-sm text-neutral-700">لا توجد تسليمات بعد.</p>;
   }
 
   return (

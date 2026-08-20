@@ -221,7 +221,7 @@ export default function AdminSitePage() {
             className={`px-4 py-2.5 text-sm font-semibold transition-colors ${
               tab === t.id
                 ? "border-b-2 border-p-green text-p-green"
-                : "text-p-black/50 hover:text-p-black"
+                : "text-p-black/72 hover:text-p-black"
             }`}
           >
             {t.label}
@@ -244,7 +244,7 @@ export default function AdminSitePage() {
 
           <div className="border-t border-neutral-100 pt-4">
             <h3 className="mb-3 font-bold text-p-black">صورة الصفحة الرئيسية</h3>
-            <p className="mb-3 text-sm text-p-black/60">
+            <p className="mb-3 text-sm text-p-black/78">
               الصورة تظهر في خلفية الهيرو على الموقع. إذا لم ترفع صورة تُستخدم الصورة الافتراضية.
             </p>
             {(heroImagePreview || (settings.hero.imageUrl && !removeHeroImage)) && (
@@ -379,7 +379,7 @@ export default function AdminSitePage() {
             <p className="mb-3 text-sm font-semibold text-p-black">المراحل الدراسية المتاحة في الفورم</p>
             <div className="space-y-2">
               {grades.length === 0 ? (
-                <p className="text-sm text-neutral-500">
+                <p className="text-sm text-neutral-700">
                   لا توجد صفوف مُضافة بعد.{" "}
                   <Link href="/admin/classes" className="font-semibold text-p-green hover:underline">
                     أضف صفوفاً من هنا
@@ -404,7 +404,7 @@ export default function AdminSitePage() {
       {tab === "programs" && (
         <Card className="space-y-5">
           <h3 className="font-bold text-p-black">البرامج التعليمية حسب الصفوف</h3>
-          <p className="text-sm text-p-black/60">
+          <p className="text-sm text-p-black/78">
             هذه البرامج تُعرض في صفحة{" "}
             <Link href="/programs" className="font-semibold text-p-green hover:underline">
               البرامج

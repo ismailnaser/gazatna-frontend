@@ -92,12 +92,12 @@ export function TeacherHomeworkGradeEditor({
       </Link>
 
       <div className="mb-4">
-        <p className="text-sm text-p-black/50">{homework.subject || "عام"}</p>
+        <p className="text-sm text-p-black/72">{homework.subject || "عام"}</p>
         <h1 className="text-xl font-bold text-p-black">{homework.title}</h1>
         <div className="mt-2 flex flex-wrap items-center gap-2">
           <Badge variant="default">{submission.studentName ?? "طالب"}</Badge>
           {submission.className && <Badge variant="default">{submission.className}</Badge>}
-          <span className="text-xs text-p-black/45">
+          <span className="text-xs text-p-black/70">
             سُلّم: {new Date(submission.submittedAt).toLocaleString("ar-PS")}
           </span>
         </div>
@@ -113,12 +113,12 @@ export function TeacherHomeworkGradeEditor({
               {submission.content}
             </p>
           ) : (
-            <p className="text-sm text-neutral-500">لا يوجد نص في التسليم.</p>
+            <p className="text-sm text-neutral-700">لا يوجد نص في التسليم.</p>
           )}
 
           {attachmentUrl && (
             <div className="mt-4 rounded-xl border border-neutral-100 bg-neutral-50 p-3">
-              <p className="mb-2 text-xs font-semibold text-neutral-500">مرفق التسليم</p>
+              <p className="mb-2 text-xs font-semibold text-neutral-700">مرفق التسليم</p>
               {isImageAttachment(attachmentUrl, attachmentName) ? (
                 <a href={attachmentUrl} target="_blank" rel="noreferrer" className="block">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -178,7 +178,7 @@ export function TeacherHomeworkGradeEditor({
             <Link href={homeworkGradePath(overviewHomeworkId)}>
               <Button variant="ghost">إلغاء</Button>
             </Link>
-            <p className="text-xs text-p-black/45">أدخل الدرجة ثم احفظ التقييم من الزر أعلاه.</p>
+            <p className="text-xs text-p-black/70">أدخل الدرجة ثم احفظ التقييم من الزر أعلاه.</p>
           </div>
         </Card>
       </div>

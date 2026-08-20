@@ -36,7 +36,7 @@ export function HomeworkPanel({
   return (
     <div>
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-sm text-p-black/60">
+        <p className="text-sm text-p-black/78">
           أنشئ واجبات منزلية لطلاب هذا الفصل وحدّد موعد التسليم.
         </p>
         <Link href="/teacher/homework/new" className="w-full sm:w-auto">
@@ -48,7 +48,7 @@ export function HomeworkPanel({
       </div>
 
       {items.length === 0 ? (
-        <Card className="border-dashed text-center text-p-black/50">
+        <Card className="border-dashed text-center text-p-black/72">
           لا توجد واجبات بعد. أنشئ أول واجب للطلاب.
         </Card>
       ) : (

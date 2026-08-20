@@ -1,0 +1,7 @@
+# Long-lived cache for static brand images (LiteSpeed / Apache front).
+# Next.js also sets Cache-Control via next.config.ts headers().
+<IfModule mod_headers.c>
+  <FilesMatch "\.(webp|png|jpe?g|gif|svg|ico|woff2?)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+</IfModule>

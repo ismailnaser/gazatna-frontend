@@ -248,7 +248,7 @@ export default function AdminTeacherDetailPage() {
           className="mb-6"
         />
         <Card className="p-5">
-          <p className="text-sm text-neutral-500">
+          <p className="text-sm text-neutral-700">
             ارجع إلى{" "}
             <Link href="/admin/teachers" className="font-semibold text-brand-blue hover:underline">
               قائمة الكادر
@@ -309,7 +309,7 @@ export default function AdminTeacherDetailPage() {
           </div>
           <div className="min-w-0 flex-1">
             <h2 className="text-xl font-bold text-p-black">{current.name}</h2>
-            <p className="mt-1 text-sm text-p-black/55">
+            <p className="mt-1 text-sm text-p-black/75">
               {current.staffTypeName || "—"}
               {current.isTeacher && current.subject ? ` • ${current.subject}` : ""}
             </p>

@@ -19,6 +19,26 @@
         }
       ],
       "regex": "^/sw\\.js(?:/)?$"
+    },
+    {
+      "source": "/images/:path*",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ],
+      "regex": "^/images(?:/((?:[^/]+?)(?:/(?:[^/]+?))*))?(?:/)?$"
+    },
+    {
+      "source": "/pwa-bootstrap.js",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=86400"
+        }
+      ],
+      "regex": "^/pwa-bootstrap\\.js(?:/)?$"
     }
   ],
   "onMatchHeaders": [],
@@ -48,6 +68,22 @@
       "namedRegex": "^/admin/content/(?<nxtPid>[^/]+?)/edit(?:/)?$"
     },
     {
+      "page": "/admin/finance/plans/[id]/edit",
+      "regex": "^/admin/finance/plans/([^/]+?)/edit(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/admin/finance/plans/(?<nxtPid>[^/]+?)/edit(?:/)?$"
+    },
+    {
+      "page": "/admin/schedules/[id]/edit",
+      "regex": "^/admin/schedules/([^/]+?)/edit(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/admin/schedules/(?<nxtPid>[^/]+?)/edit(?:/)?$"
+    },
+    {
       "page": "/admin/students/[id]",
       "regex": "^/admin/students/([^/]+?)(?:/)?$",
       "routeKeys": {
@@ -64,12 +100,36 @@
       "namedRegex": "^/admin/students/(?<nxtPid>[^/]+?)/documents(?:/)?$"
     },
     {
+      "page": "/admin/students/[id]/edit",
+      "regex": "^/admin/students/([^/]+?)/edit(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/admin/students/(?<nxtPid>[^/]+?)/edit(?:/)?$"
+    },
+    {
+      "page": "/admin/subjects/[id]/edit",
+      "regex": "^/admin/subjects/([^/]+?)/edit(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/admin/subjects/(?<nxtPid>[^/]+?)/edit(?:/)?$"
+    },
+    {
       "page": "/admin/teachers/[id]",
       "regex": "^/admin/teachers/([^/]+?)(?:/)?$",
       "routeKeys": {
         "nxtPid": "nxtPid"
       },
       "namedRegex": "^/admin/teachers/(?<nxtPid>[^/]+?)(?:/)?$"
+    },
+    {
+      "page": "/admin/users/[id]/edit",
+      "regex": "^/admin/users/([^/]+?)/edit(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/admin/users/(?<nxtPid>[^/]+?)/edit(?:/)?$"
     },
     {
       "page": "/faculty/[id]",
@@ -286,6 +346,12 @@
       "namedRegex": "^/admin/finance(?:/)?$"
     },
     {
+      "page": "/admin/finance/plans/create",
+      "regex": "^/admin/finance/plans/create(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/finance/plans/create(?:/)?$"
+    },
+    {
       "page": "/admin/grade-schemes",
       "regex": "^/admin/grade\\-schemes(?:/)?$",
       "routeKeys": {},
@@ -316,6 +382,12 @@
       "namedRegex": "^/admin/schedules(?:/)?$"
     },
     {
+      "page": "/admin/schedules/create",
+      "regex": "^/admin/schedules/create(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/schedules/create(?:/)?$"
+    },
+    {
       "page": "/admin/site",
       "regex": "^/admin/site(?:/)?$",
       "routeKeys": {},
@@ -328,10 +400,22 @@
       "namedRegex": "^/admin/students(?:/)?$"
     },
     {
+      "page": "/admin/students/create",
+      "regex": "^/admin/students/create(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/students/create(?:/)?$"
+    },
+    {
       "page": "/admin/subjects",
       "regex": "^/admin/subjects(?:/)?$",
       "routeKeys": {},
       "namedRegex": "^/admin/subjects(?:/)?$"
+    },
+    {
+      "page": "/admin/subjects/create",
+      "regex": "^/admin/subjects/create(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/subjects/create(?:/)?$"
     },
     {
       "page": "/admin/teachers",
@@ -356,6 +440,12 @@
       "regex": "^/admin/users(?:/)?$",
       "routeKeys": {},
       "namedRegex": "^/admin/users(?:/)?$"
+    },
+    {
+      "page": "/admin/users/create",
+      "regex": "^/admin/users/create(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/users/create(?:/)?$"
     },
     {
       "page": "/admin/year-end",

@@ -57,11 +57,11 @@ export function CertificateSettingsPanel() {
               <Badge variant="default">غير منشورة</Badge>
             )}
           </div>
-          <p className="mt-1 text-xs text-p-black/55">
+          <p className="mt-1 text-xs text-p-black/75">
             تحديد دورة إصدار الشهادات، المعدل من 100%، وشهادة التقدير للمعدلات العالية.
           </p>
           {certificateConfig?.publishedAt ? (
-            <p className="mt-1 text-xs text-p-black/45">
+            <p className="mt-1 text-xs text-p-black/70">
               آخر نشر: {new Date(certificateConfig.publishedAt).toLocaleString("ar")}
             </p>
           ) : null}
@@ -69,7 +69,7 @@ export function CertificateSettingsPanel() {
       </div>
 
       {loadingCertificate ? (
-        <p className="text-sm text-neutral-500">جاري تحميل إعدادات الشهادات...</p>
+        <p className="text-sm text-neutral-700">جاري تحميل إعدادات الشهادات...</p>
       ) : (
         <>
           <div className="grid gap-4 md:grid-cols-2">
@@ -169,7 +169,7 @@ export function CertificateSettingsPanel() {
           {selectedYear.isActive ? (
             <div className="rounded-xl border border-neutral-200 bg-p-cream/40 p-4">
               <h4 className="font-semibold text-p-black">إصدار الشهادات للطلاب</h4>
-              <p className="mt-1 text-xs text-p-black/55">
+              <p className="mt-1 text-xs text-p-black/75">
                 بعد النشر، تظهر الشهادات في صفحة «الشهادات» لأولياء الأمور مع إمكانية التحميل.
               </p>
 
@@ -222,7 +222,7 @@ export function CertificateSettingsPanel() {
                 <div className="mt-6 space-y-4 border-t border-neutral-200 pt-4">
                   <div>
                     <h5 className="font-semibold text-p-black">نتائج المعاينة</h5>
-                    <p className="mt-1 text-xs text-p-black/55">{certificatePreview.periodLabel}</p>
+                    <p className="mt-1 text-xs text-p-black/75">{certificatePreview.periodLabel}</p>
                   </div>
 
                   <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -234,7 +234,7 @@ export function CertificateSettingsPanel() {
                     ].map((item) => (
                       <div key={item.label} className="rounded-xl bg-white px-3 py-2 text-center">
                         <p className="text-lg font-bold text-p-black">{item.value}</p>
-                        <p className="text-xs text-p-black/55">{item.label}</p>
+                        <p className="text-xs text-p-black/75">{item.label}</p>
                       </div>
                     ))}
                   </div>
@@ -242,7 +242,7 @@ export function CertificateSettingsPanel() {
                   <div className="overflow-x-auto rounded-xl border border-neutral-200 bg-white">
                     <table className="w-full min-w-[980px] text-sm">
                       <thead>
-                        <tr className="border-b border-neutral-100 bg-p-cream/60 text-p-black/60">
+                        <tr className="border-b border-neutral-100 bg-p-cream/60 text-p-black/78">
                           <th className="w-10 px-2 py-2" aria-label="تفاصيل" />
                           <th className="px-3 py-2 text-start font-semibold">الطالب</th>
                           <th className="px-3 py-2 text-start font-semibold">الصف</th>
@@ -268,7 +268,7 @@ export function CertificateSettingsPanel() {
                                   <button
                                     type="button"
                                     onClick={() => toggleCertificateStudentExpanded(row.studentId)}
-                                    className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-p-black/55 hover:bg-neutral-100"
+                                    className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-p-black/75 hover:bg-neutral-100"
                                     aria-label={expanded ? "إخفاء التفاصيل" : "عرض تفاصيل المواد"}
                                   >
                                     {expanded ? (
@@ -280,7 +280,7 @@ export function CertificateSettingsPanel() {
                                 </td>
                                 <td className="px-3 py-2.5">
                                   <p className="font-medium text-p-black">{row.studentName}</p>
-                                  <p className="text-xs text-p-black/45">{row.studentNumber || "—"}</p>
+                                  <p className="text-xs text-p-black/70">{row.studentNumber || "—"}</p>
                                 </td>
                                 <td className="px-3 py-2.5">
                                   {row.gradeLevel} {row.section}
@@ -357,14 +357,14 @@ export function CertificateSettingsPanel() {
                                 <tr className="border-b border-neutral-100 bg-neutral-50/70">
                                   <td colSpan={8} className="px-4 py-3">
                                     {row.subjects.length === 0 ? (
-                                      <p className="text-sm text-p-black/50">
+                                      <p className="text-sm text-p-black/72">
                                         لا توجد مواد مسندة لهذا الطالب.
                                       </p>
                                     ) : (
                                       <div className="overflow-x-auto rounded-xl border border-neutral-200 bg-white">
                                         <table className="w-full min-w-[520px] text-sm">
                                           <thead>
-                                            <tr className="border-b border-neutral-100 bg-p-cream/60 text-p-black/60">
+                                            <tr className="border-b border-neutral-100 bg-p-cream/60 text-p-black/78">
                                               <th className="px-3 py-2 text-start font-semibold">
                                                 المادة
                                               </th>
@@ -394,7 +394,7 @@ export function CertificateSettingsPanel() {
                                                   className={cn(
                                                     "px-3 py-2 font-semibold",
                                                     subject.percent == null
-                                                      ? "text-p-black/45"
+                                                      ? "text-p-black/70"
                                                       : subject.percent >= 50
                                                         ? "text-p-green"
                                                         : "text-p-red"

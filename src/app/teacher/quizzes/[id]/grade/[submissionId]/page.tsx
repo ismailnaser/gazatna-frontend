@@ -56,7 +56,7 @@ export default function TeacherQuizSubmissionGradePage({
   }
 
   if (!item?.quiz || !submission) {
-    return <Card className="text-center text-neutral-500">التسليم غير متاح.</Card>;
+    return <Card className="text-center text-neutral-700">التسليم غير متاح.</Card>;
   }
 
   return (

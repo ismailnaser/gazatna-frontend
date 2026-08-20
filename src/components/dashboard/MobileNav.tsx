@@ -88,7 +88,7 @@ export function MobileNav({
               prefetch={false}
               className={cn(
                 "relative flex min-h-[56px] flex-1 flex-col items-center justify-center gap-0.5 px-1 py-2 text-[11px] font-medium leading-tight",
-                active ? "text-p-green" : "text-p-black/50"
+                active ? "text-p-green" : "text-p-black/72"
               )}
             >
               <span className="relative">
@@ -110,7 +110,7 @@ export function MobileNav({
             onClick={() => setMoreOpen(true)}
             className={cn(
               "flex min-h-[56px] flex-1 flex-col items-center justify-center gap-0.5 px-1 py-2 text-[11px] font-medium leading-tight",
-              moreOpen || overflowActive ? "text-p-green" : "text-p-black/50"
+              moreOpen || overflowActive ? "text-p-green" : "text-p-black/72"
             )}
             aria-expanded={moreOpen}
             aria-haspopup="dialog"
@@ -146,13 +146,13 @@ export function MobileNav({
                   <h2 id="mobile-nav-sheet-title" className="text-base font-bold text-p-black">
                     القائمة
                   </h2>
-                  <p className="text-xs text-p-black/50">اختر القسم الذي تريد فتحه</p>
+                  <p className="text-xs text-p-black/72">اختر القسم الذي تريد فتحه</p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setMoreOpen(false)}
-                className="flex h-10 w-10 items-center justify-center rounded-full text-p-black/60 transition-colors hover:bg-neutral-100"
+                className="flex h-10 w-10 items-center justify-center rounded-full text-p-black/78 transition-colors hover:bg-neutral-100"
                 aria-label="إغلاق"
               >
                 <X className="h-5 w-5" />

@@ -109,7 +109,7 @@ export function AdminScheduleRolloverPanel({
         <Archive className="mt-0.5 h-5 w-5 shrink-0 text-brand-blue" />
         <div className="min-w-0 flex-1">
           <h3 className="font-bold text-p-black">جداول {typeLabel} — {context.previousTerm?.name}</h3>
-          <p className="mt-1 text-sm text-p-black/60">
+          <p className="mt-1 text-sm text-p-black/78">
             هذه الجداول من الفترة السابقة ولا تظهر للطلاب والمعلمين. لكل شعبة بدون جدول في الفترة
             الحالية، اختر الاحتفاظ بنفس الجدول أو البدء بجدول جديد.
           </p>
@@ -128,7 +128,7 @@ export function AdminScheduleRolloverPanel({
             >
               <div className="min-w-0">
                 <p className="font-semibold text-p-black">{item.classLabel}</p>
-                <p className="mt-0.5 text-xs text-p-black/50">
+                <p className="mt-0.5 text-xs text-p-black/72">
                   جدول سابق: «{item.previousScheduleName}»
                 </p>
               </div>
@@ -160,7 +160,7 @@ export function AdminScheduleRolloverPanel({
 
       {hasPrevious ? (
         <div className="rounded-xl border border-neutral-200 bg-white/80 p-3">
-          <p className="text-xs font-semibold text-p-black/55">الجداول المحفوظة من الفترة السابقة</p>
+          <p className="text-xs font-semibold text-p-black/75">الجداول المحفوظة من الفترة السابقة</p>
           <ul className="mt-2 space-y-1 text-sm text-p-black/70">
             {context.previousSchedules.map((schedule) => (
               <li key={schedule.id}>

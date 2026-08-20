@@ -38,7 +38,7 @@ export function NewsDetailClient({ id }: { id: string }) {
   if (!item) {
     return (
       <div className="mx-auto max-w-3xl px-4 py-20 text-center">
-        <p className="text-neutral-500">{error || "الخبر غير موجود"}</p>
+        <p className="text-neutral-700">{error || "الخبر غير موجود"}</p>
         <Button href="/" variant="outline" className="mt-6">
           العودة للرئيسية
         </Button>

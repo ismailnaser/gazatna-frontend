@@ -62,12 +62,12 @@ export function CertificatePreviewDialog({
               <h3 id="certificate-preview-title" className="font-bold text-p-black">
                 معاينة الشهادة
               </h3>
-              <p className="mt-0.5 text-xs text-p-black/55">{title}</p>
+              <p className="mt-0.5 text-xs text-p-black/75">{title}</p>
             </div>
             <button
               type="button"
               onClick={onClose}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-p-black/55 hover:bg-neutral-100"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-p-black/75 hover:bg-neutral-100"
               aria-label="إغلاق المعاينة"
             >
               <X className="h-5 w-5" />
@@ -76,7 +76,7 @@ export function CertificatePreviewDialog({
 
           <div ref={viewportRef} className="min-h-[320px] flex-1 overflow-auto bg-neutral-100 p-4">
             {loading ? (
-              <p className="py-16 text-center text-sm text-neutral-500">جاري تحضير المعاينة...</p>
+              <p className="py-16 text-center text-sm text-neutral-700">جاري تحضير المعاينة...</p>
             ) : html ? (
               <div className="mx-auto" style={{ width: CERTIFICATE_WIDTH * scale }}>
                 <div
@@ -89,7 +89,7 @@ export function CertificatePreviewDialog({
                 />
               </div>
             ) : (
-              <p className="py-16 text-center text-sm text-neutral-500">تعذر عرض الشهادة.</p>
+              <p className="py-16 text-center text-sm text-neutral-700">تعذر عرض الشهادة.</p>
             )}
           </div>
 

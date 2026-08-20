@@ -1,10 +1,10 @@
 ﻿"use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Alert } from "@/components/atoms/Alert";
 import { Button } from "@/components/atoms/Button";
 import { Select } from "@/components/atoms/Select";
-import { AdminStudentFormPanel } from "@/components/admin/AdminStudentFormPanel";
 import { AdminStudentsTable } from "@/components/admin/AdminStudentsTable";
 import { GradeSectionClassMultiSelect } from "@/components/shared/GradeSectionClassMultiSelect";
 import { PageHeader } from "@/components/molecules/PageHeader";
@@ -18,6 +18,7 @@ import type { AccountCredentials, AdminStudent } from "@/types";
 import { Download, Plus, Search, Users } from "lucide-react";
 
 export default function AdminStudentsPage() {
+  const router = useRouter();
   const { classes, grades } = useSchool();
   const [students, setStudents] = useState<AdminStudent[]>([]);
   const [loading, setLoading] = useState(true);
@@ -372,7 +373,7 @@ export default function AdminStudentsPage() {
           title="إدارة الطلاب"
           description="الأرشيف الرقمي لسجلات الطلاب — إضافة، تعديل، والوثائق."
         />
-        <Button onClick={openCreateForm} className="shrink-0">
+        <Button href="/admin/students/create" className="shrink-0">
           <Plus className="h-4 w-4" />
           إضافة طالب
         </Button>
@@ -405,63 +406,7 @@ export default function AdminStudentsPage() {
       ) : null}
 
       {success ? <Alert variant="success">{success}</Alert> : null}
-      {error && !showForm && !editing ? <Alert variant="error">{error}</Alert> : null}
-
-      <div ref={formRef}>
-        {showForm ? (
-          <AdminStudentFormPanel
-            mode="create"
-            classes={classes}
-            grades={grades}
-            existingStudents={students}
-            docRows={docRows}
-            onDocRowsChange={setDocRows}
-            error={error}
-            submitting={submitting}
-            onSubmit={handleAdd}
-            onClose={closeForm}
-          />
-        ) : null}
-
-        {editing ? (
-          <AdminStudentFormPanel
-            key={editing.id}
-            mode="edit"
-            editing={editing}
-            classes={classes}
-            grades={grades}
-            editingClassId={editingClassId}
-            existingStudents={students}
-            docRows={docRows}
-            onDocRowsChange={setDocRows}
-            error={error}
-            submitting={submitting}
-            onSubmit={handleUpdate}
-            onClose={closeForm}
-          />
-        ) : null}
-      </div>
-
-      <div className="grid gap-3 sm:grid-cols-2">
-        <div className="flex items-center gap-3 rounded-xl border border-neutral-100 bg-neutral-50 px-4 py-3 shadow-sm">
-          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-blue/10 text-brand-blue">
-            <Users className="h-5 w-5" />
-          </span>
-          <div>
-            <p className="text-xs text-p-black/45">إجمالي الطلاب</p>
-            <p className="text-lg font-bold text-p-black">{students.length}</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-3 rounded-xl border border-neutral-100 bg-neutral-50 px-4 py-3 shadow-sm">
-          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-orange/10 text-brand-orange">
-            <Search className="h-5 w-5" />
-          </span>
-          <div>
-            <p className="text-xs text-p-black/45">نتائج العرض</p>
-            <p className="text-lg font-bold text-p-black">{filteredStudents.length}</p>
-          </div>
-        </div>
-      </div>
+      {error ? <Alert variant="error">{error}</Alert> : null}
 
       <section className="rounded-2xl border border-neutral-100 bg-neutral-50 shadow-sm">
         <header className="relative z-10 space-y-3 border-b border-neutral-100 bg-neutral-50/70 px-3 py-3 sm:px-4 sm:py-4">
@@ -529,7 +474,7 @@ export default function AdminStudentsPage() {
               students={filteredStudents}
               hasActiveFilters={hasActiveFilters}
               togglingId={togglingStudentId}
-              onEdit={openEditForm}
+              onEdit={(student) => router.push(`/admin/students/${student.id}/edit`)}
               onResetPassword={setConfirmReset}
               onToggleActive={toggleStudentActive}
               onDelete={(student) => {

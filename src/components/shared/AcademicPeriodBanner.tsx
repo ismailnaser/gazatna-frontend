@@ -51,7 +51,7 @@ export function AcademicPeriodBanner({
         </span>
         <div className="min-w-0 space-y-1">
           <p className="text-base font-bold text-p-black sm:text-lg">{parts.combined}</p>
-          <p className="text-sm text-p-black/60">
+          <p className="text-sm text-p-black/78">
             السنة الدراسية: <span className="font-semibold text-p-black">{parts.yearLabel ?? "—"}</span>
             {" · "}
             الفصل: <span className="font-semibold text-p-black">{parts.termLabel ?? "—"}</span>

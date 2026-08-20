@@ -1,11 +1,11 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Alert } from "@/components/atoms/Alert";
 import { Button } from "@/components/atoms/Button";
 import { Card } from "@/components/atoms/Card";
-import { Input } from "@/components/atoms/Input";
 import { AdminSubjectsGrid } from "@/components/admin/AdminSubjectsGrid";
 import { ConfirmDialog } from "@/components/molecules/ConfirmDialog";
 import { PageHeader } from "@/components/molecules/PageHeader";
@@ -56,6 +56,7 @@ function StatChip({
 }
 
 export default function AdminSubjectsPage() {
+  const router = useRouter();
   const { user } = useAuth();
   const canManageClasses =
     user && isAdminRole(user.role) && canManageAdminClasses(user.role);
@@ -66,8 +67,6 @@ export default function AdminSubjectsPage() {
     grades,
     loading,
     refresh,
-    addSubject,
-    updateSubject,
     syncSubjectSections,
     setSubjectClasses,
     removeSubject,
@@ -75,19 +74,15 @@ export default function AdminSubjectsPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const pageTopRef = useRef<HTMLDivElement>(null);
-  const [adding, setAdding] = useState(false);
   const [search, setSearch] = useState("");
   const [confirmDeleteSubject, setConfirmDeleteSubject] = useState<Subject | null>(null);
   const [deletingSubject, setDeletingSubject] = useState(false);
-  const [editingSubject, setEditingSubject] = useState<Subject | null>(null);
   const [modalSubject, setModalSubject] = useState<Subject | null>(null);
   const [assignMode, setAssignMode] = useState<"classes" | "teachers" | null>(null);
   const [selectedClassIds, setSelectedClassIds] = useState<string[]>([]);
   const [sectionDrafts, setSectionDrafts] = useState<Record<string, SubjectSectionDraft>>({});
   const [savingSections, setSavingSections] = useState(false);
   const [savingClasses, setSavingClasses] = useState(false);
-  const [editName, setEditName] = useState("");
-  const [savingEdit, setSavingEdit] = useState(false);
   const [modalClasses, setModalClasses] = useState<SchoolClass[]>([]);
   const [modalGrades, setModalGrades] = useState<Grade[]>([]);
 
@@ -268,60 +263,8 @@ export default function AdminSubjectsPage() {
     }
   }
 
-  async function handleAdd(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    setError("");
-    setAdding(true);
-    const formEl = e.currentTarget;
-    const form = new FormData(formEl);
-    const name = String(form.get("name") ?? "").trim();
 
-    if (!name) {
-      setError("اسم المادة مطلوب");
-      setAdding(false);
-      return;
-    }
 
-    try {
-      await addSubject(name);
-      formEl.reset();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "فشل إضافة المادة");
-    } finally {
-      setAdding(false);
-    }
-  }
-
-  function openEdit(subject: Subject) {
-    setEditingSubject(subject);
-    setEditName(subject.name);
-    setError("");
-  }
-
-  async function saveEdit() {
-    if (!editingSubject) return;
-    const name = editName.trim();
-    if (!name) {
-      setError("اسم المادة مطلوب");
-      return;
-    }
-    if (name === editingSubject.name) {
-      setEditingSubject(null);
-      return;
-    }
-
-    setSavingEdit(true);
-    setError("");
-    try {
-      await updateSubject(editingSubject.id, name);
-      setEditingSubject(null);
-      setEditName("");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "فشل تعديل المادة");
-    } finally {
-      setSavingEdit(false);
-    }
-  }
 
   async function confirmDeleteSubjectAction() {
     if (!confirmDeleteSubject) return;
@@ -361,26 +304,18 @@ export default function AdminSubjectsPage() {
         />
       </div>
 
-      <Card className="mb-6 p-4 sm:p-5">
-        <h3 className="mb-1 font-bold text-p-black">إضافة مادة جديدة</h3>
-        <p className="mb-4 text-sm text-p-black/55">
-          مثال: الرياضيات، الفيزياء، اللغة العربية
-        </p>
+      <div className="mb-4 flex flex-wrap items-center justify-end gap-3">
+        <Button type="button" onClick={() => router.push("/admin/subjects/create")}>
+          <Plus className="h-4 w-4" />
+          إضافة مادة
+        </Button>
+      </div>
 
-        {error && !confirmDeleteSubject && !editingSubject && !modalSubject && (
-          <Alert variant="error" className="mb-4">
-            {error}
-          </Alert>
-        )}
-
-        <form onSubmit={handleAdd} className="flex flex-col gap-4 sm:flex-row sm:items-end">
-          <Input label="اسم المادة" name="name" required className="flex-1" />
-          <Button type="submit" disabled={adding} className="sm:min-w-[150px]">
-            <Plus className="h-4 w-4" />
-            {adding ? "جاري الإضافة..." : "إضافة مادة"}
-          </Button>
-        </form>
-      </Card>
+      {error && !confirmDeleteSubject && !modalSubject ? (
+        <Alert variant="error" className="mb-4">
+          {error}
+        </Alert>
+      ) : null}
 
       <Card className="p-4 sm:p-5">
         <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -413,7 +348,7 @@ export default function AdminSubjectsPage() {
             onView={openAssignClasses}
             onAssignClasses={openAssignClasses}
             onAssignTeachers={openAssignTeachers}
-            onEdit={openEdit}
+            onEdit={(subject) => router.push(`/admin/subjects/${subject.id}/edit`)}
             onDelete={(subject) => {
               setError("");
               setConfirmDeleteSubject(subject);
@@ -569,68 +504,6 @@ export default function AdminSubjectsPage() {
             <div className="mt-5 flex justify-end">
               <Button type="button" variant="outline" onClick={closeAssignModal}>
                 إغلاق
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {editingSubject && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
-          role="dialog"
-          aria-modal="true"
-          onClick={() => setEditingSubject(null)}
-        >
-          <div
-            className="w-full max-w-md rounded-2xl bg-white p-6"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="mb-4 flex items-start justify-between gap-3">
-              <div>
-                <h3 className="text-lg font-bold text-p-black">تعديل اسم المادة</h3>
-                <p className="mt-1 text-sm text-p-black/55">
-                  {editingSubject.teacherCount > 0
-                    ? `مرتبطة بـ ${teacherCountLabel(editingSubject.teacherCount)} — سيُحدَّث الاسم لديهم تلقائياً`
-                    : "لم تُسند لمعلمين بعد"}
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setEditingSubject(null)}
-                aria-label="إغلاق"
-                className="rounded-full p-1 text-p-black/40 hover:bg-neutral-100 hover:text-p-black"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            {error && (
-              <Alert variant="error" className="mb-4">
-                {error}
-              </Alert>
-            )}
-
-            <Input
-              label="اسم المادة"
-              value={editName}
-              onChange={(e) => setEditName(e.target.value)}
-              required
-              autoFocus
-            />
-
-            <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setEditingSubject(null)}
-                disabled={savingEdit}
-              >
-                إلغاء
-              </Button>
-              <Button type="button" onClick={saveEdit} disabled={savingEdit || !editName.trim()}>
-                <Save className="h-4 w-4" />
-                {savingEdit ? "جاري الحفظ..." : "حفظ التعديل"}
               </Button>
             </div>
           </div>

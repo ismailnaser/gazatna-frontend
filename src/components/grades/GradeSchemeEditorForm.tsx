@@ -44,7 +44,7 @@ export function GradeSchemeEditorForm({
     <div className="space-y-4">
       {!readOnly ? (
         <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-          <p className="text-xs text-p-black/50">
+          <p className="text-xs text-p-black/72">
             حدّد العلامة الكاملة ثم قسّمها. تُطبَّق التقسيمة الموحّدة على كل المراحل والشعب والمواد.
           </p>
           <Button type="button" variant="outline" size="sm" onClick={onAddComponent}>
@@ -57,7 +57,7 @@ export function GradeSchemeEditorForm({
       <div className="grid gap-3 sm:grid-cols-[140px_1fr] sm:items-end">
         {readOnly ? (
           <div>
-            <p className="mb-1 text-xs font-medium text-p-black/55">العلامة الكاملة</p>
+            <p className="mb-1 text-xs font-medium text-p-black/75">العلامة الكاملة</p>
             <p className="rounded-xl border border-neutral-100 bg-neutral-50 px-3 py-2 text-sm font-bold text-p-black">
               {maxScoreNumber || "—"}
             </p>
@@ -95,7 +95,7 @@ export function GradeSchemeEditorForm({
             )}
           >
             <div className="flex items-center gap-2">
-              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white text-xs font-bold text-p-black/45 ring-1 ring-neutral-200">
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white text-xs font-bold text-p-black/70 ring-1 ring-neutral-200">
                 {index + 1}
               </span>
               {readOnly ? (
@@ -110,7 +110,7 @@ export function GradeSchemeEditorForm({
               )}
             </div>
             {readOnly ? (
-              <p className="text-sm text-p-black/60 sm:text-end">
+              <p className="text-sm text-p-black/78 sm:text-end">
                 {component.maxScore} علامة
               </p>
             ) : (

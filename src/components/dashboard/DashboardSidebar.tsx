@@ -86,7 +86,7 @@ export function DashboardSidebar({
                 "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors",
                 active
                   ? "bg-p-green/10 text-p-green"
-                  : "text-p-black/60 hover:bg-neutral-50 hover:text-p-black"
+                  : "text-p-black/78 hover:bg-neutral-50 hover:text-p-black"
               )}
             >
               <Icon className="h-5 w-5" />

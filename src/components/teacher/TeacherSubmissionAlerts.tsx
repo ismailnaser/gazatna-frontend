@@ -93,16 +93,16 @@ function TeacherAlertItem({
             >
               <Icon className="h-4 w-4" />
             </span>
-            <span className="text-xs font-bold text-p-black/55">{alertTypeLabel(alert)}</span>
+            <span className="text-xs font-bold text-p-black/75">{alertTypeLabel(alert)}</span>
           </div>
           {statusBadge(alert, opened)}
         </div>
 
         <p className="truncate text-sm font-bold text-p-black">{alert.studentName}</p>
         <p className="mt-0.5 text-sm text-p-black/75">{alertTitle(alert)}</p>
-        <p className="mt-1 text-xs text-p-black/45">{alert.className}</p>
+        <p className="mt-1 text-xs text-p-black/70">{alert.className}</p>
 
-        <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-p-black/40">
+        <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-p-black/75">
           <span>{when.date}</span>
           <span aria-hidden>•</span>
           <span>{when.time}</span>
@@ -172,7 +172,7 @@ export function TeacherSubmissionAlerts({
           </span>
           <div className="min-w-0">
             <p className="text-sm font-bold text-p-black">{title}</p>
-            <p className="text-xs text-p-black/50">
+            <p className="text-xs text-p-black/72">
               {alerts.length === 0
                 ? "لا توجد تسليمات جديدة"
                 : pendingCount > 0
@@ -189,7 +189,7 @@ export function TeacherSubmissionAlerts({
             </span>
           )}
           <ChevronDown
-            className={cn("h-5 w-5 text-p-black/40 transition-transform", open && "rotate-180")}
+            className={cn("h-5 w-5 text-p-black/75 transition-transform", open && "rotate-180")}
           />
         </div>
       </button>
@@ -197,7 +197,7 @@ export function TeacherSubmissionAlerts({
       {open && (
         <div className="border-t border-amber-200/60 bg-white/70 px-3 py-3 sm:px-4">
           {visible.length === 0 ? (
-            <p className="py-4 text-center text-sm text-neutral-500">لا توجد إشعارات حالياً.</p>
+            <p className="py-4 text-center text-sm text-neutral-700">لا توجد إشعارات حالياً.</p>
           ) : (
             <div className="space-y-2">
               {visible.map((alert) => (

@@ -8,7 +8,7 @@ import { Input } from "@/components/atoms/Input";
 import { Select } from "@/components/atoms/Select";
 import { Textarea } from "@/components/atoms/Textarea";
 import { FileUploadField } from "@/components/molecules/FileUploadField";
-import { GradeSectionClassPicker } from "@/components/shared/GradeSectionClassPicker";
+import { GradeThenSectionSelect } from "@/components/shared/GradeThenSectionSelect";
 import { useAuth } from "@/context/AuthContext";
 import { canManageAdminClasses, isAdminRole } from "@/lib/adminRoles";
 import type { AdminStudent } from "@/types";
@@ -34,7 +34,7 @@ function FormSection({
     <section className="overflow-hidden rounded-2xl border border-neutral-100 bg-neutral-50 shadow-sm">
       <header className="border-b border-neutral-100 bg-neutral-50/70 px-3 py-2.5 sm:px-4">
         <h3 className="text-sm font-bold text-p-black">{title}</h3>
-        {description ? <p className="mt-0.5 text-xs text-p-black/50">{description}</p> : null}
+        {description ? <p className="mt-0.5 text-xs text-p-black/72">{description}</p> : null}
       </header>
       <div className="space-y-3 p-3 sm:space-y-4 sm:p-4">{children}</div>
     </section>
@@ -111,7 +111,7 @@ export function AdminStudentFormPanel({
             {isCreate ? "طالب جديد" : editing?.name}
           </h2>
           {!isCreate && editing?.studentNumber ? (
-            <p className="mt-1 text-xs text-p-black/50" dir="ltr">
+            <p className="mt-1 text-xs text-p-black/72" dir="ltr">
               #{editing.studentNumber}
             </p>
           ) : null}
@@ -120,7 +120,7 @@ export function AdminStudentFormPanel({
           type="button"
           onClick={onClose}
           aria-label="إغلاق"
-          className="rounded-lg p-1.5 text-p-black/45 hover:bg-white hover:text-p-black"
+          className="rounded-lg p-1.5 text-p-black/70 hover:bg-white hover:text-p-black"
         >
           <X className="h-5 w-5" />
         </button>
@@ -151,7 +151,7 @@ export function AdminStudentFormPanel({
               />
 
               {classes.length === 0 ? (
-                <div className="sm:col-span-2 rounded-xl border border-dashed border-neutral-200 px-4 py-6 text-center text-sm text-neutral-500">
+                <div className="sm:col-span-2 rounded-xl border border-dashed border-neutral-200 px-4 py-6 text-center text-sm text-neutral-700">
                   لا توجد فصول مسجّلة.{" "}
                   {canManageClasses ? (
                     <Link href="/admin/classes" className="font-semibold text-brand-blue hover:underline">
@@ -163,16 +163,13 @@ export function AdminStudentFormPanel({
                 </div>
               ) : (
                 <div className="sm:col-span-2">
-                  <GradeSectionClassPicker
+                  <GradeThenSectionSelect
                     classes={classes}
                     grades={grades}
-                    mode="single"
-                    value={selectedClassIds}
-                    onChange={setSelectedClassIds}
-                    label="الفصل والشعبة"
+                    value={selectedClassIds[0] ?? ""}
+                    onChange={(id) => setSelectedClassIds(id ? [id] : [])}
+                    name="classId"
                     required
-                    formFieldName="classId"
-                    resetKey={`${mode}-${editingClassId}`}
                   />
                 </div>
               )}
@@ -282,7 +279,7 @@ export function AdminStudentFormPanel({
                         <Button
                           type="button"
                           variant="ghost"
-                          className="px-2 py-1 text-xs text-neutral-500"
+                          className="px-2 py-1 text-xs text-neutral-700"
                           onClick={() =>
                             onDocRowsChange(
                               docRows.map((r, i) => (i === idx ? { ...r, file: null } : r))
@@ -305,7 +302,7 @@ export function AdminStudentFormPanel({
                   </div>
                 ))}
               </div>
-              <p className="flex items-center gap-1.5 text-xs text-p-black/45">
+              <p className="flex items-center gap-1.5 text-xs text-p-black/70">
                 <FileText className="h-3.5 w-3.5" />
                 الوثائق تُحفظ مع ملف الطالب ويمكن إدارتها لاحقاً.
               </p>

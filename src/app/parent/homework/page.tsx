@@ -33,7 +33,7 @@ function SubjectStat({
       </span>
       <div className="min-w-0">
         <p className="text-base font-bold leading-none text-p-black">{count}</p>
-        <p className="mt-0.5 truncate text-xs text-p-black/55">{label}</p>
+        <p className="mt-0.5 truncate text-xs text-p-black/75">{label}</p>
       </div>
     </div>
   );
@@ -64,7 +64,7 @@ export default function ParentHomeworkSubjectsPage() {
           <div className="h-24 animate-pulse rounded-2xl bg-neutral-100" />
         </div>
       ) : subjects.length === 0 ? (
-        <Card className="text-center text-neutral-500">لا توجد مواد أو واجبات حالياً.</Card>
+        <Card className="text-center text-neutral-700">لا توجد مواد أو واجبات حالياً.</Card>
       ) : (
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4">
           {subjects.map((row) => {
@@ -134,7 +134,7 @@ export default function ParentHomeworkSubjectsPage() {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-p-black/45">لا يوجد محتوى بعد</p>
+                  <p className="text-sm text-p-black/70">لا يوجد محتوى بعد</p>
                 )}
               </Card>
             </Link>

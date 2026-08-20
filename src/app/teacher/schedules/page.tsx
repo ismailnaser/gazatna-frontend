@@ -51,7 +51,7 @@ export default function TeacherSchedulesPage() {
 
       <Card className="overflow-hidden">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-neutral-100 p-4">
-          <p className="text-sm text-p-black/60">
+          <p className="text-sm text-p-black/78">
             {loading ? "..." : `${rows.length} حصة في الجدول`}
           </p>
           <Button
@@ -67,7 +67,7 @@ export default function TeacherSchedulesPage() {
 
         <div className="p-4">
           {loading ? (
-            <p className="py-10 text-center text-sm text-p-black/50">جاري تحميل الجدول...</p>
+            <p className="py-10 text-center text-sm text-p-black/72">جاري تحميل الجدول...</p>
           ) : (
             <TeacherScheduleTable rows={rows} />
           )}

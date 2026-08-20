@@ -27,7 +27,7 @@ export function TeacherSubjectPicker({
 
   if (subjects.length === 0) {
     return (
-      <p className="rounded-xl border border-dashed border-neutral-200 bg-neutral-50 px-4 py-5 text-sm text-neutral-500">
+      <p className="rounded-xl border border-dashed border-neutral-200 bg-neutral-50 px-4 py-5 text-sm text-neutral-700">
         لا توجد مواد مسجّلة.{" "}
         <Link href="/admin/subjects" className="font-semibold text-brand-blue hover:underline">
           أضف المواد أولاً

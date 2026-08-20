@@ -29,14 +29,14 @@ type ArchiveYear = {
 
 function GradesTable({ grades }: { grades: Grade[] }) {
   if (grades.length === 0) {
-    return <p className="text-sm text-p-black/55">لا توجد علامات محفوظة لهذا الفصل.</p>;
+    return <p className="text-sm text-p-black/75">لا توجد علامات محفوظة لهذا الفصل.</p>;
   }
 
   return (
     <div className="overflow-x-auto">
       <table className="w-full min-w-[520px] text-sm">
         <thead>
-          <tr className="border-b border-neutral-100 bg-p-cream/60 text-p-black/60">
+          <tr className="border-b border-neutral-100 bg-p-cream/60 text-p-black/78">
             <th className="px-3 py-2 text-start font-semibold">المادة</th>
             <th className="px-3 py-2 text-center font-semibold">العلامة</th>
             <th className="px-3 py-2 text-center font-semibold">الحالة</th>
@@ -127,7 +127,7 @@ export default function ParentArchivePage() {
       <Card className="flex flex-wrap items-center justify-between gap-3 p-4">
         <div>
           <p className="font-semibold text-p-black">أرشيف الشهادات</p>
-          <p className="mt-1 text-sm text-p-black/55">
+          <p className="mt-1 text-sm text-p-black/75">
             شهادات الفصول المنتهية والسنوات المؤرشفة في قسم مستقل
           </p>
         </div>
@@ -140,7 +140,7 @@ export default function ParentArchivePage() {
       {error ? <Alert variant="error">{error}</Alert> : null}
 
       {!hasContent ? (
-        <Card className="p-6 text-sm text-p-black/60">
+        <Card className="p-6 text-sm text-p-black/78">
           لا يوجد أرشيف بعد. بعد إغلاق فصل دراسي أو أرشفة سنة ستظهر هنا العلامات المحفوظة.
         </Card>
       ) : null}
@@ -149,7 +149,7 @@ export default function ParentArchivePage() {
         <Card className="space-y-4 p-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <p className="text-xs text-p-black/50">{selectedTerm.yearName}</p>
+              <p className="text-xs text-p-black/72">{selectedTerm.yearName}</p>
               <h2 className="text-lg font-bold text-p-black">{selectedTerm.name}</h2>
             </div>
             <Button variant="outline" onClick={() => setSelectedTerm(null)}>
@@ -158,7 +158,7 @@ export default function ParentArchivePage() {
             </Button>
           </div>
           {loadingGrades ? (
-            <p className="text-sm text-neutral-500">جاري تحميل العلامات...</p>
+            <p className="text-sm text-neutral-700">جاري تحميل العلامات...</p>
           ) : (
             <GradesTable grades={grades} />
           )}
@@ -172,7 +172,7 @@ export default function ParentArchivePage() {
                 {year.isArchived ? <Badge variant="default">مؤرشفة</Badge> : null}
               </div>
               {year.terms.length === 0 ? (
-                <p className="text-sm text-p-black/55">لا توجد فصول منتهية في هذه السنة.</p>
+                <p className="text-sm text-p-black/75">لا توجد فصول منتهية في هذه السنة.</p>
               ) : (
                 <div className="grid gap-2 sm:grid-cols-2">
                   {year.terms.map((term) => (
@@ -185,7 +185,7 @@ export default function ParentArchivePage() {
                       )}
                     >
                       <p className="font-semibold text-p-black">{term.termName}</p>
-                      <p className="mt-1 text-xs text-p-black/50">
+                      <p className="mt-1 text-xs text-p-black/72">
                         {term.hasGrades ? "عرض العلامات" : "لا توجد علامات"}
                       </p>
                     </button>

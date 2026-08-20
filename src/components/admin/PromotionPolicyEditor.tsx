@@ -76,7 +76,7 @@ export function PromotionPolicyEditor({
     <div className="rounded-xl border border-neutral-200 bg-p-cream/30 p-4">
       <div className="mb-4">
         <h4 className="text-sm font-semibold text-p-black">{title}</h4>
-        <p className="mt-1 text-xs text-p-black/55">{description}</p>
+        <p className="mt-1 text-xs text-p-black/75">{description}</p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
@@ -145,7 +145,7 @@ export function PromotionPolicyEditor({
         <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
           <label className="text-sm font-medium text-p-black">مواد إلزامية للنجاح</label>
           {maxRequiredSubjects != null ? (
-            <span className="text-xs text-p-black/50">
+            <span className="text-xs text-p-black/72">
               {policyDraft.requiredSubjects.length} / {maxRequiredSubjects}
             </span>
           ) : null}
@@ -156,7 +156,7 @@ export function PromotionPolicyEditor({
               {subject}
               <button
                 type="button"
-                className="text-p-black/50 hover:text-p-red"
+                className="text-p-black/72 hover:text-p-red"
                 onClick={() => onRemoveRequiredSubject(subject)}
                 aria-label={`إزالة ${subject}`}
               >
@@ -165,14 +165,14 @@ export function PromotionPolicyEditor({
             </Badge>
           ))}
           {policyDraft.requiredSubjects.length === 0 ? (
-            <span className="text-xs text-p-black/45">لم تُحدَّد مواد إلزامية</span>
+            <span className="text-xs text-p-black/70">لم تُحدَّد مواد إلزامية</span>
           ) : null}
         </div>
         <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-start">
           <div className="min-w-[220px] flex-1">
             <label className="text-sm font-medium text-p-black/80">اختيار مادة</label>
             {subjects.length === 0 ? (
-              <p className="mt-1.5 rounded-xl border border-dashed border-neutral-200 bg-neutral-50 px-4 py-3 text-sm text-p-black/45">
+              <p className="mt-1.5 rounded-xl border border-dashed border-neutral-200 bg-neutral-50 px-4 py-3 text-sm text-p-black/70">
                 لا توجد مواد مسجّلة
               </p>
             ) : (
@@ -208,7 +208,7 @@ export function PromotionPolicyEditor({
                     );
                   })}
                 {subjectPickerOptions.filter((option) => option.value).length === 0 ? (
-                  <p className="px-4 py-3 text-xs text-p-black/45">جميع المواد مضافة بالفعل</p>
+                  <p className="px-4 py-3 text-xs text-p-black/70">جميع المواد مضافة بالفعل</p>
                 ) : null}
               </div>
             )}
@@ -224,12 +224,12 @@ export function PromotionPolicyEditor({
           </Button>
         </div>
         {atRequiredSubjectLimit ? (
-          <p className="mt-2 text-xs text-p-black/55">
+          <p className="mt-2 text-xs text-p-black/75">
             وصلت للحد الأقصى ({maxRequiredSubjects} مواد) حسب «عدد المواد المطلوب النجاح فيها».
           </p>
         ) : null}
         {subjects.length === 0 ? (
-          <p className="mt-2 text-xs text-p-black/45">أضف المواد من صفحة «المواد الدراسية».</p>
+          <p className="mt-2 text-xs text-p-black/70">أضف المواد من صفحة «المواد الدراسية».</p>
         ) : null}
       </div>
 

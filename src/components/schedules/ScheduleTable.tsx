@@ -54,7 +54,7 @@ export function ScheduleTable({ schedule, className, pdfMode = false }: Schedule
           <h1 className="text-lg font-bold text-p-black">{schedule.name}</h1>
           <p className="text-sm text-p-black/70">{SCHEDULE_TYPE_LABELS[schedule.scheduleType]}</p>
           {schedule.classLabels.length > 0 ? (
-            <p className="text-xs text-p-black/60">الفصول: {schedule.classLabels.join(" · ")}</p>
+            <p className="text-xs text-p-black/78">الفصول: {schedule.classLabels.join(" · ")}</p>
           ) : null}
         </div>
       ) : null}
@@ -81,7 +81,7 @@ export function ScheduleTable({ schedule, className, pdfMode = false }: Schedule
                     colSpan={5}
                     {...(pdfMode
                       ? { style: { ...pdfTdStyle, textAlign: "center", color: "#666" } }
-                      : { className: cn(tdClass, "text-center text-p-black/50") })}
+                      : { className: cn(tdClass, "text-center text-p-black/72") })}
                   >
                     لا توجد صفوف في هذا الجدول
                   </td>

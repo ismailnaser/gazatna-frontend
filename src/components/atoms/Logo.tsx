@@ -19,7 +19,7 @@ export function Logo({
 
   const content = (
     <Image
-      src="/images/logo.png"
+      src="/images/logo.webp"
       alt="مدرسة غزتنا الخاصة"
       width={280}
       height={120}

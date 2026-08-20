@@ -49,7 +49,7 @@ export function TeacherFormSection({
           </span>
           <div>
             <h3 className="font-bold text-p-black">{title}</h3>
-            {description ? <p className="text-xs text-p-black/50">{description}</p> : null}
+            {description ? <p className="text-xs text-p-black/72">{description}</p> : null}
           </div>
         </div>
       </div>

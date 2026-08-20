@@ -64,7 +64,7 @@ export default function ParentHomeworkDetailPage({
   }
 
   if (!child && !loading) {
-    return <p className="text-neutral-500">لم يتم ربط حسابك بملف طالب.</p>;
+    return <p className="text-neutral-700">لم يتم ربط حسابك بملف طالب.</p>;
   }
 
   const subject = hw?.subject || "عام";
@@ -85,7 +85,7 @@ export default function ParentHomeworkDetailPage({
           <div className="h-24 animate-pulse rounded-2xl bg-neutral-100" />
         </div>
       ) : !hw ? (
-        <Card className="text-center text-neutral-500">الواجب غير متاح.</Card>
+        <Card className="text-center text-neutral-700">الواجب غير متاح.</Card>
       ) : (
         <>
           <PageHeader title={hw.title} description={hw.subject ? `مادة ${hw.subject}` : undefined} className="mb-4" />

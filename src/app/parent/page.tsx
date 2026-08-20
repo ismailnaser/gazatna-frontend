@@ -206,7 +206,7 @@ export default function ParentDashboard() {
               "px-4 py-2.5 text-sm font-semibold transition-colors",
               activeTab === t.id
                 ? "border-b-2 border-p-green text-p-green"
-                : "text-p-black/50 hover:text-p-black"
+                : "text-p-black/72 hover:text-p-black"
             )}
           >
             {t.label}
@@ -216,7 +216,7 @@ export default function ParentDashboard() {
 
       {sectionLoading ? (
         <Card className="mb-6">
-          <p className="text-sm text-neutral-500">جاري تحميل القسم...</p>
+          <p className="text-sm text-neutral-700">جاري تحميل القسم...</p>
         </Card>
       ) : null}
 
@@ -227,7 +227,7 @@ export default function ParentDashboard() {
               <GraduationCap className="h-4 w-4 text-p-green sm:h-5 sm:w-5" />
             </span>
             <div className="min-w-0 flex-1">
-              <p className="text-[11px] text-p-black/50 sm:text-xs">اسم الطالب</p>
+              <p className="text-[11px] text-p-black/72 sm:text-xs">اسم الطالب</p>
               <p className="text-sm font-semibold leading-snug text-p-black sm:text-base">{student.name}</p>
             </div>
           </Card>
@@ -240,7 +240,7 @@ export default function ParentDashboard() {
                 <item.icon className="h-4 w-4 text-p-green sm:h-5 sm:w-5" />
               </span>
               <div className="min-w-0">
-                <p className="text-[11px] text-p-black/50 sm:text-xs">{item.label}</p>
+                <p className="text-[11px] text-p-black/72 sm:text-xs">{item.label}</p>
                 <p className="truncate text-sm font-semibold text-p-black sm:text-base">{item.value}</p>
               </div>
             </Card>
@@ -250,7 +250,7 @@ export default function ParentDashboard() {
               <Hash className="h-4 w-4 text-p-green sm:h-5 sm:w-5" />
             </span>
             <div className="min-w-0 flex-1">
-              <p className="text-[11px] text-p-black/50 sm:text-xs">رقم الطالب</p>
+              <p className="text-[11px] text-p-black/72 sm:text-xs">رقم الطالب</p>
               <p className="text-sm font-semibold text-p-black sm:text-base">{student.studentNumber}</p>
             </div>
           </Card>
@@ -265,9 +265,9 @@ export default function ParentDashboard() {
           </h2>
 
           {subjects.length === 0 ? (
-            <Card className="mb-8 space-y-2 text-center text-neutral-500">
+            <Card className="mb-8 space-y-2 text-center text-neutral-700">
               <p>لا توجد مواد مسندة لفصل الطالب حالياً.</p>
-              <p className="text-sm text-p-black/60">
+              <p className="text-sm text-p-black/78">
                 فصل الطالب:{" "}
                 <span className="font-semibold text-p-black">
                   {formatClassLabel(student.grade, student.section)}
@@ -288,14 +288,14 @@ export default function ParentDashboard() {
                       <div className="min-w-0">
                         <h3 className="truncate text-base font-bold text-p-black">{row.subject}</h3>
                         {row.teacherName ? (
-                          <p className="mt-1 text-xs text-p-black/55">المعلم: {row.teacherName}</p>
+                          <p className="mt-1 text-xs text-p-black/75">المعلم: {row.teacherName}</p>
                         ) : null}
                         {row.totalCount > 0 ? (
                           <p className="mt-2 text-xs font-medium text-brand-orange">
                             {row.totalCount} عنصر جديد
                           </p>
                         ) : (
-                          <p className="mt-2 text-xs text-p-black/45">لا يوجد محتوى بعد</p>
+                          <p className="mt-2 text-xs text-p-black/70">لا يوجد محتوى بعد</p>
                         )}
                       </div>
                       <ChevronLeft className="h-5 w-5 shrink-0 text-p-black/30" />
@@ -331,7 +331,7 @@ export default function ParentDashboard() {
           </h2>
 
           {contentAlerts.length === 0 ? (
-            <Card className="mb-6 text-center text-neutral-500">
+            <Card className="mb-6 text-center text-neutral-700">
               لا توجد إشعارات جديدة في المواد حالياً.
             </Card>
           ) : (
@@ -348,7 +348,7 @@ export default function ParentDashboard() {
                       {alertIcon(alert.type)}
                       <div>
                         <p className="font-semibold text-p-black">{alert.text}</p>
-                        <p className="text-xs text-p-black/50">{alertHint(alert.type)}</p>
+                        <p className="text-xs text-p-black/72">{alertHint(alert.type)}</p>
                       </div>
                     </div>
                     <ChevronLeft className="h-5 w-5 text-p-black/30" />
@@ -378,7 +378,7 @@ export default function ParentDashboard() {
 
           <div className="space-y-3">
             {otherAlerts.length === 0 && installmentNotices.length === 0 ? (
-              <Card className="text-center text-neutral-500">لا توجد تنبيهات أخرى.</Card>
+              <Card className="text-center text-neutral-700">لا توجد تنبيهات أخرى.</Card>
             ) : (
               otherAlerts.map((alert) => (
                 <Card key={alert.id} className="flex items-center gap-3 py-4">

@@ -134,7 +134,7 @@ export function SubjectClassAssigner({
           <div key={group.grade} className="rounded-xl border border-neutral-100 bg-neutral-50 p-3">
             <div className="mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-neutral-50 pb-3">
               <p className="text-sm font-bold text-p-black">{group.grade}</p>
-              <label className="flex cursor-pointer items-center gap-2 text-xs font-semibold text-p-black/65">
+              <label className="flex cursor-pointer items-center gap-2 text-xs font-semibold text-p-black/75">
                 <TriStateCheckbox
                   checked={gradeAllSelected}
                   indeterminate={!gradeAllSelected && gradeSomeSelected}

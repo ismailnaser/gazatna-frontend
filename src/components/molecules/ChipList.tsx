@@ -10,7 +10,7 @@ export function ChipList({
   empty?: string;
 }) {
   if (items.length === 0) {
-    return empty ? <span className="text-sm text-p-black/50">{empty}</span> : null;
+    return empty ? <span className="text-sm text-p-black/72">{empty}</span> : null;
   }
 
   return (

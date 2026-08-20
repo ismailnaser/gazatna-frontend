@@ -48,7 +48,7 @@ export function TeacherClassPicker({
 
   if (subjectIds.length === 0) {
     return (
-      <p className="rounded-xl border border-dashed border-neutral-200 bg-neutral-50 px-4 py-5 text-sm text-neutral-500">
+      <p className="rounded-xl border border-dashed border-neutral-200 bg-neutral-50 px-4 py-5 text-sm text-neutral-700">
         اختر المواد الدراسية أولاً لعرض الفصول والشعب المرتبطة بها.
       </p>
     );
@@ -56,7 +56,7 @@ export function TeacherClassPicker({
 
   if (eligibleClasses.length === 0) {
     return (
-      <p className="rounded-xl border border-dashed border-neutral-200 bg-neutral-50 px-4 py-5 text-sm text-neutral-500">
+      <p className="rounded-xl border border-dashed border-neutral-200 bg-neutral-50 px-4 py-5 text-sm text-neutral-700">
         لا توجد فصول مسندة للمواد المحددة.{" "}
         <Link href="/admin/subjects" className="font-semibold text-brand-blue hover:underline">
           اسند المواد للفصول من صفحة «المواد الدراسية»

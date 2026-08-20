@@ -15,7 +15,7 @@ export function AboutSection() {
           className="mb-10 text-center"
         >
           <h2 className="text-2xl font-bold text-p-black sm:text-3xl">من نحن</h2>
-          <p className="mx-auto mt-3 max-w-2xl text-p-black/60">
+          <p className="mx-auto mt-3 max-w-2xl text-p-black/78">
             مدرسة غَزتنا مؤسسة تعليمية رقمية تهدف إلى تمكين الطلاب من خلال بيئة
             تعلم آمنة، مبتكرة، ومتصلة بالمستقبل.
           </p>
@@ -32,7 +32,7 @@ export function AboutSection() {
                 <Target className="h-5 w-5 text-p-green" />
               </div>
               <h3 className="text-lg font-bold text-p-black">رؤيتنا</h3>
-              <p className="mt-2 leading-relaxed text-p-black/60">
+              <p className="mt-2 leading-relaxed text-p-black/78">
                 أن نكون المدرسة الرقمية الرائدة في فلسطين، نُخرّج جيلاً قادراً
                 على المنافسة عالمياً مع الحفاظ على الهوية والقيم.
               </p>
@@ -49,7 +49,7 @@ export function AboutSection() {
                 <Heart className="h-5 w-5 text-p-green" />
               </div>
               <h3 className="text-lg font-bold text-p-black">رسالتنا</h3>
-              <p className="mt-2 leading-relaxed text-p-black/60">
+              <p className="mt-2 leading-relaxed text-p-black/78">
                 توفير تعليم عالي الجودة يجمع بين المناهج الأكاديمية والمهارات
                 الرقمية، مع دعم شامل لأولياء الأمور والمجتمع.
               </p>

@@ -356,7 +356,7 @@ export function PromotionPoliciesPanel() {
                     <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                       <p className="text-sm font-bold text-p-black">اختر المراحل</p>
                       {pickerGrades.length > 0 ? (
-                        <label className="flex cursor-pointer items-center gap-2 text-xs font-semibold text-p-black/65">
+                        <label className="flex cursor-pointer items-center gap-2 text-xs font-semibold text-p-black/75">
                           <input
                             type="checkbox"
                             checked={allPickerSelected}

@@ -45,7 +45,7 @@ export function TeacherProfileImageField({
           selectedFileName={imageSrc ? "تم اختيار صورة" : null}
           onChange={(files) => onFileSelect(files?.[0] ?? null)}
         />
-        <p className="mt-2 text-xs text-p-black/45">
+        <p className="mt-2 text-xs text-p-black/70">
           يمكنك ترك هذا الحقل فارغاً — الصورة تظهر في صفحة الكادر والملف الشخصي إن رُفعت.
         </p>
       </div>

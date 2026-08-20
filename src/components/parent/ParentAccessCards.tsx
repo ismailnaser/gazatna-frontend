@@ -20,7 +20,7 @@ export function ParentAccessBlockedCard({ message, studentName }: ParentAccessBl
       {studentName ? (
         <p className="mt-2 text-sm font-medium text-p-black/70">الطالب: {studentName}</p>
       ) : null}
-      <p className="mt-3 text-sm leading-relaxed text-p-black/65">{message}</p>
+      <p className="mt-3 text-sm leading-relaxed text-p-black/75">{message}</p>
       <Button href="/parent/fees" className="mt-5 gap-1.5">
         <CreditCard className="h-4 w-4" />
         الذهاب إلى صفحة المالية
@@ -34,7 +34,7 @@ export function ParentAccessBlockedCard({ message, studentName }: ParentAccessBl
 
 export function ParentNoStudentCard() {
   return (
-    <Card className="text-center text-neutral-500">
+    <Card className="text-center text-neutral-700">
       لا يوجد طالب مرتبط بحسابك. تواصل مع الإدارة.
     </Card>
   );

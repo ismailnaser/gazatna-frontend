@@ -26,14 +26,14 @@ import { Download } from "lucide-react";
 const DEFAULT_SCHOOL_NAME = "مدرسة غَزتنا";
 
 function scoreTextClass(passed: boolean | null | undefined) {
-  if (passed == null) return "text-p-black/45";
+  if (passed == null) return "text-p-black/70";
   return passed ? "text-p-green font-semibold" : "text-p-red font-semibold";
 }
 
 function PassFailBadge({ passed }: { passed: boolean | null | undefined }) {
   if (passed == null) {
     return (
-      <span className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-xs font-medium text-p-black/45">
+      <span className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-xs font-medium text-p-black/70">
         —
       </span>
     );
@@ -66,7 +66,7 @@ function AllGradesTable({ grades }: { grades: Grade[] }) {
     <div className="overflow-x-auto">
       <table className="w-full min-w-[640px] text-sm">
         <thead>
-          <tr className="border-b border-neutral-100 bg-p-cream/60 text-p-black/60">
+          <tr className="border-b border-neutral-100 bg-p-cream/60 text-p-black/78">
             <th className="px-4 py-2.5 text-start font-semibold">المادة</th>
             {componentColumns.map((column) => (
               <th key={column.key} className="px-3 py-2.5 text-center font-semibold">
@@ -92,7 +92,7 @@ function AllGradesTable({ grades }: { grades: Grade[] }) {
                         passed={component.passed}
                       />
                     ) : (
-                      <span className="text-p-black/45">—</span>
+                      <span className="text-p-black/70">—</span>
                     )}
                   </td>
                 );
@@ -238,7 +238,7 @@ export default function ParentGradesPage() {
       ) : null}
 
       {grades.length === 0 ? (
-        <Card className="text-center text-neutral-500">لا توجد علامات مسجّلة بعد.</Card>
+        <Card className="text-center text-neutral-700">لا توجد علامات مسجّلة بعد.</Card>
       ) : (
         <Card className="overflow-hidden p-0">
           <AllGradesTable grades={grades} />
@@ -246,7 +246,7 @@ export default function ParentGradesPage() {
           {gradesWithNotes.length > 0 ? (
             <div className="space-y-2 border-t border-neutral-100 px-4 py-3">
               {gradesWithNotes.map((grade) => (
-                <p key={grade.id} className="text-xs text-p-black/55">
+                <p key={grade.id} className="text-xs text-p-black/75">
                   <span className="font-semibold text-p-black/70">{grade.subject}:</span>{" "}
                   {grade.note}
                 </p>

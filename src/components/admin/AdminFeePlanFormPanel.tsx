@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useMemo } from "react";
 import { Button } from "@/components/atoms/Button";
@@ -207,7 +207,7 @@ export function AdminFeePlanFormPanel({
           />
         </div>
         {period ? (
-          <p className="mt-4 rounded-xl border border-brand-blue/15 bg-white px-4 py-3 text-xs text-p-black/65">
+          <p className="mt-4 rounded-xl border border-brand-blue/15 bg-white px-4 py-3 text-xs text-p-black/78">
             فترة الدفع المعتمدة: <span className="font-semibold text-p-black">{period.label}</span>
             <span dir="ltr" className="mx-1">
               ({period.start} — {period.end})

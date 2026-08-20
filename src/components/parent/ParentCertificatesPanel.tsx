@@ -80,7 +80,7 @@ export function CertificateCard({
                 <h2 className="text-lg font-bold text-p-black">{title}</h2>
                 <Badge variant="success">منشورة</Badge>
               </div>
-              <p className="mt-1 text-sm text-p-black/55">{certificate.periodLabel}</p>
+              <p className="mt-1 text-sm text-p-black/75">{certificate.periodLabel}</p>
               {archiveAfterGrace && visibleUntil ? (
                 <p className="mt-1 text-xs text-brand-blue">
                   تبقى في قسم الشهادات حتى {visibleUntil} ثم تنتقل إلى أرشيف الشهادات
@@ -96,21 +96,21 @@ export function CertificateCard({
 
         <div className="grid gap-3 px-4 py-4 sm:grid-cols-2 lg:grid-cols-4">
           <div>
-            <p className="text-xs text-p-black/50">اسم الطالب</p>
+            <p className="text-xs text-p-black/72">اسم الطالب</p>
             <p className="font-semibold text-p-black">{certificate.studentName}</p>
           </div>
           <div>
-            <p className="text-xs text-p-black/50">الصف</p>
+            <p className="text-xs text-p-black/72">الصف</p>
             <p className="font-semibold text-p-black">
               {certificate.gradeLevel} {certificate.section}
             </p>
           </div>
           <div>
-            <p className="text-xs text-p-black/50">المعدل من 100%</p>
+            <p className="text-xs text-p-black/72">المعدل من 100%</p>
             <p className="text-xl font-bold text-p-green">{formatPercent(certificate.averagePercent)}</p>
           </div>
           <div>
-            <p className="text-xs text-p-black/50">المواد المحتسبة</p>
+            <p className="text-xs text-p-black/72">المواد المحتسبة</p>
             <p className="font-semibold text-p-black">
               {certificate.gradedSubjectsCount}/{certificate.assignedSubjectsCount}
             </p>
@@ -120,7 +120,7 @@ export function CertificateCard({
         <div className="overflow-x-auto border-t border-neutral-100">
           <table className="w-full min-w-[520px] text-sm">
             <thead>
-              <tr className="border-b border-neutral-100 bg-p-cream/60 text-p-black/60">
+              <tr className="border-b border-neutral-100 bg-p-cream/60 text-p-black/78">
                 <th className="px-4 py-2.5 text-start font-semibold">المادة</th>
                 <th className="px-4 py-2.5 text-start font-semibold">العلامة</th>
                 <th className="px-4 py-2.5 text-start font-semibold">النسبة من 100%</th>
@@ -139,7 +139,7 @@ export function CertificateCard({
                     className={cn(
                       "px-4 py-2.5 font-semibold",
                       subject.percent == null
-                        ? "text-p-black/45"
+                        ? "text-p-black/70"
                         : subject.percent >= 50
                           ? "text-p-green"
                           : "text-p-red"
@@ -225,7 +225,7 @@ export function ParentCertificatesPanel({
       <Card className="flex flex-col items-center gap-3 py-12 text-center">
         <Medal className="h-10 w-10 text-p-black/25" />
         <p className="text-neutral-600">{data?.message || emptyTitle}</p>
-        <p className="text-sm text-p-black/45">{emptyDescription}</p>
+        <p className="text-sm text-p-black/70">{emptyDescription}</p>
       </Card>
     );
   }

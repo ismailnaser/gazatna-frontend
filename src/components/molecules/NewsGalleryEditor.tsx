@@ -40,7 +40,7 @@ export function NewsGalleryEditor({
         </Button>
       </div>
 
-      <p className="text-xs text-neutral-500">
+      <p className="text-xs text-neutral-700">
         اختر صورة واحدة كغلاف للخبر. باقي الصور تظهر في صفحة تفاصيل الخبر.
       </p>
 
@@ -55,7 +55,7 @@ export function NewsGalleryEditor({
           </span>
           <span>
             <span className="block text-base font-bold text-p-black">اضغط لإضافة صور الخبر</span>
-            <span className="mt-1 block text-xs text-neutral-500">صور JPG أو PNG من جهازك</span>
+            <span className="mt-1 block text-xs text-neutral-700">صور JPG أو PNG من جهازك</span>
           </span>
         </button>
       ) : (

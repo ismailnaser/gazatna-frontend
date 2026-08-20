@@ -84,7 +84,7 @@ export function AcademicAdminShell({ children }: { children: ReactNode }) {
   return (
     <div>
       {loading ? (
-        <p className="mb-4 text-sm text-neutral-500">جاري تحميل السنوات الدراسية...</p>
+        <p className="mb-4 text-sm text-neutral-700">جاري تحميل السنوات الدراسية...</p>
       ) : null}
 
       {error ? (
@@ -114,7 +114,7 @@ export function AcademicAdminShell({ children }: { children: ReactNode }) {
       >
         <div className="space-y-4">
           {createYearOptions.length === 0 ? (
-            <p className="text-sm text-neutral-500">
+            <p className="text-sm text-neutral-700">
               جميع السنوات المتاحة في النطاق الحالي (السنة الدراسية الجارية + 10 سنوات) مُسجّلة
               مسبقاً.
             </p>
@@ -251,7 +251,7 @@ export function AcademicAdminShell({ children }: { children: ReactNode }) {
             {isArchiveView ? "السنوات المؤرشفة" : "السنوات الدراسية"}
           </h2>
           {sidebarYears.length === 0 ? (
-            <p className="text-sm text-neutral-500">
+            <p className="text-sm text-neutral-700">
               {isArchiveView ? "لا توجد سنوات مؤرشفة بعد." : "لا توجد سنوات بعد."}
             </p>
           ) : (
@@ -278,7 +278,7 @@ export function AcademicAdminShell({ children }: { children: ReactNode }) {
                       <Badge variant="default">مؤرشفة</Badge>
                     ) : null}
                   </div>
-                  <p className="mt-1 text-xs text-p-black/55">
+                  <p className="mt-1 text-xs text-p-black/75">
                     {year.startDate} — {year.endDate}
                   </p>
                 </button>
@@ -304,7 +304,7 @@ export function AcademicAdminShell({ children }: { children: ReactNode }) {
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <h2 className="text-lg font-bold text-p-black">{selectedYear.name}</h2>
-                  <p className="mt-1 text-sm text-p-black/55">
+                  <p className="mt-1 text-sm text-p-black/75">
                     {selectedYear.startDate} — {selectedYear.endDate}
                   </p>
                 </div>
@@ -340,7 +340,7 @@ export function AcademicAdminShell({ children }: { children: ReactNode }) {
           {children}
 
           {!selectedYear ? (
-            <Card className="flex min-h-48 items-center justify-center text-neutral-500">
+            <Card className="flex min-h-48 items-center justify-center text-neutral-700">
               {isArchiveView
                 ? "اختر سنة مؤرشفة من القائمة."
                 : "اختر سنة دراسية من القائمة."}

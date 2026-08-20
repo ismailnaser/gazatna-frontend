@@ -72,7 +72,7 @@ function renderCellContent(
       <span className={cn("font-semibold", !pdfMode && "text-xs sm:text-sm")}>{cell.subject}</span>
       {secondaryLine ? (
         <span
-          className={cn(!pdfMode && "text-[10px] font-normal text-p-black/55")}
+          className={cn(!pdfMode && "text-[10px] font-normal text-p-black/75")}
           style={pdfMode ? { fontSize: "10px", fontWeight: 400, color: "#666" } : undefined}
         >
           {secondaryLine}
@@ -122,7 +122,7 @@ export function ClassScheduleGridView({
               <div className={cn(!pdfMode && "text-xs")}>{column.period}</div>
               {column.timeLabel && column.timeLabel !== "—" ? (
                 <div
-                  className={cn(!pdfMode && "mt-0.5 text-[10px] font-medium text-p-black/55")}
+                  className={cn(!pdfMode && "mt-0.5 text-[10px] font-medium text-p-black/75")}
                   style={
                     pdfMode
                       ? { marginTop: "2px", fontSize: "10px", fontWeight: 500, color: "#666" }
@@ -143,7 +143,7 @@ export function ClassScheduleGridView({
               colSpan={Math.max(grid.lessonColumns.length + 1, 2)}
               {...(pdfMode
                 ? { style: { ...pdfTdStyle, textAlign: "center", color: "#666" } }
-                : { className: cn(tdClass, "text-center text-p-black/50") })}
+                : { className: cn(tdClass, "text-center text-p-black/72") })}
             >
               {emptyMessage}
             </td>

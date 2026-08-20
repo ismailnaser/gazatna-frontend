@@ -49,7 +49,7 @@ export default function TeacherGradeEntryPage() {
       <Card className="space-y-4 p-4 sm:p-6">
         <div>
           <h2 className="text-sm font-bold text-p-black">نوع الإدخال</h2>
-          <p className="mt-1 text-xs text-p-black/50">
+          <p className="mt-1 text-xs text-p-black/72">
             اختر وحدة واحدة — التقييمات أو علامات المواد — لتظهر الواجهة المناسبة.
           </p>
         </div>
@@ -78,14 +78,14 @@ export default function TeacherGradeEntryPage() {
                 <span
                   className={cn(
                     "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl",
-                    active ? "bg-brand-teal/15 text-brand-teal" : "bg-neutral-50 text-p-black/45"
+                    active ? "bg-brand-teal/15 text-brand-teal" : "bg-neutral-50 text-p-black/70"
                   )}
                 >
                   <Icon className="h-5 w-5" />
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block font-semibold text-p-black">{option.label}</span>
-                  <span className="mt-1 block text-xs leading-relaxed text-p-black/50">
+                  <span className="mt-1 block text-xs leading-relaxed text-p-black/72">
                     {option.description}
                   </span>
                 </span>

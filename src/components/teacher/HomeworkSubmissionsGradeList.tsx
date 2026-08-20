@@ -53,7 +53,7 @@ export function HomeworkSubmissionsGradeList({
 }) {
   if (submissions.length === 0) {
     return (
-      <div className="rounded-2xl border border-dashed border-neutral-200 bg-neutral-50/60 px-4 py-8 text-center text-sm text-p-black/50">
+      <div className="rounded-2xl border border-dashed border-neutral-200 bg-neutral-50/60 px-4 py-8 text-center text-sm text-p-black/72">
         لا تسليمات في هذا الفصل.
       </div>
     );
@@ -63,7 +63,7 @@ export function HomeworkSubmissionsGradeList({
     <div className={cn("-mx-3 overflow-x-auto sm:mx-0", className)}>
       <table className="w-full min-w-[520px] text-sm">
         <thead>
-          <tr className="border-b border-neutral-100 bg-neutral-50 text-p-black/55">
+          <tr className="border-b border-neutral-100 bg-neutral-50 text-p-black/75">
             <th className="px-3 py-2.5 text-start text-xs font-bold sm:px-4 sm:py-3">
               الطالب
             </th>
@@ -99,7 +99,7 @@ export function HomeworkSubmissionsGradeList({
                     </span>
                     <div className="min-w-0">
                       <p className="font-semibold text-p-black">{sub.studentName ?? "طالب"}</p>
-                      <p className="mt-0.5 text-[11px] text-p-black/45 sm:text-xs" dir="ltr">
+                      <p className="mt-0.5 text-[11px] text-p-black/70 sm:text-xs" dir="ltr">
                         {whenText}
                       </p>
                     </div>
@@ -151,7 +151,7 @@ export function HomeworkSubmissionsGradeListSkeleton({ rows = 4 }: { rows?: numb
     <div className="-mx-3 overflow-x-auto sm:mx-0">
       <table className="w-full min-w-[520px] text-sm">
         <thead>
-          <tr className="border-b border-neutral-100 bg-neutral-50 text-p-black/55">
+          <tr className="border-b border-neutral-100 bg-neutral-50 text-p-black/75">
             <th className="px-3 py-2.5 text-start text-xs font-bold sm:px-4 sm:py-3">
               الطالب
             </th>

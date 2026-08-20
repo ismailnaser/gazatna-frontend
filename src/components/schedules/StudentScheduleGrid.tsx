@@ -25,7 +25,7 @@ export function StudentScheduleGrid({ schedule, className, pdfMode = false }: St
           <h1 className="text-lg font-bold text-p-black">{schedule.name}</h1>
           <p className="text-sm text-p-black/70">{SCHEDULE_TYPE_LABELS[schedule.scheduleType]}</p>
           {schedule.classLabels.length > 0 ? (
-            <p className="text-xs text-p-black/60">الشعبة: {schedule.classLabels.join(" · ")}</p>
+            <p className="text-xs text-p-black/78">الشعبة: {schedule.classLabels.join(" · ")}</p>
           ) : null}
         </div>
       ) : null}

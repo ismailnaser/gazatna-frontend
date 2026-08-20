@@ -38,7 +38,7 @@ export function QuizPanel({
   return (
     <div>
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-sm text-p-black/60">
+        <p className="text-sm text-p-black/78">
           أنشئ اختبارات بوقت بداية ومؤقت محدد لطلاب الفصل.
         </p>
         <Link href="/teacher/quizzes/new" className="w-full sm:w-auto">
@@ -50,7 +50,7 @@ export function QuizPanel({
       </div>
 
       {items.length === 0 ? (
-        <Card className="border-dashed text-center text-p-black/50">
+        <Card className="border-dashed text-center text-p-black/72">
           لا توجد اختبارات بعد. أنشئ أول اختبار للطلاب.
         </Card>
       ) : (

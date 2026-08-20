@@ -153,7 +153,7 @@ export function ParentQuizReviewClient({ quizId }: { quizId: string }) {
                   <Badge variant="default" className="ms-2">
                     {typeLabel[q.questionType ?? "choice"]}
                   </Badge>
-                  <span className="ms-2 text-xs text-neutral-500">({q.points} درجة)</span>
+                  <span className="ms-2 text-xs text-neutral-700">({q.points} درجة)</span>
                 </div>
                 <Badge variant={meta.variant}>
                   {status === "correct" ? (
@@ -169,7 +169,7 @@ export function ParentQuizReviewClient({ quizId }: { quizId: string }) {
 
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="rounded-xl border border-neutral-200 bg-white p-3">
-                  <p className="mb-1 text-xs font-semibold text-neutral-500">إجابتك</p>
+                  <p className="mb-1 text-xs font-semibold text-neutral-700">إجابتك</p>
                   <p className="text-sm text-neutral-800">{formatStudentAnswer(q, answer)}</p>
                   {attachmentUrl && (
                     <div className="mt-2">
@@ -206,7 +206,7 @@ export function ParentQuizReviewClient({ quizId }: { quizId: string }) {
               </div>
 
               {manualScore != null && (
-                <p className="mt-3 text-xs text-neutral-500">
+                <p className="mt-3 text-xs text-neutral-700">
                   درجة هذا السؤال: {manualScore}/{q.points}
                 </p>
               )}

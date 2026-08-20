@@ -46,15 +46,15 @@ export function TeacherHomeworkEditor({ mode, homeworkId }: Props) {
   }
 
   if (!teacher) {
-    return <p className="text-neutral-500">لم يتم ربط حسابك بملف معلم.</p>;
+    return <p className="text-neutral-700">لم يتم ربط حسابك بملف معلم.</p>;
   }
 
   if (classes.length === 0) {
-    return <p className="text-neutral-500">لا توجد فصول مسندة إليك.</p>;
+    return <p className="text-neutral-700">لا توجد فصول مسندة إليك.</p>;
   }
 
   if (mode === "edit" && !editingGroup) {
-    return <p className="text-neutral-500">الواجب غير موجود.</p>;
+    return <p className="text-neutral-700">الواجب غير موجود.</p>;
   }
 
   async function handleCreate(data: HomeworkFormData) {

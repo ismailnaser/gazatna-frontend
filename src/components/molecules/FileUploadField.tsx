@@ -165,7 +165,7 @@ export const FileUploadField = forwardRef<HTMLInputElement, FileUploadFieldProps
             <span className="block text-base font-bold text-p-black">
               {resolvedButtonText}
             </span>
-            <span className="mt-1 block text-xs text-neutral-500">{resolvedHint}</span>
+            <span className="mt-1 block text-xs text-neutral-700">{resolvedHint}</span>
           </span>
         </label>
         <input

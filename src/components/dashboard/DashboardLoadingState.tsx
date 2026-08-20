@@ -32,7 +32,7 @@ export function DashboardLoadingState({
       </div>
 
       <p className="text-base font-semibold text-p-black">{message}</p>
-      {hint ? <p className="mt-2 max-w-xs text-sm leading-relaxed text-p-black/45">{hint}</p> : null}
+      {hint ? <p className="mt-2 max-w-xs text-sm leading-relaxed text-p-black/70">{hint}</p> : null}
 
       <div className="mt-6 h-1.5 w-full max-w-[200px] overflow-hidden rounded-full bg-neutral-100">
         <div className="loading-bar h-full w-2/5 rounded-full bg-gradient-to-r from-brand-blue via-brand-blue-light to-brand-blue" />

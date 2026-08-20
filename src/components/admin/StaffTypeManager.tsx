@@ -74,7 +74,7 @@ export function StaffTypeManager({ types, onChange }: StaffTypeManagerProps) {
     <div className="rounded-2xl border border-neutral-200 bg-neutral-50/70 p-4">
       <div className="mb-3">
         <h3 className="font-bold text-p-black">أنواع الكادر</h3>
-        <p className="mt-1 text-sm text-p-black/55">
+        <p className="mt-1 text-sm text-p-black/75">
           أضف أنواعاً مثل مدير، نائب مدير، سكرتير… لتصنيف بيانات العاملين في المدرسة.
           نوع «معلم» وحده هو الذي يملك حساب دخول في الموقع.
         </p>

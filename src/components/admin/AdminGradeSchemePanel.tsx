@@ -134,7 +134,7 @@ export function AdminGradeSchemePanel() {
   }
 
   if (loading) {
-    return <p className="py-10 text-center text-sm text-p-black/50">جاري تحميل التقسيمة...</p>;
+    return <p className="py-10 text-center text-sm text-p-black/72">جاري تحميل التقسيمة...</p>;
   }
 
   return (
@@ -144,7 +144,7 @@ export function AdminGradeSchemePanel() {
       <Card className="space-y-4 p-4 sm:p-6">
         <div>
           <h2 className="text-sm font-bold text-p-black">التقسيمة الموحّدة للعلامات</h2>
-          <p className="mt-1 text-xs text-p-black/50">
+          <p className="mt-1 text-xs text-p-black/72">
             تُطبَّق على كل المراحل الدراسية والشعب والمواد في الفصل الدراسي الحالي
             {academicTermLabel ? ` (${academicTermLabel})` : ""}. المعلمون يرونها فقط عند إدخال
             علامات الطلاب.

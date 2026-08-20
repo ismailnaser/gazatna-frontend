@@ -182,7 +182,7 @@ export function ParentQuizTakeClient({ quizId }: { quizId: string }) {
   }, [started, quiz, attemptStart, finished, answers, finishQuiz]);
 
   if (!child) {
-    return <p className="text-neutral-500">لم يتم ربط حسابك بملف طالب.</p>;
+    return <p className="text-neutral-700">لم يتم ربط حسابك بملف طالب.</p>;
   }
 
   if (!quiz || quiz.classId !== child.classId) {
@@ -239,7 +239,7 @@ export function ParentQuizTakeClient({ quizId }: { quizId: string }) {
         <Card className="text-center">
           <h2 className="text-xl font-bold text-neutral-950">تم إنهاء الاختبار</h2>
           {attemptInfo && (
-            <p className="mt-2 text-xs text-neutral-500">{attemptInfo}</p>
+            <p className="mt-2 text-xs text-neutral-700">{attemptInfo}</p>
           )}
           {showScore ? (
             <p className="mt-4 text-3xl font-extrabold text-brand-blue">
@@ -335,7 +335,7 @@ export function ParentQuizTakeClient({ quizId }: { quizId: string }) {
             {finished ? "تم إنهاء المحاولة" : "لديك محاولات متبقية"}
           </h2>
           {attemptInfo && (
-            <p className="mt-2 text-xs text-neutral-500">{attemptInfo}</p>
+            <p className="mt-2 text-xs text-neutral-700">{attemptInfo}</p>
           )}
           {showScore && (
             <p className="mt-4 text-2xl font-extrabold text-brand-blue">
@@ -399,7 +399,7 @@ export function ParentQuizTakeClient({ quizId }: { quizId: string }) {
                 <div className="mb-4 flex flex-wrap items-center gap-2">
                   <p className="font-semibold text-neutral-900">السؤال {qi + 1}</p>
                   <Badge variant="info">مصطلح علمي</Badge>
-                  <span className="text-xs text-neutral-500">{q.points} درجة</span>
+                  <span className="text-xs text-neutral-700">{q.points} درجة</span>
                 </div>
                 <Input
                   label="اكتب المصطلح"
@@ -426,7 +426,7 @@ export function ParentQuizTakeClient({ quizId }: { quizId: string }) {
                 <p className="mb-1 font-semibold text-neutral-900">
                   {qi + 1}. {q.prompt}
                 </p>
-                <p className="mb-4 text-xs text-neutral-500">{q.points} درجة</p>
+                <p className="mb-4 text-xs text-neutral-700">{q.points} درجة</p>
 
                 {(q.questionType === "choice" || q.questionType === "true_false" || !q.questionType) && (
                   <div className="space-y-2">

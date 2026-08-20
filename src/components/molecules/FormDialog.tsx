@@ -37,12 +37,12 @@ export function FormDialog({
           <div className="flex shrink-0 items-start justify-between gap-3 border-b border-neutral-100 px-5 py-4">
             <div>
               <h2 className="text-lg font-bold text-p-black">{title}</h2>
-              {description && <p className="mt-1 text-sm text-p-black/60">{description}</p>}
+              {description && <p className="mt-1 text-sm text-p-black/78">{description}</p>}
             </div>
             <button
               type="button"
               onClick={onClose}
-              className="rounded-lg p-1.5 text-p-black/50 transition-colors hover:bg-neutral-100 hover:text-p-black"
+              className="rounded-lg p-1.5 text-p-black/72 transition-colors hover:bg-neutral-100 hover:text-p-black"
               aria-label="إغلاق"
             >
               <X className="h-5 w-5" />

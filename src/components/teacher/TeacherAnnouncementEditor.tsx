@@ -60,15 +60,15 @@ export function TeacherAnnouncementEditor({ mode, announcementId }: Props) {
   }
 
   if (!teacher) {
-    return <p className="text-neutral-500">لم يتم ربط حسابك بملف معلم.</p>;
+    return <p className="text-neutral-700">لم يتم ربط حسابك بملف معلم.</p>;
   }
 
   if (classes.length === 0) {
-    return <p className="text-neutral-500">لا توجد فصول مسندة إليك.</p>;
+    return <p className="text-neutral-700">لا توجد فصول مسندة إليك.</p>;
   }
 
   if (mode === "edit" && !editingGroup) {
-    return <p className="text-neutral-500">الإعلان غير موجود.</p>;
+    return <p className="text-neutral-700">الإعلان غير موجود.</p>;
   }
 
   async function handleCreate(data: AnnouncementFormData) {

@@ -74,7 +74,7 @@ export default function ParentSchedulesPage() {
                 "inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-semibold transition-colors",
                 active
                   ? "border-brand-blue bg-brand-blue/10 text-brand-blue"
-                  : "border-neutral-200 bg-white text-p-black/65 hover:border-brand-blue/30"
+                  : "border-neutral-200 bg-white text-p-black/75 hover:border-brand-blue/30"
               )}
             >
               <Icon className="h-4 w-4" />
@@ -85,10 +85,10 @@ export default function ParentSchedulesPage() {
       </div>
 
       {loading ? (
-        <p className="py-10 text-center text-sm text-p-black/50">جاري تحميل الجداول...</p>
+        <p className="py-10 text-center text-sm text-p-black/72">جاري تحميل الجداول...</p>
       ) : schedules.length === 0 ? (
         <Card className="p-8 text-center">
-          <p className="text-sm text-p-black/55">
+          <p className="text-sm text-p-black/75">
             لا يوجد {SCHEDULE_TYPE_LABELS[tab].toLowerCase()} منشور لشعبتك حالياً.
           </p>
         </Card>
@@ -102,7 +102,7 @@ export default function ParentSchedulesPage() {
                 <div className="flex flex-wrap items-start justify-between gap-3 p-4">
                   <div>
                     <h3 className="text-base font-bold text-p-black">{schedule.name}</h3>
-                    <p className="mt-1 text-xs text-p-black/50">
+                    <p className="mt-1 text-xs text-p-black/72">
                       {SCHEDULE_TYPE_LABELS[schedule.scheduleType]}
                       {schedule.classLabels.length > 0
                         ? ` · ${schedule.classLabels.join(" · ")}`

@@ -1,4 +1,4 @@
-﻿import { Calendar } from "lucide-react";
+import { Calendar } from "lucide-react";
 import { formatMetaDate } from "@/lib/dateDisplay";
 import { cn } from "@/lib/utils";
 
@@ -29,7 +29,7 @@ export function DateMetaChip({
         <Calendar className={cn(compact ? "h-3.5 w-3.5" : "h-4 w-4")} />
       </span>
       <div className="min-w-0 flex-1">
-        <p className="text-[11px] font-semibold text-p-black/45">{label}</p>
+        <p className="text-[11px] font-semibold text-p-black/70">{label}</p>
         <p
           className={cn(
             "mt-0.5 font-bold leading-snug text-p-black",
@@ -40,7 +40,7 @@ export function DateMetaChip({
           {date}
         </p>
         {time ? (
-          <p className="mt-0.5 text-[11px] font-medium text-p-black/55" dir="ltr">
+          <p className="mt-0.5 text-[11px] font-medium text-p-black/75" dir="ltr">
             {time}
           </p>
         ) : null}

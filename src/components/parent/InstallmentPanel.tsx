@@ -61,7 +61,7 @@ export function InstallmentSchedule({
   const scheduled = installments.filter((inst) => inst.scheduled);
   if (scheduled.length === 0) {
     return (
-      <p className="text-sm text-neutral-500">
+      <p className="text-sm text-neutral-700">
         لم تُحدَّد مواعيد الدفعات بعد. ستظهر هنا عند إعلانها من الإدارة.
       </p>
     );
@@ -85,7 +85,7 @@ export function InstallmentSchedule({
                   <Badge variant={statusVariants[inst.status]}>{statusLabels[inst.status]}</Badge>
                 )}
               </div>
-              <p className="mt-1 text-sm text-p-black/60">
+              <p className="mt-1 text-sm text-p-black/78">
                 بداية الدفع: {inst.startDate} — آخر موعد: {inst.endDate}
               </p>
             </div>

@@ -43,7 +43,7 @@ export function NewsListClient() {
           <div className="h-32 animate-pulse rounded-2xl bg-neutral-100" />
         </div>
       ) : filtered.length === 0 ? (
-        <p className="text-center text-neutral-500">
+        <p className="text-center text-neutral-700">
           {items.length === 0 ? "لا توجد أخبار حالياً." : "لا توجد أخبار في هذا التصنيف."}
         </p>
       ) : (

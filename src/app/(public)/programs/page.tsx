@@ -58,9 +58,9 @@ export default function ProgramsPage() {
 
       <div className="space-y-8">
         {loading ? (
-          <p className="text-center text-neutral-500">جاري التحميل...</p>
+          <p className="text-center text-neutral-700">جاري التحميل...</p>
         ) : visible.length === 0 ? (
-          <p className="text-center text-neutral-500">
+          <p className="text-center text-neutral-700">
             لا توجد صفوف دراسية مُعرّفة بعد.
           </p>
         ) : (

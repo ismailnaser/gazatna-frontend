@@ -1,18 +1,22 @@
 "use client";
 
+import { useState } from "react";
 import { Badge } from "@/components/atoms/Badge";
 import { Button } from "@/components/atoms/Button";
+import {
+  ExpandRowButton,
+  TABLE_BASE,
+  TABLE_TD,
+  TABLE_TH,
+  TABLE_WRAP,
+  TablePagination,
+  useClientPagination,
+} from "@/components/shared/DataTable";
 import { ExpandableText } from "@/components/molecules/ExpandableText";
 import { resolveMediaUrl } from "@/lib/media";
 import { cn } from "@/lib/utils";
 import type { SchoolClass, TeacherProfile } from "@/types/teacher";
 import { Layers, Pencil, Power } from "lucide-react";
-
-const TABLE = "w-full min-w-[980px] border-collapse border border-neutral-200 text-sm";
-const TH =
-  "border-b border-e border-neutral-200 bg-neutral-50 px-3 py-3 text-start text-xs font-bold text-p-black/55 last:border-e-0 sm:px-4";
-const TD =
-  "border-b border-e border-neutral-200 px-3 py-3 align-top last:border-e-0 sm:px-4";
 
 function memberInitial(name: string) {
   return name.replace(/^(د\.|أ\.|م\.)\s*/u, "").trim().charAt(0) || "ك";
@@ -54,164 +58,217 @@ export function AdminTeachersTable({
   onEdit,
   onToggleStatus,
 }: AdminTeachersTableProps) {
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const { page, totalPages, pageItems, pageSize, total, next, prev, setPage } =
+    useClientPagination(teachers, 10);
+
   if (teachers.length === 0) {
     return (
-      <p className="py-10 text-center text-sm text-p-black/50">
+      <p className="py-10 text-center text-sm text-p-black/72">
         {hasActiveFilters ? "لا توجد نتائج مطابقة للبحث أو الفلاتر." : "لا يوجد أعضاء كادر بعد."}
       </p>
     );
   }
 
   return (
-    <div className="-mx-3 overflow-x-auto sm:mx-0">
-      <table className={TABLE}>
-        <colgroup>
-          <col className="w-[20%]" />
-          <col className="w-[12%]" />
-          <col className="w-[14%]" />
-          <col className="w-[18%]" />
-          <col className="w-[16%]" />
-          <col className="w-[8%]" />
-          <col className="w-[12%]" />
-        </colgroup>
-        <thead>
-          <tr>
-            <th className={TH}>الاسم</th>
-            <th className={TH}>التخصص</th>
-            <th className={TH}>الهوية / الجوال</th>
-            <th className={TH}>المواد</th>
-            <th className={TH}>الفصول</th>
-            <th className={TH}>الحالة</th>
-            <th className={TH}>إجراءات</th>
-          </tr>
-        </thead>
-        <tbody>
-          {teachers.map((teacher, index) => {
-            const subjects = teacherSubjects(teacher);
-            const classNames = teacherClasses(teacher.id, assignments, classes);
-            const imageSrc = resolveMediaUrl(teacher.imageUrl);
-            const isActive = teacher.status !== "inactive";
+    <div className={TABLE_WRAP}>
+      <div className="overflow-x-auto">
+        <table className={TABLE_BASE}>
+          <thead>
+            <tr>
+              <th className={TABLE_TH}>الاسم</th>
+              <th className={cn(TABLE_TH, "w-40")}>التخصص</th>
+            </tr>
+          </thead>
+          <tbody>
+            {pageItems.map((teacher, index) => {
+              const open = expandedId === teacher.id;
+              const subjects = teacherSubjects(teacher);
+              const classNames = teacherClasses(teacher.id, assignments, classes);
+              const imageSrc = resolveMediaUrl(teacher.imageUrl);
+              const isActive = teacher.status !== "inactive";
 
-            return (
-              <tr
-                key={teacher.id}
-                className={cn(index % 2 === 1 && "bg-neutral-50/50", !isActive && "opacity-70")}
-              >
-                <td className={TD}>
-                  <div className="flex items-center gap-3">
-                    <span
-                      className={cn(
-                        "flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl text-sm font-bold text-white",
-                        !imageSrc && `bg-gradient-to-br ${teacher.imageGradient}`
-                      )}
-                    >
-                      {imageSrc ? (
-                        <img src={imageSrc} alt="" className="h-full w-full object-cover" />
-                      ) : (
-                        memberInitial(teacher.name)
-                      )}
-                    </span>
-                    <div className="min-w-0">
-                      <p className="font-semibold leading-snug text-p-black">{teacher.name}</p>
-                      {teacher.nameEn ? (
-                        <p className="mt-0.5 text-xs text-p-black/45" dir="ltr">
-                          {teacher.nameEn}
-                        </p>
-                      ) : null}
-                      {teacher.username ? (
-                        <p className="mt-0.5 text-xs text-p-black/45" dir="ltr">
-                          {teacher.username}
-                        </p>
-                      ) : null}
-                    </div>
-                  </div>
-                </td>
-                <td className={TD}>
-                  <Badge variant="info">{teacher.staffTypeName || "—"}</Badge>
-                </td>
-                <td className={TD}>
-                  <p className="font-mono text-xs text-p-black/75" dir="ltr">
-                    {teacher.nationalId || "—"}
-                  </p>
-                  <p className="mt-1 text-xs text-p-black/55" dir="ltr">
-                    {teacher.mobile || "—"}
-                  </p>
-                </td>
-                <td className={TD}>
-                  {!teacher.isTeacher ? (
-                    <span className="text-xs text-p-black/40">—</span>
-                  ) : subjects.length === 0 ? (
-                    <span className="text-xs text-p-black/40">بدون مواد</span>
-                  ) : (
-                    <div className="flex flex-wrap gap-1.5">
-                      {subjects.map((subject) => (
-                        <Badge key={subject} variant="info">
-                          {subject}
-                        </Badge>
-                      ))}
-                    </div>
-                  )}
-                </td>
-                <td className={TD}>
-                  {!teacher.isTeacher ? (
-                    <span className="text-xs text-p-black/40">—</span>
-                  ) : classNames.length === 0 ? (
-                    <span className="text-xs text-p-black/40">بدون فصول</span>
-                  ) : (
-                    <div className="space-y-1">
-                      <p className="inline-flex items-center gap-1 text-xs font-semibold text-brand-blue">
-                        <Layers className="h-3.5 w-3.5" />
-                        {classNames.length} فصل
-                      </p>
-                      <ExpandableText maxLines={2} className="text-xs text-p-black/55">
-                        {classNames.join("، ")}
-                      </ExpandableText>
-                    </div>
-                  )}
-                </td>
-                <td className={TD}>
-                  {teacher.isTeacher ? (
-                    <Badge variant={isActive ? "success" : "default"}>
-                      {isActive ? "نشط" : "غير نشط"}
-                    </Badge>
-                  ) : (
-                    <Badge variant="default">—</Badge>
-                  )}
-                </td>
-                <td className={TD}>
-                  <div className="flex flex-col gap-1.5">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="h-9 w-full text-xs"
-                      onClick={() => onEdit(teacher.id)}
-                    >
-                      <Pencil className="h-3.5 w-3.5" />
-                      تعديل
-                    </Button>
-                    {teacher.isTeacher ? (
-                      <Button
+              return (
+                <tr key={teacher.id} className={cn(index % 2 === 1 && "bg-neutral-50/70")}>
+                  <td className={TABLE_TD} colSpan={open ? 2 : 1}>
+                    {!open ? (
+                      <div className="flex items-center gap-3">
+                        <span
+                          className={cn(
+                            "flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl text-sm font-bold text-white",
+                            !imageSrc && `bg-gradient-to-br ${teacher.imageGradient}`
+                          )}
+                        >
+                          {imageSrc ? (
+                            <img src={imageSrc} alt="" className="h-full w-full object-cover" />
+                          ) : (
+                            memberInitial(teacher.name)
+                          )}
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <ExpandRowButton
+                            open={false}
+                            label={teacher.name}
+                            onClick={() => setExpandedId(teacher.id)}
+                          />
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        <div className="flex flex-wrap items-start justify-between gap-3">
+                          <div className="flex items-center gap-3">
+                            <span
+                              className={cn(
+                                "flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl text-sm font-bold text-white",
+                                !imageSrc && `bg-gradient-to-br ${teacher.imageGradient}`
+                              )}
+                            >
+                              {imageSrc ? (
+                                <img src={imageSrc} alt="" className="h-full w-full object-cover" />
+                              ) : (
+                                memberInitial(teacher.name)
+                              )}
+                            </span>
+                            <div>
+                              <p className="text-lg font-bold text-p-black">{teacher.name}</p>
+                              {teacher.username ? (
+                                <p className="text-sm text-p-black/72" dir="ltr">
+                                  {teacher.username}
+                                </p>
+                              ) : null}
+                            </div>
+                          </div>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className="px-3 py-1.5 text-xs"
+                            onClick={() => setExpandedId(null)}
+                          >
+                            إغلاق
+                          </Button>
+                        </div>
+
+                        <dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                          <div>
+                            <dt className="text-xs font-semibold text-p-black/72">التخصص</dt>
+                            <dd className="mt-1">
+                              <Badge variant="info">{teacher.staffTypeName || "—"}</Badge>
+                            </dd>
+                          </div>
+                          <div>
+                            <dt className="text-xs font-semibold text-p-black/72">رقم الهوية</dt>
+                            <dd className="mt-0.5 font-medium" dir="ltr">
+                              {teacher.nationalId || "—"}
+                            </dd>
+                          </div>
+                          <div>
+                            <dt className="text-xs font-semibold text-p-black/72">الجوال</dt>
+                            <dd className="mt-0.5 font-medium" dir="ltr">
+                              {teacher.mobile || "—"}
+                            </dd>
+                          </div>
+                          <div>
+                            <dt className="text-xs font-semibold text-p-black/72">الحالة</dt>
+                            <dd className="mt-1">
+                              {teacher.isTeacher ? (
+                                <Badge variant={isActive ? "success" : "default"}>
+                                  {isActive ? "نشط" : "غير نشط"}
+                                </Badge>
+                              ) : (
+                                <Badge variant="default">—</Badge>
+                              )}
+                            </dd>
+                          </div>
+                          <div className="sm:col-span-2">
+                            <dt className="text-xs font-semibold text-p-black/72">المواد</dt>
+                            <dd className="mt-1 flex flex-wrap gap-1.5">
+                              {!teacher.isTeacher || subjects.length === 0 ? (
+                                <span className="text-sm text-p-black/72">—</span>
+                              ) : (
+                                subjects.map((subject) => (
+                                  <Badge key={subject} variant="info">
+                                    {subject}
+                                  </Badge>
+                                ))
+                              )}
+                            </dd>
+                          </div>
+                          <div className="sm:col-span-2 lg:col-span-3">
+                            <dt className="text-xs font-semibold text-p-black/72">الفصول</dt>
+                            <dd className="mt-1">
+                              {!teacher.isTeacher || classNames.length === 0 ? (
+                                <span className="text-sm text-p-black/72">—</span>
+                              ) : (
+                                <div className="space-y-1">
+                                  <p className="inline-flex items-center gap-1 text-xs font-semibold text-brand-blue">
+                                    <Layers className="h-3.5 w-3.5" />
+                                    {classNames.length} فصل
+                                  </p>
+                                  <ExpandableText maxLines={3} className="text-sm text-p-black/78">
+                                    {classNames.join("، ")}
+                                  </ExpandableText>
+                                </div>
+                              )}
+                            </dd>
+                          </div>
+                        </dl>
+
+                        <div className="flex flex-wrap gap-2 border-t border-neutral-100 pt-3">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className="gap-1.5 px-3 py-1.5 text-xs"
+                            onClick={() => onEdit(teacher.id)}
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                            تعديل
+                          </Button>
+                          {teacher.isTeacher ? (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              className="gap-1.5 px-3 py-1.5 text-xs"
+                              onClick={() => onToggleStatus(teacher)}
+                              disabled={togglingId === teacher.id}
+                            >
+                              <Power className="h-3.5 w-3.5" />
+                              {togglingId === teacher.id
+                                ? "جاري..."
+                                : isActive
+                                  ? "تعطيل"
+                                  : "تفعيل"}
+                            </Button>
+                          ) : null}
+                        </div>
+                      </div>
+                    )}
+                  </td>
+                  {!open ? (
+                    <td className={TABLE_TD}>
+                      <button
                         type="button"
-                        variant="ghost"
-                        className="h-9 w-full text-xs"
-                        onClick={() => onToggleStatus(teacher)}
-                        disabled={togglingId === teacher.id}
+                        className="text-start"
+                        onClick={() => setExpandedId(teacher.id)}
                       >
-                        <Power className="h-3.5 w-3.5" />
-                        {togglingId === teacher.id
-                          ? "جاري..."
-                          : isActive
-                            ? "تعطيل"
-                            : "تفعيل"}
-                      </Button>
-                    ) : null}
-                  </div>
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+                        <Badge variant="info">{teacher.staffTypeName || "—"}</Badge>
+                      </button>
+                    </td>
+                  ) : null}
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      <TablePagination
+        page={page}
+        totalPages={totalPages}
+        total={total}
+        pageSize={pageSize}
+        onPrev={prev}
+        onNext={next}
+        onPage={setPage}
+      />
     </div>
   );
 }

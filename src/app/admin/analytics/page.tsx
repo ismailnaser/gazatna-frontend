@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Card } from "@/components/atoms/Card";
+import { Select } from "@/components/atoms/Select";
 import { Input } from "@/components/atoms/Input";
 import { PageHeader } from "@/components/molecules/PageHeader";
 import { SimpleBarChart } from "@/components/molecules/SimpleBarChart";
@@ -179,7 +180,7 @@ export default function AdminAnalyticsDetailsPage() {
               "px-4 py-2.5 text-sm font-semibold transition-colors",
               activeTabState === t.id
                 ? "border-b-2 border-p-green text-p-green"
-                : "text-p-black/50 hover:text-p-black"
+                : "text-p-black/72 hover:text-p-black"
             )}
           >
             {t.label}
@@ -189,24 +190,16 @@ export default function AdminAnalyticsDetailsPage() {
 
       <Card className="mb-6">
         <div className="grid gap-4 sm:grid-cols-3">
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor={gradeSelectId} className="text-sm font-medium text-p-black/80">
-              المرحلة
-            </label>
-            <select
-              id={gradeSelectId}
-              className="rounded-xl border border-neutral-200 bg-white px-4 py-2.5 text-sm text-p-black focus:border-p-green focus:outline-none focus:ring-2 focus:ring-p-green/20"
-              value={gradeLevel}
-              onChange={(e) => setGradeLevel(e.target.value)}
-            >
-              <option value="">كل المراحل</option>
-              {gradeOptions.map((name) => (
-                <option key={name} value={name}>
-                  {name}
-                </option>
-              ))}
-            </select>
-          </div>
+          <Select
+            id={gradeSelectId}
+            label="المرحلة"
+            value={gradeLevel}
+            onChange={(e) => setGradeLevel(e.target.value)}
+            options={[
+              { value: "", label: "كل المراحل" },
+              ...gradeOptions.map((name) => ({ value: name, label: name })),
+            ]}
+          />
 
           {activeTabState === "fees" && (
             <>
@@ -261,14 +254,14 @@ export default function AdminAnalyticsDetailsPage() {
         <>
           <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <Card>
-              <p className="text-sm text-p-black/50">
+              <p className="text-sm text-p-black/72">
                 المسجلون خلال السنة الدراسية
                 {data?.academicYear ? ` ${data.academicYear}` : ""}
               </p>
               <p className="mt-1 text-3xl font-bold text-p-black">{data?.registeredStudents ?? 0}</p>
             </Card>
             <Card>
-              <p className="text-sm text-p-black/50">
+              <p className="text-sm text-p-black/72">
                 المسجلون في السنة السابقة
                 {data?.previousAcademicYear ? ` ${data.previousAcademicYear}` : ""}
               </p>
@@ -277,24 +270,24 @@ export default function AdminAnalyticsDetailsPage() {
               </p>
             </Card>
             <Card>
-              <p className="text-sm text-p-black/50">نسبة ازدياد الطلاب</p>
+              <p className="text-sm text-p-black/72">نسبة ازدياد الطلاب</p>
               <p className={cn("mt-1 text-3xl font-bold", growthTone(growth))}>
                 {formatGrowth(growth)}
               </p>
               {growth == null && (data?.registeredStudents ?? 0) > 0 ? (
-                <p className="mt-1 text-xs text-p-black/45">لا توجد تسجيلات في السنة السابقة للمقارنة</p>
+                <p className="mt-1 text-xs text-p-black/70">لا توجد تسجيلات في السنة السابقة للمقارنة</p>
               ) : null}
             </Card>
             <Card>
-              <p className="text-sm text-p-black/50">إجمالي الطلاب</p>
+              <p className="text-sm text-p-black/72">إجمالي الطلاب</p>
               <p className="mt-1 text-3xl font-bold text-p-black">{data?.totalStudents ?? 0}</p>
             </Card>
             <Card>
-              <p className="text-sm text-p-black/50">الطلاب النشطون</p>
+              <p className="text-sm text-p-black/72">الطلاب النشطون</p>
               <p className="mt-1 text-3xl font-bold text-p-black">{data?.activeStudents ?? 0}</p>
             </Card>
             <Card>
-              <p className="text-sm text-p-black/50">غير النشطين / طلبات قيد الانتظار</p>
+              <p className="text-sm text-p-black/72">غير النشطين / طلبات قيد الانتظار</p>
               <p className="mt-1 text-3xl font-bold text-p-black">
                 {data?.inactiveStudents ?? 0}
                 <span className="mx-1 text-lg font-semibold text-p-black/35">/</span>
@@ -307,21 +300,21 @@ export default function AdminAnalyticsDetailsPage() {
             <Card>
               <h3 className="mb-4 font-bold text-p-black">التسجيلات حسب المرحلة (السنة الحالية)</h3>
               {loading ? (
-                <p className="text-sm text-neutral-500">جاري التحميل...</p>
+                <p className="text-sm text-neutral-700">جاري التحميل...</p>
               ) : data && (data.studentsChart?.length ?? 0) > 0 ? (
                 <SimpleBarChart data={data.studentsChart ?? []} color="bg-p-green" unit="" />
               ) : (
-                <p className="text-sm text-neutral-500">لا توجد بيانات.</p>
+                <p className="text-sm text-neutral-700">لا توجد بيانات.</p>
               )}
             </Card>
             <Card>
               <h3 className="mb-4 font-bold text-p-black">مقارنة التسجيلات بين السنوات</h3>
               {loading ? (
-                <p className="text-sm text-neutral-500">جاري التحميل...</p>
+                <p className="text-sm text-neutral-700">جاري التحميل...</p>
               ) : data && (data.yearlyStudentsChart?.length ?? 0) > 0 ? (
                 <SimpleBarChart data={data.yearlyStudentsChart ?? []} color="bg-brand-blue" unit="" />
               ) : (
-                <p className="text-sm text-neutral-500">لا توجد بيانات.</p>
+                <p className="text-sm text-neutral-700">لا توجد بيانات.</p>
               )}
             </Card>
           </div>
@@ -332,14 +325,14 @@ export default function AdminAnalyticsDetailsPage() {
             {activeTabState === "grades" ? (
               <Card className="flex items-center gap-4">
                 <div>
-                  <p className="text-sm text-p-black/50">متوسط الدرجات</p>
+                  <p className="text-sm text-p-black/72">متوسط الدرجات</p>
                   <p className="text-3xl font-bold text-p-black">{data?.avgGrade ?? 0}%</p>
                 </div>
               </Card>
             ) : (
               <Card className="flex items-center gap-4">
                 <div>
-                  <p className="text-sm text-p-black/50">نسبة الرسوم المحصلة</p>
+                  <p className="text-sm text-p-black/72">نسبة الرسوم المحصلة</p>
                   <p className="text-3xl font-bold text-p-black">{data?.feesCollected ?? 0}%</p>
                 </div>
               </Card>
@@ -350,22 +343,22 @@ export default function AdminAnalyticsDetailsPage() {
             <Card>
               <h3 className="mb-4 font-bold text-p-black">نسب النجاح حسب المرحلة</h3>
               {loading ? (
-                <p className="text-sm text-neutral-500">جاري التحميل...</p>
+                <p className="text-sm text-neutral-700">جاري التحميل...</p>
               ) : data && (data.gradeChart?.length ?? 0) > 0 ? (
                 <SimpleBarChart data={data.gradeChart} color="bg-p-green" />
               ) : (
-                <p className="text-sm text-neutral-500">لا توجد بيانات.</p>
+                <p className="text-sm text-neutral-700">لا توجد بيانات.</p>
               )}
             </Card>
           ) : (
             <Card>
               <h3 className="mb-4 font-bold text-p-black">نسبة الرسوم المحصلة حسب المرحلة</h3>
               {loading ? (
-                <p className="text-sm text-neutral-500">جاري التحميل...</p>
+                <p className="text-sm text-neutral-700">جاري التحميل...</p>
               ) : data && (data.feesChart?.length ?? 0) > 0 ? (
                 <SimpleBarChart data={data.feesChart} color="bg-p-red" />
               ) : (
-                <p className="text-sm text-neutral-500">لا توجد بيانات.</p>
+                <p className="text-sm text-neutral-700">لا توجد بيانات.</p>
               )}
             </Card>
           )}

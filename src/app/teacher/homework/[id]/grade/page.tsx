@@ -42,8 +42,8 @@ function MetaChip({
         <Icon className="h-4 w-4 sm:h-4 sm:w-4" />
       </span>
       <div className="min-w-0 w-full">
-        <p className="text-[11px] leading-snug text-p-black/55 sm:hidden">{shortLabel ?? label}</p>
-        <p className="hidden text-[11px] leading-snug text-p-black/45 sm:block">{label}</p>
+        <p className="text-[11px] leading-snug text-p-black/75 sm:hidden">{shortLabel ?? label}</p>
+        <p className="hidden text-[11px] leading-snug text-p-black/70 sm:block">{label}</p>
         <p className="mt-0.5 text-base font-bold leading-none text-p-black sm:text-sm">{value}</p>
       </div>
     </div>
@@ -167,7 +167,7 @@ export default function TeacherHomeworkGradePage({
 
   if (!item || !hw) {
     return (
-      <Card className="text-center text-neutral-500">
+      <Card className="text-center text-neutral-700">
         {error || "الواجب غير متاح."}
       </Card>
     );
@@ -193,7 +193,7 @@ export default function TeacherHomeworkGradePage({
           <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-orange/10 text-brand-orange">
             <PenLine className="h-4 w-4" />
           </span>
-          <span className="text-xs font-bold text-p-black/55">تقييم الواجب</span>
+          <span className="text-xs font-bold text-p-black/75">تقييم الواجب</span>
           {hw.subject && <Badge variant="default">{hw.subject}</Badge>}
           {hw.gradesVisible ? (
             <Badge variant="success">العلامة ظاهرة للطلاب</Badge>
@@ -265,7 +265,7 @@ export default function TeacherHomeworkGradePage({
             <ClipboardList className="h-6 w-6" />
           </span>
           <p className="font-semibold text-p-black/70">لا توجد تسليمات بعد</p>
-          <p className="mt-1 text-sm text-p-black/45">
+          <p className="mt-1 text-sm text-p-black/70">
             عندما يسلّم الطلاب واجبهم ستظهر هنا للتقييم.
           </p>
         </div>
@@ -280,7 +280,7 @@ export default function TeacherHomeworkGradePage({
                 <header className="flex items-center justify-between gap-2 border-b border-neutral-100 bg-neutral-50/70 px-3 py-3 sm:px-4">
                   <div>
                     <h2 className="text-sm font-bold text-p-black">{section.className}</h2>
-                    <p className="mt-0.5 text-xs text-p-black/45">
+                    <p className="mt-0.5 text-xs text-p-black/70">
                       {section.submissions.length} تسليم
                     </p>
                   </div>

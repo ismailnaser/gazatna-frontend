@@ -89,7 +89,7 @@ export function StatsSection() {
           </span>
           <div>
             <h2 className="text-2xl font-bold text-p-green">إنجازاتنا بالأرقام</h2>
-            <p className="mt-1 text-sm text-p-black/50">
+            <p className="mt-1 text-sm text-p-black/72">
               مؤشرات تعكس جودة التعليم في مدرسة غَزتنا
             </p>
           </div>

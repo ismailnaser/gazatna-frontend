@@ -41,7 +41,7 @@ export function ImagePreviewModal({
             type="button"
             onClick={onClose}
             aria-label="إغلاق"
-            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-p-black/60 transition-colors hover:bg-neutral-100 hover:text-p-black"
+            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-p-black/78 transition-colors hover:bg-neutral-100 hover:text-p-black"
           >
             <X className="h-5 w-5" />
           </button>

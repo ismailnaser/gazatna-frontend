@@ -86,7 +86,7 @@ export function YearEndPanel() {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h3 className="font-bold text-p-black">معاينة وتنفيذ نهاية السنة</h3>
-          <p className="text-xs text-p-black/55">
+          <p className="text-xs text-p-black/75">
             راجع نتائج السنة على مستوى الطالب، حدّد قرارات الترفيع، ثم نفّذ الأرشفة وفتح سنة
             جديدة. عند التنفيذ تُصدر شهادة نهاية السنة (معدل جميع الفصول) وشهادة التقدير للمؤهلين
             فقط — دون شهادة منفصلة للفصل الأخير — ثم تُؤرشف السنة. أنشئ السنة الدراسية الجديدة يدوياً
@@ -122,7 +122,7 @@ export function YearEndPanel() {
             ].map((item) => (
               <div key={item.label} className="rounded-xl bg-p-cream px-3 py-2 text-center">
                 <p className="text-lg font-bold text-p-black">{item.value}</p>
-                <p className="text-xs text-p-black/55">{item.label}</p>
+                <p className="text-xs text-p-black/75">{item.label}</p>
               </div>
             ))}
           </div>
@@ -130,7 +130,7 @@ export function YearEndPanel() {
           <div className="max-w-full overflow-x-auto overscroll-x-contain rounded-xl border border-neutral-200 bg-white">
             <table className="w-full min-w-[720px] text-sm">
               <thead>
-                <tr className="border-b border-neutral-100 bg-p-cream/60 text-p-black/60">
+                <tr className="border-b border-neutral-100 bg-p-cream/60 text-p-black/78">
                   <th className="px-3 py-2 text-start font-semibold">الطالب</th>
                   <th className="px-3 py-2 text-start font-semibold">الصف</th>
                   <th className="px-3 py-2 text-start font-semibold">الحالة السنوية</th>
@@ -150,7 +150,7 @@ export function YearEndPanel() {
                     <tr key={row.studentId} className="border-b border-neutral-50">
                       <td className="px-3 py-2.5">
                         <p className="font-medium text-p-black">{row.name}</p>
-                        <p className="text-xs text-p-black/45">{row.studentNumber || "—"}</p>
+                        <p className="text-xs text-p-black/70">{row.studentNumber || "—"}</p>
                       </td>
                       <td className="px-3 py-2.5">
                         {row.currentGrade} {row.currentSection}

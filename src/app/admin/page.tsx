@@ -111,7 +111,7 @@ export default function AdminDashboard() {
             href="/admin/site"
             className="flex items-center gap-2 rounded-xl border border-neutral-200 bg-white px-4 py-2 text-sm font-semibold text-p-black transition-colors hover:bg-neutral-50"
           >
-            <Settings2 className="h-4 w-4 text-p-black/60" />
+            <Settings2 className="h-4 w-4 text-p-black/78" />
             إعدادات الموقع
           </Link>
         )}
@@ -133,7 +133,7 @@ export default function AdminDashboard() {
               "px-4 py-2.5 text-sm font-semibold transition-colors",
               activeTab === t.id
                 ? "border-b-2 border-p-green text-p-green"
-                : "text-p-black/50 hover:text-p-black"
+                : "text-p-black/72 hover:text-p-black"
             )}
           >
             {t.label}
@@ -143,7 +143,7 @@ export default function AdminDashboard() {
 
       {loadingTab && !(activeTab && cache[activeTab]) ? (
         <Card>
-          <p className="text-sm text-neutral-500">جاري تحميل القسم...</p>
+          <p className="text-sm text-neutral-700">جاري تحميل القسم...</p>
         </Card>
       ) : null}
 
@@ -154,7 +154,7 @@ export default function AdminDashboard() {
               <Users className="h-6 w-6 text-p-green" />
             </span>
             <div>
-              <p className="text-sm text-p-black/50">
+              <p className="text-sm text-p-black/72">
                 المسجلون خلال السنة
                 {data.academicYear ? ` ${data.academicYear}` : ""}
               </p>
@@ -169,7 +169,7 @@ export default function AdminDashboard() {
               <Users className="h-6 w-6 text-p-green" />
             </span>
             <div>
-              <p className="text-sm text-p-black/50">الطلاب النشطون / الإجمالي</p>
+              <p className="text-sm text-p-black/72">الطلاب النشطون / الإجمالي</p>
               <p className="text-3xl font-bold text-p-black">
                 {data.activeStudents ?? 0}
                 <span className="mx-1 text-lg font-semibold text-p-black/35">/</span>
@@ -193,7 +193,7 @@ export default function AdminDashboard() {
               <BarChart3 className="h-6 w-6 text-p-green" />
             </span>
             <div>
-              <p className="text-sm text-p-black/50">معدل درجات المدرسة</p>
+              <p className="text-sm text-p-black/72">معدل درجات المدرسة</p>
               <p className="text-3xl font-bold text-p-black">{data.avgGrade}%</p>
               <Link
                 href="/admin/analytics?tab=grades"
@@ -213,7 +213,7 @@ export default function AdminDashboard() {
               <CreditCard className="h-6 w-6 text-p-green" />
             </span>
             <div>
-              <p className="text-sm text-p-black/50">نسبة الرسوم المحصلة</p>
+              <p className="text-sm text-p-black/72">نسبة الرسوم المحصلة</p>
               <p className="text-3xl font-bold text-p-black">{data.feesCollected}%</p>
               <Link
                 href="/admin/analytics?tab=fees"
@@ -228,7 +228,7 @@ export default function AdminDashboard() {
             {data.feesChart.length > 0 ? (
               <SimpleBarChart data={data.feesChart} color="bg-p-red" />
             ) : (
-              <p className="text-sm text-neutral-500">لا توجد بيانات بعد.</p>
+              <p className="text-sm text-neutral-700">لا توجد بيانات بعد.</p>
             )}
           </Card>
         </div>
@@ -282,7 +282,7 @@ export default function AdminDashboard() {
               })}
             </ul>
           ) : (
-            <p className="text-sm text-neutral-500">لا توجد إشعارات مهمة حالياً.</p>
+            <p className="text-sm text-neutral-700">لا توجد إشعارات مهمة حالياً.</p>
           )}
         </Card>
       )}

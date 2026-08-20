@@ -147,7 +147,7 @@ export default function TeacherArchivePage() {
       {error ? <Alert variant="error">{error}</Alert> : null}
 
       {!hasContent ? (
-        <Card className="p-6 text-sm text-p-black/60">
+        <Card className="p-6 text-sm text-p-black/78">
           لا يوجد أرشيف بعد. بعد إغلاق فصل دراسي ستظهر هنا علامات الطلاب التي أدخلتها في الفصول
           السابقة.
         </Card>
@@ -157,7 +157,7 @@ export default function TeacherArchivePage() {
         <Card className="space-y-4 p-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <p className="text-xs text-p-black/50">
+              <p className="text-xs text-p-black/72">
                 {selectedTerm.yearName} — {selectedTerm.name}
               </p>
               <h2 className="text-lg font-bold text-p-black">{selectedClass.name}</h2>
@@ -169,14 +169,14 @@ export default function TeacherArchivePage() {
           </div>
 
           {loadingDetail ? (
-            <p className="text-sm text-neutral-500">جاري تحميل العلامات...</p>
+            <p className="text-sm text-neutral-700">جاري تحميل العلامات...</p>
           ) : students.length === 0 ? (
-            <p className="text-sm text-p-black/55">لا توجد علامات محفوظة لهذا الفصل.</p>
+            <p className="text-sm text-p-black/75">لا توجد علامات محفوظة لهذا الفصل.</p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full min-w-[640px] text-sm">
                 <thead>
-                  <tr className="border-b border-neutral-100 bg-p-cream/60 text-p-black/60">
+                  <tr className="border-b border-neutral-100 bg-p-cream/60 text-p-black/78">
                     <th className="px-3 py-2 text-start font-semibold">الطالب</th>
                     {subjects.map((subject) => (
                       <th key={subject} className="px-3 py-2 text-center font-semibold">
@@ -190,7 +190,7 @@ export default function TeacherArchivePage() {
                     <tr key={student.studentId} className="border-b border-neutral-50">
                       <td className="px-3 py-2.5">
                         <p className="font-medium text-p-black">{student.name}</p>
-                        <p className="text-xs text-p-black/45">{student.studentNumber || "—"}</p>
+                        <p className="text-xs text-p-black/70">{student.studentNumber || "—"}</p>
                       </td>
                       {subjects.map((subject) => {
                         const cell = student.subjects[subject];
@@ -211,7 +211,7 @@ export default function TeacherArchivePage() {
         <Card className="space-y-4 p-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <p className="text-xs text-p-black/50">{selectedTerm.yearName}</p>
+              <p className="text-xs text-p-black/72">{selectedTerm.yearName}</p>
               <h2 className="text-lg font-bold text-p-black">{selectedTerm.name}</h2>
             </div>
             <Button variant="outline" onClick={resetToYears}>
@@ -221,9 +221,9 @@ export default function TeacherArchivePage() {
           </div>
 
           {loadingDetail ? (
-            <p className="text-sm text-neutral-500">جاري التحميل...</p>
+            <p className="text-sm text-neutral-700">جاري التحميل...</p>
           ) : classes.length === 0 ? (
-            <p className="text-sm text-p-black/55">لا توجد فصول مرتبطة بهذا الفصل.</p>
+            <p className="text-sm text-p-black/75">لا توجد فصول مرتبطة بهذا الفصل.</p>
           ) : (
             <div className="grid gap-2 sm:grid-cols-2">
               {classes.map((archiveClass) => (
@@ -236,7 +236,7 @@ export default function TeacherArchivePage() {
                   )}
                 >
                   <p className="font-semibold text-p-black">{archiveClass.name}</p>
-                  <p className="mt-1 text-xs text-p-black/50">
+                  <p className="mt-1 text-xs text-p-black/72">
                     {archiveClass.gradeLevel}
                     {archiveClass.section ? ` — ${archiveClass.section}` : ""}
                   </p>
@@ -253,7 +253,7 @@ export default function TeacherArchivePage() {
               {year.isArchived ? <Badge variant="default">مؤرشفة</Badge> : null}
             </div>
             {year.terms.length === 0 ? (
-              <p className="text-sm text-p-black/55">لا توجد فصول منتهية في هذه السنة.</p>
+              <p className="text-sm text-p-black/75">لا توجد فصول منتهية في هذه السنة.</p>
             ) : (
               <div className="grid gap-2 sm:grid-cols-2">
                 {year.terms.map((term) => (
@@ -266,7 +266,7 @@ export default function TeacherArchivePage() {
                     )}
                   >
                     <p className="font-semibold text-p-black">{term.termName}</p>
-                    <p className="mt-1 text-xs text-p-black/50">{term.classCount} فصل/شعبة</p>
+                    <p className="mt-1 text-xs text-p-black/72">{term.classCount} فصل/شعبة</p>
                   </button>
                 ))}
               </div>

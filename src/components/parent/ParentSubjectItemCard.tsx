@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import type { LucideIcon } from "lucide-react";
@@ -91,7 +91,7 @@ function SubjectCardShell({
               <h3 className="text-base font-bold leading-snug text-p-black">{title}</h3>
               {description ? (
                 tone === "material" ? (
-                  <ExpandableText maxLines={3} className="mt-1.5 text-sm text-p-black/65">
+                  <ExpandableText maxLines={3} className="mt-1.5 text-sm text-p-black/78">
                     {description}
                   </ExpandableText>
                 ) : (

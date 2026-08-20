@@ -38,7 +38,7 @@ export function Footer() {
   return (
     <footer className="relative overflow-hidden text-neutral-950">
       <div
-        className="absolute inset-0 bg-[url('/images/footer-bg.png')] bg-cover bg-bottom bg-no-repeat"
+        className="absolute inset-0 bg-[url('/images/footer-bg.webp')] bg-cover bg-bottom bg-no-repeat"
         aria-hidden
       />
       <div className="absolute inset-0 bg-[#fdf2d9]/75" aria-hidden />

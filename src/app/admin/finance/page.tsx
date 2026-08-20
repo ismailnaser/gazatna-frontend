@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Alert } from "@/components/atoms/Alert";
 import { Button } from "@/components/atoms/Button";
 import { Card } from "@/components/atoms/Card";
@@ -9,11 +10,9 @@ import { NumberFieldWithKeypad } from "@/components/teacher/NumberFieldWithKeypa
 import { ConfirmDialog } from "@/components/molecules/ConfirmDialog";
 import { ImagePreviewModal } from "@/components/molecules/ImagePreviewModal";
 import { PageHeader } from "@/components/molecules/PageHeader";
-import { AdminFeePlanFormPanel } from "@/components/admin/AdminFeePlanFormPanel";
 import { AdminFeePlansTable } from "@/components/admin/AdminFeePlansTable";
 import { StatusBadge } from "@/components/molecules/StatusBadge";
 import { StudentSearchSelect } from "@/components/molecules/StudentSearchSelect";
-import { useSchool } from "@/context/SchoolContext";
 import { api } from "@/lib/api";
 import type { PaymentStatus } from "@/types";
 import {
@@ -24,28 +23,25 @@ import {
   type FinanceNotice,
   type ManualPaymentLog,
 } from "@/types/finance";
-import type { Grade } from "@/types/teacher";
-import type { AcademicYear } from "@/types/academic";
-import { mapAcademicYear } from "@/types/academic";
-import {
-  createDefaultFeePlanForm,
-  feePlanToForm,
-  formatPlanPayload,
-  validateFeePlanForm,
-  type FeePlanFormState,
-} from "@/lib/feePlanForm";
 import { Check, ClipboardList, Image, Plus, RotateCcw, Unlock, Wallet, X } from "lucide-react";
 
 type Tab = "payments" | "manual" | "plans" | "access";
 
 export default function AdminFinancePage() {
-  const { grades: schoolGrades } = useSchool();
+  const router = useRouter();
   const [tab, setTab] = useState<Tab>("payments");
+  const [tabFromQueryApplied, setTabFromQueryApplied] = useState(false);
+
+  useEffect(() => {
+    if (tabFromQueryApplied || typeof window === "undefined") return;
+    const value = new URLSearchParams(window.location.search).get("tab");
+    if (value === "payments" || value === "manual" || value === "plans" || value === "access") {
+      setTab(value);
+    }
+    setTabFromQueryApplied(true);
+  }, [tabFromQueryApplied]);
   const [notices, setNotices] = useState<FinanceNotice[]>([]);
   const [plans, setPlans] = useState<FeePlan[]>([]);
-  const [grades, setGrades] = useState<Grade[]>([]);
-  const [academicYears, setAcademicYears] = useState<AcademicYear[]>([]);
-  const [planValidationError, setPlanValidationError] = useState("");
   const [students, setStudents] = useState<
     Array<{ id: string; name: string; grade: string; studentNumber: string; nationalId?: string }>
   >([]);
@@ -63,9 +59,6 @@ export default function AdminFinancePage() {
   } | null>(null);
   const [undoing, setUndoing] = useState(false);
 
-  const [planForm, setPlanForm] = useState<FeePlanFormState>(() => createDefaultFeePlanForm([]));
-  const [showPlanForm, setShowPlanForm] = useState(false);
-  const [savingPlan, setSavingPlan] = useState(false);
   const [deletePlanTarget, setDeletePlanTarget] = useState<FeePlan | null>(null);
   const [deletingPlan, setDeletingPlan] = useState(false);
 
@@ -82,7 +75,6 @@ export default function AdminFinancePage() {
     url: string;
     title: string;
   } | null>(null);
-  const planFormRef = useRef<HTMLDivElement>(null);
 
   async function loadManualLogs() {
     setLoadingManualLogs(true);
@@ -137,32 +129,9 @@ export default function AdminFinancePage() {
           if (cancelled) return;
           await loadManualLogs();
         } else if (tab === "plans") {
-          const [plansData, yearsData] = await Promise.all([
-            api.getAdminFeePlans(),
-            api.getAdminAcademicYears(),
-          ]);
+          const plansData = await api.getAdminFeePlans();
           if (cancelled) return;
           setPlans((plansData as Array<Record<string, unknown>>).map(mapFeePlan));
-          setAcademicYears(
-            (yearsData as Array<Record<string, unknown>>).map(mapAcademicYear)
-          );
-          if (!schoolGrades.length && !grades.length) {
-            try {
-              const gradeRows = await api.getAdminGrades();
-              if (!cancelled) {
-                setGrades(
-                  (gradeRows as Array<Record<string, unknown>>).map((g) => ({
-                    id: String(g.id),
-                    name: String(g.name ?? ""),
-                    sectionsCount: Number(g.sectionsCount ?? 0),
-                    sortOrder: Number(g.sortOrder ?? 0),
-                  }))
-                );
-              }
-            } catch {
-              /* plans still usable without grade labels */
-            }
-          }
         } else if (tab === "access") {
           await ensureStudents();
         }
@@ -178,15 +147,6 @@ export default function AdminFinancePage() {
       cancelled = true;
     };
   }, [tab]);
-
-  useEffect(() => {
-    if (schoolGrades.length) setGrades(schoolGrades);
-  }, [schoolGrades]);
-
-  const gradeOptions = useMemo(
-    () => grades.map((g) => ({ value: g.id, label: g.name })),
-    [grades]
-  );
 
   async function rejectNotice(id: string) {
     await api.updateAdminPayment(id, { status: "rejected" });
@@ -246,56 +206,11 @@ export default function AdminFinancePage() {
   }
 
   function openCreatePlan() {
-    setPlanForm(createDefaultFeePlanForm(academicYears));
-    setShowPlanForm(true);
-    setError("");
-    setPlanValidationError("");
-    setTimeout(() => planFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+    router.push("/admin/finance/plans/create");
   }
 
   function openEditPlan(plan: FeePlan) {
-    setPlanForm(feePlanToForm(plan, academicYears));
-    setShowPlanForm(true);
-    setError("");
-    setPlanValidationError("");
-    setTimeout(() => planFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
-  }
-
-  function closePlanForm() {
-    setShowPlanForm(false);
-    setPlanForm(createDefaultFeePlanForm(academicYears));
-    setPlanValidationError("");
-  }
-
-  async function savePlan(e: React.FormEvent) {
-    e.preventDefault();
-    const validationMessage = validateFeePlanForm(planForm, academicYears, plans);
-    if (validationMessage) {
-      setPlanValidationError(validationMessage);
-      return;
-    }
-
-    setSavingPlan(true);
-    setError("");
-    setPlanValidationError("");
-    const payload = formatPlanPayload(planForm);
-    try {
-      if (planForm.id) {
-        const updated = await api.updateAdminFeePlan(planForm.id, payload);
-        const mapped = mapFeePlan(updated as Record<string, unknown>);
-        setPlans((prev) => prev.map((p) => (p.id === mapped.id ? mapped : p)));
-      } else {
-        const created = await api.createAdminFeePlan(payload);
-        const mapped = mapFeePlan(created as Record<string, unknown>);
-        setPlans((prev) => [mapped, ...prev]);
-      }
-      setSuccess("تم حفظ خطة الرسوم وتطبيقها على الطلاب في المراحل المحددة.");
-      closePlanForm();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "تعذر حفظ خطة الرسوم");
-    } finally {
-      setSavingPlan(false);
-    }
+    router.push(`/admin/finance/plans/${plan.id}/edit`);
   }
 
   async function confirmDeletePlan() {
@@ -305,9 +220,6 @@ export default function AdminFinancePage() {
     try {
       await api.deleteAdminFeePlan(deletePlanTarget.id);
       setPlans((prev) => prev.filter((p) => p.id !== deletePlanTarget.id));
-      if (planForm.id === deletePlanTarget.id) {
-        closePlanForm();
-      }
       setDeletePlanTarget(null);
       setSuccess(`تم حذف خطة ${deletePlanTarget.name}.`);
     } catch {
@@ -427,7 +339,7 @@ export default function AdminFinancePage() {
 
       {sectionLoading ? (
         <Card className="mb-4">
-          <p className="text-sm text-neutral-500">جاري تحميل القسم...</p>
+          <p className="text-sm text-neutral-700">جاري تحميل القسم...</p>
         </Card>
       ) : null}
 
@@ -435,7 +347,7 @@ export default function AdminFinancePage() {
         <Card className="overflow-x-auto p-0">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-neutral-100 bg-p-cream text-p-black/60">
+              <tr className="border-b border-neutral-100 bg-p-cream text-p-black/78">
                 <th className="px-4 py-3 text-start font-semibold">الطالب</th>
                 <th className="px-4 py-3 text-start font-semibold">المبلغ المُعلن</th>
                 <th className="px-4 py-3 text-start font-semibold">المبلغ المُعتمد</th>
@@ -469,9 +381,9 @@ export default function AdminFinancePage() {
                         عرض
                       </button>
                     ) : n.source === "manual" ? (
-                      <span className="text-p-black/60">يدوي</span>
+                      <span className="text-p-black/78">يدوي</span>
                     ) : (
-                      <span className="text-p-black/40">—</span>
+                      <span className="text-p-black/75">—</span>
                     )}
                   </td>
                   <td className="px-4 py-3">
@@ -533,7 +445,7 @@ export default function AdminFinancePage() {
               <Wallet className="h-5 w-5 text-p-green" />
               تسجيل دفع يدوي
             </h3>
-            <p className="mb-4 text-sm text-p-black/60">
+            <p className="mb-4 text-sm text-p-black/78">
               للطلاب الذين دفعوا خارج المنصة (نقداً أو تحويل مباشر). ابحث بالاسم أو رقم الطالب أو رقم الهوية، حدد المبلغ،
               وسيُخصم تلقائياً من رصيده.
             </p>
@@ -570,18 +482,18 @@ export default function AdminFinancePage() {
           <Card className="overflow-x-auto p-0">
             <div className="border-b border-neutral-100 px-5 py-4">
               <h3 className="font-bold text-p-black">سجل الدفعات اليدوية</h3>
-              <p className="mt-1 text-sm text-p-black/50">
+              <p className="mt-1 text-sm text-p-black/72">
                 جميع الدفعات المسجّلة يدوياً من الإدارة مع اسم المستخدم الذي اعتمدها
               </p>
             </div>
             {loadingManualLogs ? (
-              <p className="px-5 py-8 text-sm text-neutral-500">جاري تحميل السجل...</p>
+              <p className="px-5 py-8 text-sm text-neutral-700">جاري تحميل السجل...</p>
             ) : manualLogs.length === 0 ? (
-              <p className="px-5 py-8 text-sm text-neutral-500">لا توجد دفعات يدوية مسجّلة بعد.</p>
+              <p className="px-5 py-8 text-sm text-neutral-700">لا توجد دفعات يدوية مسجّلة بعد.</p>
             ) : (
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-neutral-100 bg-p-cream text-p-black/60">
+                  <tr className="border-b border-neutral-100 bg-p-cream text-p-black/78">
                     <th className="px-4 py-3 text-start font-semibold">الطالب</th>
                     <th className="px-4 py-3 text-start font-semibold">رقم الطالب</th>
                     <th className="px-4 py-3 text-start font-semibold">المبلغ</th>
@@ -601,7 +513,7 @@ export default function AdminFinancePage() {
                       <td className="px-4 py-3">{row.amount} ₪</td>
                       <td className="px-4 py-3">{row.date}</td>
                       <td className="px-4 py-3 font-medium text-p-black">{row.reviewedByName}</td>
-                      <td className="px-4 py-3 text-p-black/60">{row.note || "—"}</td>
+                      <td className="px-4 py-3 text-p-black/78">{row.note || "—"}</td>
                       <td className="px-4 py-3">
                         <Button
                           variant="outline"
@@ -638,7 +550,7 @@ export default function AdminFinancePage() {
                 <ClipboardList className="h-5 w-5" />
               </span>
               <div>
-                <p className="text-xs text-p-black/50">خطط مسجّلة</p>
+                <p className="text-xs text-p-black/72">خطط مسجّلة</p>
                 <p className="text-lg font-bold text-p-black">{plans.length}</p>
               </div>
             </div>
@@ -647,7 +559,7 @@ export default function AdminFinancePage() {
                 <Wallet className="h-5 w-5" />
               </span>
               <div>
-                <p className="text-xs text-p-black/50">مراحل مغطاة</p>
+                <p className="text-xs text-p-black/72">مراحل مغطاة</p>
                 <p className="text-lg font-bold text-p-black">{coveredGradesCount}</p>
               </div>
             </div>
@@ -657,42 +569,21 @@ export default function AdminFinancePage() {
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <h3 className="font-bold text-p-black">خطط الرسوم</h3>
-                <p className="mt-1 text-sm text-p-black/55">
+                <p className="mt-1 text-sm text-p-black/75">
                   أنشئ خطة جديدة أو عدّل خطة موجودة من الجدول أدناه.
                 </p>
               </div>
-              {!showPlanForm ? (
-                <Button type="button" onClick={openCreatePlan}>
-                  <Plus className="h-4 w-4" />
-                  خطة جديدة
-                </Button>
-              ) : null}
+              <Button type="button" onClick={openCreatePlan}>
+                <Plus className="h-4 w-4" />
+                خطة جديدة
+              </Button>
             </div>
           </Card>
-
-          {showPlanForm ? (
-            <div ref={planFormRef}>
-              <Card className="p-4 sm:p-5">
-                <AdminFeePlanFormPanel
-                  form={planForm}
-                  onChange={setPlanForm}
-                  gradeOptions={gradeOptions}
-                  plans={plans}
-                  academicYears={academicYears}
-                  saving={savingPlan}
-                  validationError={planValidationError}
-                  onSubmit={savePlan}
-                  onCancel={closePlanForm}
-                />
-              </Card>
-            </div>
-          ) : null}
 
           <Card className="p-4 sm:p-5">
             <h3 className="mb-4 font-bold text-p-black">الخطط المسجّلة</h3>
             <AdminFeePlansTable
               plans={plans}
-              activePlanId={showPlanForm ? planForm.id : undefined}
               onCreate={openCreatePlan}
               onEdit={openEditPlan}
               onDelete={(plan) => {
@@ -731,7 +622,7 @@ export default function AdminFinancePage() {
             <Unlock className="h-5 w-5 text-p-green" />
             فتح الوصول مؤقتاً
           </h3>
-          <p className="mb-4 text-sm text-p-black/60">
+          <p className="mb-4 text-sm text-p-black/78">
             يسمح للطالب غير المسدّد بالدخول إلى المنصة لفترة محددة، ثم يُغلق الوصول تلقائياً.
           </p>
           <form onSubmit={grantAccess} className="space-y-4">
@@ -782,7 +673,7 @@ export default function AdminFinancePage() {
                 allowDecimal
                 maxDecimalPlaces={2}
               />
-              <p className="mt-2 text-xs text-p-black/50">
+              <p className="mt-2 text-xs text-p-black/72">
                 عدّل المبلغ إذا كان المبلغ المحوّل يختلف عما أدخله ولي الأمر.
               </p>
             </div>

@@ -102,7 +102,7 @@ export default function ParentFeesPage() {
           { label: "المتبقي", value: `${student.balance.remaining} ₪`, color: "text-p-red" },
         ].map((item) => (
           <Card key={item.label}>
-            <p className="text-sm text-p-black/50">{item.label}</p>
+            <p className="text-sm text-p-black/72">{item.label}</p>
             <p className={`mt-1 text-2xl font-bold ${item.color ?? "text-p-black"}`}>
               {item.value}
             </p>
@@ -177,11 +177,11 @@ export default function ParentFeesPage() {
             <h3 className="font-bold text-p-black">سجل الإشعارات</h3>
           </div>
           {notices.length === 0 ? (
-            <p className="px-4 py-6 text-center text-sm text-neutral-500">لا توجد إشعارات دفع.</p>
+            <p className="px-4 py-6 text-center text-sm text-neutral-700">لا توجد إشعارات دفع.</p>
           ) : (
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-neutral-100 bg-p-cream text-p-black/60">
+                <tr className="border-b border-neutral-100 bg-p-cream text-p-black/78">
                   <th className="px-4 py-2 text-start">التاريخ</th>
                   <th className="px-4 py-2 text-start">المبلغ</th>
                   <th className="px-4 py-2 text-start">الحالة</th>

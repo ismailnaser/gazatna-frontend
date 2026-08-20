@@ -96,7 +96,7 @@ export default function TeacherQuizGradePage({
 
   if (!item || !quiz) {
     return (
-      <Card className="text-center text-neutral-500">
+      <Card className="text-center text-neutral-700">
         {error || "الاختبار غير متاح."}
       </Card>
     );
@@ -137,7 +137,7 @@ export default function TeacherQuizGradePage({
               )}
             </div>
             <CollapsibleChipList items={targets.map((t) => t.className)} className="mb-2" />
-            <p className="text-sm text-p-black/60">
+            <p className="text-sm text-p-black/78">
               العلامة الكاملة: <span className="font-semibold">{maxScore}</span>
             </p>
           </div>
@@ -159,7 +159,7 @@ export default function TeacherQuizGradePage({
       </Card>
 
       {submissions.length === 0 ? (
-        <Card className="text-center text-neutral-500">لا توجد تسليمات بعد.</Card>
+        <Card className="text-center text-neutral-700">لا توجد تسليمات بعد.</Card>
       ) : (
         <div className="space-y-5">
           {submissionsByClass.map((section) =>

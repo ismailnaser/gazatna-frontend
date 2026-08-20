@@ -19,7 +19,7 @@ export function AdminAccessGuard({ children }: { children: React.ReactNode }) {
 
   if (loading && !user) {
     return (
-      <div className="py-10 text-center text-sm text-neutral-500">جاري التحقق من الصلاحية...</div>
+      <div className="py-10 text-center text-sm text-neutral-700">جاري التحقق من الصلاحية...</div>
     );
   }
 
@@ -29,7 +29,7 @@ export function AdminAccessGuard({ children }: { children: React.ReactNode }) {
 
   if (!canAccessAdminPath(user.role, pathname)) {
     return (
-      <div className="flex min-h-[40vh] items-center justify-center text-sm text-neutral-500">
+      <div className="flex min-h-[40vh] items-center justify-center text-sm text-neutral-700">
         جاري التحويل...
       </div>
     );

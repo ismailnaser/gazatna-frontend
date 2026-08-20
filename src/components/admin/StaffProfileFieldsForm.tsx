@@ -132,7 +132,7 @@ export function StaffProfileFieldsForm({
       />
 
       {selectedType && !selectedType.isTeacher ? (
-        <p className="rounded-xl border border-brand-blue/15 bg-brand-blue/5 px-3 py-2 text-sm text-p-black/65">
+        <p className="rounded-xl border border-brand-blue/15 bg-brand-blue/5 px-3 py-2 text-sm text-p-black/75">
           هذا النوع لحفظ بيانات العامل في المدرسة فقط — بدون حساب دخول أو إسناد مواد.
         </p>
       ) : null}

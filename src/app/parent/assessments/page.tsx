@@ -46,14 +46,14 @@ export default function ParentAssessmentsPage() {
           <div className="h-24 animate-pulse rounded-2xl bg-neutral-100" />
         </div>
       ) : items.length === 0 ? (
-        <Card className="text-center text-neutral-500">
+        <Card className="text-center text-neutral-700">
           لا توجد تقييمات منشورة بعد. ستظهر هنا عندما يُظهر المعلم علامة واجب أو اختبار.
         </Card>
       ) : (
         <Card className="overflow-x-auto p-0">
           <table className="w-full min-w-[560px] text-sm">
             <thead>
-              <tr className="border-b border-neutral-100 bg-p-cream text-p-black/60">
+              <tr className="border-b border-neutral-100 bg-p-cream text-p-black/78">
                 <th className="px-4 py-3 text-start font-semibold">النوع</th>
                 <th className="px-4 py-3 text-start font-semibold">المادة</th>
                 <th className="px-4 py-3 text-start font-semibold">العنوان</th>
@@ -94,10 +94,10 @@ export default function ParentAssessmentsPage() {
                   <td className="px-4 py-3 font-semibold text-p-green">
                     {item.score}/{item.maxScore}
                   </td>
-                  <td className="max-w-[180px] px-4 py-3 text-p-black/50">
+                  <td className="max-w-[180px] px-4 py-3 text-p-black/72">
                     {item.teacherNote?.trim() ? item.teacherNote : "—"}
                   </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-xs text-p-black/45">
+                  <td className="whitespace-nowrap px-4 py-3 text-xs text-p-black/70">
                     {formatAt(item.at)}
                   </td>
                 </tr>

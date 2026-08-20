@@ -28,14 +28,14 @@ export function AcademicTermsPanel() {
     <Card className="overflow-hidden p-0">
       <div className="border-b border-neutral-100 px-4 py-3">
         <h3 className="font-bold text-p-black">الفصول الدراسية</h3>
-        <p className="text-xs text-p-black/55">
+        <p className="text-xs text-p-black/75">
           حدّد عدد الفصول وأسماءها وتواريخها. الفصل الحالي هو ما يراه المعلمون وأولياء الأمور في
           العلامات.
         </p>
       </div>
       <div className="space-y-4 px-4 py-4">
         {termsDraft.length === 0 ? (
-          <p className="rounded-xl border border-dashed border-neutral-200 bg-p-cream/20 px-4 py-6 text-center text-sm text-p-black/55">
+          <p className="rounded-xl border border-dashed border-neutral-200 bg-p-cream/20 px-4 py-6 text-center text-sm text-p-black/75">
             لا توجد فصول دراسية لهذه السنة بعد. اضغط «إضافة فصل» لإنشاء الفصول يدوياً.
           </p>
         ) : null}
@@ -61,7 +61,7 @@ export function AcademicTermsPanel() {
                     {settingTermId === term.id ? "..." : "تعيين كفصل حالي"}
                   </Button>
                 ) : term.id.startsWith("new-") ? (
-                  <span className="text-xs text-p-black/45">احفظ الفصول أولاً</span>
+                  <span className="text-xs text-p-black/70">احفظ الفصول أولاً</span>
                 ) : null}
                 {!term.isClosed ? (
                 <Button

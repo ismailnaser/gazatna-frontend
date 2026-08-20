@@ -33,7 +33,7 @@ export function AppLoadingScreen({
           <Logo href={undefined} className="h-14 w-auto sm:h-16" />
         </div>
 
-        <p className="mt-5 text-sm font-medium text-p-black/55">{message}</p>
+        <p className="mt-5 text-sm font-medium text-p-black/75">{message}</p>
 
         <div className="mt-6 h-1.5 w-full max-w-[220px] overflow-hidden rounded-full bg-neutral-100">
           <div className="loading-bar h-full w-2/5 rounded-full bg-gradient-to-r from-brand-blue via-brand-blue-light to-brand-blue" />

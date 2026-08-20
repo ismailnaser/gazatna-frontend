@@ -69,14 +69,14 @@ export default function ParentSubjectsPage() {
           studentName={student.name}
         />
       ) : subjects.length === 0 ? (
-        <Card className="space-y-2 text-center text-neutral-500">
+        <Card className="space-y-2 text-center text-neutral-700">
           <p>لا توجد مواد مسندة لفصل الطالب حالياً.</p>
           {classLabel ? (
-            <p className="text-sm text-p-black/60">
+            <p className="text-sm text-p-black/78">
               فصل الطالب: <span className="font-semibold text-p-black">{classLabel}</span>
             </p>
           ) : null}
-          <p className="text-sm leading-relaxed text-p-black/55">
+          <p className="text-sm leading-relaxed text-p-black/75">
             يجب على الإدارة إسناد معلم ومواد لهذه الشعبة تحديداً من لوحة{" "}
             <span className="font-semibold">الكادر → تعديل المعلم → الفصول المسندة</span>.
           </p>
@@ -99,14 +99,14 @@ export default function ParentSubjectsPage() {
                       <h3 className="truncate text-base font-bold text-p-black">{row.subject}</h3>
                     </div>
                     {row.teacherName ? (
-                      <p className="text-sm text-p-black/60">المعلم: {row.teacherName}</p>
+                      <p className="text-sm text-p-black/78">المعلم: {row.teacherName}</p>
                     ) : null}
                     {row.totalCount > 0 ? (
                       <p className="mt-2 text-xs font-medium text-brand-orange">
                         {row.totalCount} عنصر في المحتوى
                       </p>
                     ) : (
-                      <p className="mt-2 flex items-center gap-1 text-xs text-p-black/45">
+                      <p className="mt-2 flex items-center gap-1 text-xs text-p-black/70">
                         <BookOpen className="h-3.5 w-3.5" />
                         لا يوجد محتوى بعد
                       </p>

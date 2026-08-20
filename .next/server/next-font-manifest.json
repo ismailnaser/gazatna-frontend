@@ -100,6 +100,14 @@
       "static/media/9ff27b8a0a8f3dc0-s.p.40_3w74kn95bo.woff2",
       "static/media/d41831e24743a3c1-s.p.08tn9snzkmifr.woff2"
     ],
+    "[project]/src/app/admin/finance/plans/[id]/edit/page": [
+      "static/media/9ff27b8a0a8f3dc0-s.p.40_3w74kn95bo.woff2",
+      "static/media/d41831e24743a3c1-s.p.08tn9snzkmifr.woff2"
+    ],
+    "[project]/src/app/admin/finance/plans/create/page": [
+      "static/media/9ff27b8a0a8f3dc0-s.p.40_3w74kn95bo.woff2",
+      "static/media/d41831e24743a3c1-s.p.08tn9snzkmifr.woff2"
+    ],
     "[project]/src/app/admin/grade-schemes/page": [
       "static/media/9ff27b8a0a8f3dc0-s.p.40_3w74kn95bo.woff2",
       "static/media/d41831e24743a3c1-s.p.08tn9snzkmifr.woff2"
@@ -116,6 +124,14 @@
       "static/media/9ff27b8a0a8f3dc0-s.p.40_3w74kn95bo.woff2",
       "static/media/d41831e24743a3c1-s.p.08tn9snzkmifr.woff2"
     ],
+    "[project]/src/app/admin/schedules/[id]/edit/page": [
+      "static/media/9ff27b8a0a8f3dc0-s.p.40_3w74kn95bo.woff2",
+      "static/media/d41831e24743a3c1-s.p.08tn9snzkmifr.woff2"
+    ],
+    "[project]/src/app/admin/schedules/create/page": [
+      "static/media/9ff27b8a0a8f3dc0-s.p.40_3w74kn95bo.woff2",
+      "static/media/d41831e24743a3c1-s.p.08tn9snzkmifr.woff2"
+    ],
     "[project]/src/app/admin/schedules/page": [
       "static/media/9ff27b8a0a8f3dc0-s.p.40_3w74kn95bo.woff2",
       "static/media/d41831e24743a3c1-s.p.08tn9snzkmifr.woff2"
@@ -128,11 +144,27 @@
       "static/media/9ff27b8a0a8f3dc0-s.p.40_3w74kn95bo.woff2",
       "static/media/d41831e24743a3c1-s.p.08tn9snzkmifr.woff2"
     ],
+    "[project]/src/app/admin/students/[id]/edit/page": [
+      "static/media/9ff27b8a0a8f3dc0-s.p.40_3w74kn95bo.woff2",
+      "static/media/d41831e24743a3c1-s.p.08tn9snzkmifr.woff2"
+    ],
     "[project]/src/app/admin/students/[id]/page": [
       "static/media/9ff27b8a0a8f3dc0-s.p.40_3w74kn95bo.woff2",
       "static/media/d41831e24743a3c1-s.p.08tn9snzkmifr.woff2"
     ],
+    "[project]/src/app/admin/students/create/page": [
+      "static/media/9ff27b8a0a8f3dc0-s.p.40_3w74kn95bo.woff2",
+      "static/media/d41831e24743a3c1-s.p.08tn9snzkmifr.woff2"
+    ],
     "[project]/src/app/admin/students/page": [
+      "static/media/9ff27b8a0a8f3dc0-s.p.40_3w74kn95bo.woff2",
+      "static/media/d41831e24743a3c1-s.p.08tn9snzkmifr.woff2"
+    ],
+    "[project]/src/app/admin/subjects/[id]/edit/page": [
+      "static/media/9ff27b8a0a8f3dc0-s.p.40_3w74kn95bo.woff2",
+      "static/media/d41831e24743a3c1-s.p.08tn9snzkmifr.woff2"
+    ],
+    "[project]/src/app/admin/subjects/create/page": [
       "static/media/9ff27b8a0a8f3dc0-s.p.40_3w74kn95bo.woff2",
       "static/media/d41831e24743a3c1-s.p.08tn9snzkmifr.woff2"
     ],
@@ -149,6 +181,14 @@
       "static/media/d41831e24743a3c1-s.p.08tn9snzkmifr.woff2"
     ],
     "[project]/src/app/admin/teachers/page": [
+      "static/media/9ff27b8a0a8f3dc0-s.p.40_3w74kn95bo.woff2",
+      "static/media/d41831e24743a3c1-s.p.08tn9snzkmifr.woff2"
+    ],
+    "[project]/src/app/admin/users/[id]/edit/page": [
+      "static/media/9ff27b8a0a8f3dc0-s.p.40_3w74kn95bo.woff2",
+      "static/media/d41831e24743a3c1-s.p.08tn9snzkmifr.woff2"
+    ],
+    "[project]/src/app/admin/users/create/page": [
       "static/media/9ff27b8a0a8f3dc0-s.p.40_3w74kn95bo.woff2",
       "static/media/d41831e24743a3c1-s.p.08tn9snzkmifr.woff2"
     ],

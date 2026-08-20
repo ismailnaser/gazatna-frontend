@@ -148,14 +148,14 @@ export default function FacultyPage() {
           <p className="mt-4 text-lg font-semibold text-neutral-700">
             لا يوجد كادر تعليمي معروض حالياً
           </p>
-          <p className="mt-2 text-sm text-neutral-500">
+          <p className="mt-2 text-sm text-neutral-700">
             سيتم نشر ملفات المعلمين هنا فور اعتمادها من إدارة المدرسة.
           </p>
         </div>
       ) : filtered.length === 0 ? (
         <div className="rounded-3xl border border-dashed border-neutral-200 bg-neutral-50 px-6 py-12 text-center">
           <p className="font-semibold text-neutral-700">لا توجد نتائج مطابقة</p>
-          <p className="mt-2 text-sm text-neutral-500">جرّب تغيير كلمة البحث أو التخصص.</p>
+          <p className="mt-2 text-sm text-neutral-700">جرّب تغيير كلمة البحث أو التخصص.</p>
         </div>
       ) : (
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">

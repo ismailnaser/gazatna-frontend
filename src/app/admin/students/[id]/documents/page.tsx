@@ -215,7 +215,7 @@ export default function AdminStudentDocumentsPage() {
                   <Button
                     type="button"
                     variant="ghost"
-                    className="w-fit px-2 py-1 text-xs text-neutral-500 hover:text-p-red"
+                    className="w-fit px-2 py-1 text-xs text-neutral-700 hover:text-p-red"
                     onClick={() => setRows((prev) => prev.map((r, i) => (i === idx ? { ...r, file: null } : r)))}
                   >
                     إزالة الملف
@@ -249,9 +249,9 @@ export default function AdminStudentDocumentsPage() {
           <p className="text-sm font-semibold text-p-black">الوثائق الحالية</p>
         </div>
         {loading ? (
-          <p className="px-6 py-8 text-sm text-neutral-500">جاري التحميل...</p>
+          <p className="px-6 py-8 text-sm text-neutral-700">جاري التحميل...</p>
         ) : docs.length === 0 ? (
-          <p className="px-6 py-8 text-sm text-neutral-500">لا توجد وثائق لهذا الطالب بعد.</p>
+          <p className="px-6 py-8 text-sm text-neutral-700">لا توجد وثائق لهذا الطالب بعد.</p>
         ) : (
           <ul className="divide-y divide-neutral-50">
             {docs.map((d, i) => (

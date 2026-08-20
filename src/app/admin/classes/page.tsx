@@ -383,7 +383,7 @@ export default function AdminClassesPage() {
 
   if (user && !isSuperAdmin(user.role)) {
     return (
-      <p className="text-sm text-neutral-500">إدارة المراحل الدراسية متاحة للإدارة الكلية فقط.</p>
+      <p className="text-sm text-neutral-700">إدارة المراحل الدراسية متاحة للإدارة الكلية فقط.</p>
     );
   }
 
@@ -429,7 +429,7 @@ export default function AdminClassesPage() {
         <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
           <div>
             <h3 className="font-bold text-[#1a1a1a]">الفصول المسجّلة</h3>
-            <p className="mt-1 text-sm text-neutral-500">
+            <p className="mt-1 text-sm text-neutral-700">
               اسحب الفصول لتحديد ترتيب التصعيد — الطالب ينتقل للفصل التالي في القائمة عند
               التصعيد.
             </p>
@@ -440,11 +440,11 @@ export default function AdminClassesPage() {
         </div>
 
         {loadingGrades ? (
-          <p className="rounded-xl bg-neutral-50 px-4 py-8 text-center text-sm text-neutral-500">
+          <p className="rounded-xl bg-neutral-50 px-4 py-8 text-center text-sm text-neutral-700">
             جارِ تحميل الفصول...
           </p>
         ) : grades.length === 0 ? (
-          <p className="rounded-xl bg-neutral-50 px-4 py-8 text-center text-sm text-neutral-500">
+          <p className="rounded-xl bg-neutral-50 px-4 py-8 text-center text-sm text-neutral-700">
             لا توجد فصول بعد. أضف فصلاً من النموذج أعلاه.
           </p>
         ) : (
@@ -499,14 +499,14 @@ export default function AdminClassesPage() {
                     >
                       <div className="min-w-[240px]">
                         <p className="text-base font-bold text-brand-blue">{g.name}</p>
-                        <p className="mt-1 text-xs text-neutral-500">
+                        <p className="mt-1 text-xs text-neutral-700">
                           الترتيب: <span className="font-semibold">{index + 1}</span>
                           {" · "}
                           عدد الشعب: <span className="font-semibold">{g.sectionsCount}</span>
                         </p>
                       </div>
 
-                      <div className="text-xs text-neutral-500">
+                      <div className="text-xs text-neutral-700">
                         {isOpen ? "إخفاء التفاصيل" : "عرض الشعب"}
                       </div>
                     </button>
@@ -517,7 +517,7 @@ export default function AdminClassesPage() {
                       <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
                         <div className="flex flex-wrap gap-2">
                           {sections.length === 0 ? (
-                            <span className="text-sm text-neutral-500">
+                            <span className="text-sm text-neutral-700">
                               لم يتم توليد شعب بعد لهذا الصف.
                             </span>
                           ) : (
@@ -638,21 +638,21 @@ export default function AdminClassesPage() {
                               {classError}
                             </Alert>
                           ) : null}
-                          <p className="mb-4 text-xs text-neutral-500">
+                          <p className="mb-4 text-xs text-neutral-700">
                             مربي الصف واحد لكل فصل ولا يُسند لفصل آخر — منفصل عن إسناد المواد.
                           </p>
 
                           {loadingClassDetail ? (
-                            <p className="text-sm text-neutral-500">جاري تحميل الطلاب...</p>
+                            <p className="text-sm text-neutral-700">جاري تحميل الطلاب...</p>
                           ) : classStudents.length === 0 ? (
-                            <p className="text-sm text-neutral-500">
+                            <p className="text-sm text-neutral-700">
                               لا يوجد طلاب في هذه الشعبة بعد.
                             </p>
                           ) : (
                             <div className="overflow-x-auto rounded-xl bg-white">
                               <table className="w-full text-sm">
                                 <thead>
-                                  <tr className="border-b border-neutral-100 bg-neutral-50 text-p-black/60">
+                                  <tr className="border-b border-neutral-100 bg-neutral-50 text-p-black/78">
                                     <th className="px-4 py-3 text-start font-semibold">الطالب</th>
                                     <th className="px-4 py-3 text-start font-semibold">رقم الطالب</th>
                                     <th className="px-4 py-3 text-start font-semibold">رقم الهوية</th>

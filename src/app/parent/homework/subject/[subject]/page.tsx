@@ -119,7 +119,7 @@ function SubjectItemRow({
         description={ann.body}
         footer={
           ann.teacherName ? (
-            <p className="text-xs text-p-black/50">المعلم: {ann.teacherName}</p>
+            <p className="text-xs text-p-black/72">المعلم: {ann.teacherName}</p>
           ) : undefined
         }
       />
@@ -172,7 +172,7 @@ function SubjectItemRow({
         }
         footer={
           mat.teacherName ? (
-            <p className="text-xs text-p-black/50">المعلم: {mat.teacherName}</p>
+            <p className="text-xs text-p-black/72">المعلم: {mat.teacherName}</p>
           ) : undefined
         }
       />
@@ -291,7 +291,7 @@ export default function ParentSubjectAssignmentsPage({
   }, [decodedSubject]);
 
   if (!child && !loading) {
-    return <p className="text-neutral-500">لم يتم ربط حسابك بملف طالب.</p>;
+    return <p className="text-neutral-700">لم يتم ربط حسابك بملف طالب.</p>;
   }
 
   return (
@@ -319,7 +319,7 @@ export default function ParentSubjectAssignmentsPage({
           <div className="h-24 animate-pulse rounded-2xl bg-neutral-100" />
         </div>
       ) : !detail || detail.items.length === 0 ? (
-        <Card className="text-center text-neutral-500">
+        <Card className="text-center text-neutral-700">
           <BookOpen className="mx-auto mb-2 h-8 w-8 text-neutral-300" />
           لا يوجد محتوى في هذه المادة بعد.
         </Card>

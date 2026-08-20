@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { Badge } from "@/components/atoms/Badge";
@@ -71,7 +71,7 @@ export function TeacherMaterialGroupCard({
         <div>
           <h3 className="text-base font-bold leading-snug text-p-black sm:text-lg">{group.title}</h3>
           {group.description?.trim() && (
-            <ExpandableText maxLines={2} className="mt-1.5 text-sm text-p-black/65">
+            <ExpandableText maxLines={2} className="mt-1.5 text-sm text-p-black/78">
               {group.description}
             </ExpandableText>
           )}

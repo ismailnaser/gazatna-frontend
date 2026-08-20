@@ -26,7 +26,7 @@ function InstallGuide({
         <button
           type="button"
           onClick={onClose}
-          className="rounded-lg p-1 text-p-black/45 hover:bg-neutral-100"
+          className="rounded-lg p-1 text-p-black/70 hover:bg-neutral-100"
           aria-label="إغلاق"
         >
           <X className="h-4 w-4" />

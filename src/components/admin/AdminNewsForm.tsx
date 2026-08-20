@@ -194,7 +194,7 @@ export function AdminNewsForm({
               </span>
               <div>
                 <h3 className="font-bold text-p-black">المعلومات الأساسية</h3>
-                <p className="text-xs text-p-black/50">العنوان والتصنيف الظاهر للزوار</p>
+                <p className="text-xs text-p-black/72">العنوان والتصنيف الظاهر للزوار</p>
               </div>
             </div>
           </div>
@@ -227,7 +227,7 @@ export function AdminNewsForm({
               </span>
               <div>
                 <h3 className="font-bold text-p-black">صور الخبر</h3>
-                <p className="text-xs text-p-black/50">غلاف رئيسي وصور إضافية لصفحة التفاصيل</p>
+                <p className="text-xs text-p-black/72">غلاف رئيسي وصور إضافية لصفحة التفاصيل</p>
               </div>
             </div>
           </div>
@@ -257,7 +257,7 @@ export function AdminNewsForm({
               </span>
               <div>
                 <h3 className="font-bold text-p-black">نص الخبر</h3>
-                <p className="text-xs text-p-black/50">الوصف المختصر المعروض في القائمة وصفحة الخبر</p>
+                <p className="text-xs text-p-black/72">الوصف المختصر المعروض في القائمة وصفحة الخبر</p>
               </div>
             </div>
           </div>
@@ -281,7 +281,7 @@ export function AdminNewsForm({
                   <Sparkles className="h-3.5 w-3.5 text-brand-orange" />
                   خبر مميز
                 </span>
-                <span className="mt-1 block text-xs text-neutral-500">
+                <span className="mt-1 block text-xs text-neutral-700">
                   يظهر الخبر بشكل بارز في المقدمة. عند تفعيله يُلغى تمييز الخبر المميز السابق.
                 </span>
               </span>
@@ -313,7 +313,7 @@ export function AdminNewsForm({
           >
             <div className="border-b border-neutral-100 px-5 py-4">
               <p className="text-base font-bold text-p-black">قص صورة الخبر</p>
-              <p className="mt-1 text-sm text-neutral-500">
+              <p className="mt-1 text-sm text-neutral-700">
                 حرّك الصورة وكبّرها لتحديد الإطار. سيتم حفظها بأبعاد{" "}
                 {NEWS_IMAGE_SIZE.width}×{NEWS_IMAGE_SIZE.height} بكسل.
               </p>

@@ -58,7 +58,7 @@ export function TermEndPanel() {
             السنة الدراسية «{selectedYear.name}». في هذه الحالة تُنفَّذ{" "}
             <strong>نهاية السنة</strong> وليس نهاية الفصل فقط.
           </p>
-          <p className="text-sm leading-relaxed text-p-black/60">
+          <p className="text-sm leading-relaxed text-p-black/78">
             من قسم نهاية السنة ستُصدر للطلاب شهادة نهاية السنة (معدّل جميع الفصول) وشهادة التقدير
             للمؤهلين — دون شهادة منفصلة للفصل الأخير — مع معاينة الترفيع وأرشفة السنة.
           </p>
@@ -91,7 +91,7 @@ export function TermEndPanel() {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h3 className="font-bold text-p-black">معاينة وتنفيذ نهاية الفصل</h3>
-          <p className="text-xs text-p-black/55">
+          <p className="text-xs text-p-black/75">
             راجع نتائج <strong>{getTermDisplayName(currentTerm)}</strong> على مستوى الطالب، ثم أغلق الفصل وانشر
             شهاداته وانتقل للفصل التالي. تُصفَّر علامات الفصل الجديد تلقائياً.
           </p>
@@ -117,18 +117,18 @@ export function TermEndPanel() {
           <div className="grid grid-cols-2 gap-3 sm:max-w-sm">
             <div className="rounded-xl bg-p-cream px-3 py-2 text-center">
               <p className="text-lg font-bold text-p-black">{termPreview.summary.passed}</p>
-              <p className="text-xs text-p-black/55">ناجح في الفصل</p>
+              <p className="text-xs text-p-black/75">ناجح في الفصل</p>
             </div>
             <div className="rounded-xl bg-p-cream px-3 py-2 text-center">
               <p className="text-lg font-bold text-p-black">{termPreview.summary.failed}</p>
-              <p className="text-xs text-p-black/55">راسب في الفصل</p>
+              <p className="text-xs text-p-black/75">راسب في الفصل</p>
             </div>
           </div>
 
           <div className="max-w-full overflow-x-auto overscroll-x-contain rounded-xl border border-neutral-200 bg-white">
             <table className="w-full min-w-[520px] text-sm">
               <thead>
-                <tr className="border-b border-neutral-100 bg-p-cream/60 text-p-black/60">
+                <tr className="border-b border-neutral-100 bg-p-cream/60 text-p-black/78">
                   <th className="px-3 py-2 text-start font-semibold">الطالب</th>
                   <th className="px-3 py-2 text-start font-semibold">الصف</th>
                   <th className="px-3 py-2 text-start font-semibold">الحالة</th>
@@ -139,7 +139,7 @@ export function TermEndPanel() {
                   <tr key={row.studentId} className="border-b border-neutral-50">
                     <td className="px-3 py-2.5">
                       <p className="font-medium text-p-black">{row.name}</p>
-                      <p className="text-xs text-p-black/45">{row.studentNumber || "—"}</p>
+                      <p className="text-xs text-p-black/70">{row.studentNumber || "—"}</p>
                     </td>
                     <td className="px-3 py-2.5">
                       {row.currentGrade} {row.currentSection}

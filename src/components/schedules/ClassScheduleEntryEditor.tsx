@@ -29,8 +29,9 @@ import {
   type ClassScheduleGridState,
 } from "@/types/schedules";
 import type { Subject, TeacherProfile } from "@/types/teacher";
+import { selectControlClassName } from "@/components/atoms/Select";
 import { cn } from "@/lib/utils";
-import { Clock3 } from "lucide-react";
+import {Clock3, ChevronDown} from "lucide-react";
 
 type ClassScheduleTimingMode = "custom" | "reuse";
 
@@ -104,23 +105,24 @@ function CompactSelect({
   className?: string;
 }) {
   return (
-    <select
-      value={value}
-      disabled={disabled}
-      onChange={(event) => onChange(event.target.value)}
-      className={cn(
-        "w-full rounded-lg border border-neutral-200 bg-white px-2 py-1.5 text-xs text-p-black",
-        "focus:border-brand-blue focus:outline-none focus:ring-2 focus:ring-brand-blue/15",
-        "disabled:cursor-not-allowed disabled:bg-neutral-100 disabled:text-p-black/45",
-        className
-      )}
-    >
-      {options.map((option) => (
-        <option key={`${option.value}-${option.label}`} value={option.value}>
-          {option.label}
-        </option>
-      ))}
-    </select>
+    <div className="relative">
+      <select
+        value={value}
+        disabled={disabled}
+        onChange={(event) => onChange(event.target.value)}
+        className={cn(selectControlClassName, "rounded-lg py-1.5 pe-8 ps-2 text-xs", className)}
+      >
+        {options.map((option) => (
+          <option key={`${option.value}-${option.label}`} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+      <ChevronDown
+        className="pointer-events-none absolute end-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-p-black/70"
+        aria-hidden
+      />
+    </div>
   );
 }
 
@@ -334,7 +336,7 @@ export const ClassScheduleEntryEditor = forwardRef<
       <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-brand-blue/15 bg-brand-blue/[0.04] px-3 py-2.5">
         <div>
           <p className="text-sm font-semibold text-p-black">جدول الحصص الأسبوعي</p>
-          <p className="mt-0.5 text-xs text-p-black/50">
+          <p className="mt-0.5 text-xs text-p-black/72">
             {grid.daysPerWeek} أيام × {grid.lessonsPerDay} حصص يومياً
           </p>
         </div>
@@ -411,7 +413,7 @@ export const ClassScheduleEntryEditor = forwardRef<
           اختر الفصول والشعب أولاً لعرض المواد والمعلمين المرتبطين بها.
         </p>
       ) : availableSubjects.length === 0 ? (
-        <p className="rounded-xl border border-dashed border-neutral-200 px-4 py-4 text-center text-sm text-neutral-500">
+        <p className="rounded-xl border border-dashed border-neutral-200 px-4 py-4 text-center text-sm text-neutral-700">
           لا توجد مواد مرتبطة بالفصول المختارة. اربط المواد بالفصول من صفحة المواد أولاً.
         </p>
       ) : (
@@ -452,7 +454,7 @@ export const ClassScheduleEntryEditor = forwardRef<
                               )
                             : "—"}
                         </p>
-                        <p className="mt-1 text-[10px] text-p-black/45">
+                        <p className="mt-1 text-[10px] text-p-black/70">
                           {formatClassDurationLabel(column.duration)}
                         </p>
                       </div>
@@ -483,7 +485,7 @@ export const ClassScheduleEntryEditor = forwardRef<
                           className="px-2 py-1.5 text-xs"
                         />
                         {minStartTime ? (
-                          <p className="text-[10px] leading-snug text-p-black/45">
+                          <p className="text-[10px] leading-snug text-p-black/70">
                             لا يمكن أن يبدأ قبل {formatScheduleTime12(minStartTime)}
                           </p>
                         ) : null}
@@ -496,7 +498,7 @@ export const ClassScheduleEntryEditor = forwardRef<
                           }))}
                         />
                         {endTime ? (
-                          <p className="flex items-center gap-1 text-[11px] text-p-black/50">
+                          <p className="flex items-center gap-1 text-[11px] text-p-black/72">
                             <Clock3 className="h-3 w-3" />
                             {formatScheduleTime12(column.time)} – {formatScheduleTime12(endTime)}
                           </p>
@@ -598,13 +600,13 @@ export const ClassScheduleEntryEditor = forwardRef<
                                     ? "border-neutral-100 bg-neutral-50 text-p-black/75"
                                     : cell.subject
                                       ? "border-amber-200 bg-amber-50 text-amber-900"
-                                      : "border-neutral-100 bg-neutral-50 text-p-black/40"
+                                      : "border-neutral-100 bg-neutral-50 text-p-black/75"
                                 )}
                                 title={teacherLabel}
                               >
                                 {cell.subject ? (
                                   <>
-                                    <span className="text-[10px] text-p-black/45">المعلم: </span>
+                                    <span className="text-[10px] text-p-black/70">المعلم: </span>
                                     {teacherLabel}
                                   </>
                                 ) : (
@@ -617,7 +619,7 @@ export const ClassScheduleEntryEditor = forwardRef<
                                   updateCell(day, lessonIndex, { room: event.target.value })
                                 }
                                 placeholder="القاعة"
-                                className="w-full rounded-lg border border-neutral-200 bg-white px-2 py-1.5 text-xs text-p-black placeholder:text-neutral-400 focus:border-brand-blue focus:outline-none focus:ring-2 focus:ring-brand-blue/15"
+                                className="w-full rounded-lg border border-neutral-200 bg-white px-2 py-1.5 text-xs text-p-black placeholder:text-neutral-600 focus:border-brand-blue focus:outline-none focus:ring-2 focus:ring-brand-blue/15"
                               />
                             </div>
                           </td>
@@ -630,14 +632,14 @@ export const ClassScheduleEntryEditor = forwardRef<
             </div>
           </div>
 
-          <p className="text-[11px] text-p-black/45">
+          <p className="text-[11px] text-p-black/70">
             مرّر الجدول أفقياً أو عمودياً داخل الإطار. عمود «اليوم» ورأس الجدول يبقيان ثابتين أثناء
             التمرير.
           </p>
         </div>
       )}
 
-      <p className="text-xs text-p-black/45">
+      <p className="text-xs text-p-black/70">
         اختر يوم كل صف من السبت إلى الخميس. الأعمدة تمثل الحصص اليومية.
       </p>
     </div>

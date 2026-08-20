@@ -169,5 +169,11 @@ a[class*="bg-["] {
 
 .date-time-input::-webkit-calendar-picker-indicator {
   cursor: pointer;
-  opacity: 0.65;
+  opacity: 0.75;
 }
+
+/* Native selects without the shared Select atom still get a clearer control */
+select:not([multiple]) {
+  color-scheme: light;
+}
+

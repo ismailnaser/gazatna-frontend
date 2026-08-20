@@ -95,7 +95,7 @@ export function ScheduleEntryEditor({
       </div>
 
       {entries.length === 0 ? (
-        <p className="rounded-xl border border-dashed border-neutral-200 px-4 py-6 text-center text-sm text-neutral-500">
+        <p className="rounded-xl border border-dashed border-neutral-200 px-4 py-6 text-center text-sm text-neutral-700">
           أضف صفوف الجدول (المادة، التاريخ، الوقت...)
         </p>
       ) : (
@@ -106,7 +106,7 @@ export function ScheduleEntryEditor({
               className="rounded-xl border border-neutral-100 bg-neutral-50/80 p-3"
             >
               <div className="mb-2 flex items-center justify-between gap-2">
-                <p className="text-xs font-bold text-p-black/55">صف {index + 1}</p>
+                <p className="text-xs font-bold text-p-black/75">صف {index + 1}</p>
                 <button
                   type="button"
                   onClick={() => removeEntry(index)}

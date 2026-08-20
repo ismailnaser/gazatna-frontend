@@ -33,7 +33,9 @@ const DEFAULT: HeroSettings = {
   imageObjectPosition: "center top",
 };
 
-const FALLBACK_IMAGE = "/images/hero-illustration.jpg";
+const FALLBACK_IMAGE = "/images/hero-illustration.webp";
+const FALLBACK_IMAGE_MOBILE = "/images/hero-illustration-828.webp";
+const FALLBACK_IMAGE_JPG = "/images/hero-illustration.jpg";
 
 export function Hero() {
   const [hero, setHero] = useState<HeroSettings>(DEFAULT);
@@ -56,11 +58,17 @@ export function Hero() {
       .catch(() => {});
   }, []);
 
-  const imageSrc = resolveMediaUrl(hero.imageUrl) || FALLBACK_IMAGE;
+  const customImage = resolveMediaUrl(hero.imageUrl);
+  const imageSrc = customImage || FALLBACK_IMAGE;
+  const usingFallback = !customImage;
   const title = hero.schoolName.trim() || DEFAULT.schoolName;
   const titleParts = title.split(/\s+/);
   const firstWord = titleParts[0] ?? title;
   const restTitle = titleParts.slice(1).join(" ");
+  const imageStyle = {
+    objectFit: hero.imageObjectFit,
+    objectPosition: hero.imageObjectPosition,
+  } as const;
 
   return (
     <section
@@ -68,17 +76,38 @@ export function Hero() {
       className="relative overflow-hidden bg-hero"
       style={{ minHeight: hero.imageHeight || "100dvh" }}
     >
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={imageSrc}
-        alt=""
-        aria-hidden
-        className="absolute inset-0 h-full w-full"
-        style={{
-          objectFit: hero.imageObjectFit,
-          objectPosition: hero.imageObjectPosition,
-        }}
-      />
+      {usingFallback ? (
+        <picture>
+          <source
+            type="image/webp"
+            srcSet={`${FALLBACK_IMAGE_MOBILE} 828w, ${FALLBACK_IMAGE} 1920w`}
+            sizes="100vw"
+          />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={FALLBACK_IMAGE_JPG}
+            alt=""
+            aria-hidden
+            width={1920}
+            height={945}
+            decoding="async"
+            fetchPriority="high"
+            className="absolute inset-0 h-full w-full"
+            style={imageStyle}
+          />
+        </picture>
+      ) : (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={imageSrc}
+          alt=""
+          aria-hidden
+          decoding="async"
+          fetchPriority="high"
+          className="absolute inset-0 h-full w-full"
+          style={imageStyle}
+        />
+      )}
 
       <div
         className="relative z-10 flex w-full flex-col items-start px-6 sm:px-10 lg:px-16"

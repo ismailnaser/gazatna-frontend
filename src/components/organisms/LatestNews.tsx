@@ -72,7 +72,7 @@ export function LatestNews() {
             <div className="h-72 animate-pulse rounded-2xl bg-neutral-100 lg:col-span-3" />
           </div>
         ) : items.length === 0 ? (
-          <p className="text-center text-neutral-500">لا توجد أخبار حالياً.</p>
+          <p className="text-center text-neutral-700">لا توجد أخبار حالياً.</p>
         ) : (
         <div className="flex flex-col gap-8 lg:grid lg:grid-cols-5 lg:gap-10">
           <motion.div

@@ -40,7 +40,7 @@ export function StatCard({
         </div>
         <div>
           <p className="text-3xl font-bold text-p-black">{value}</p>
-          <p className="mt-1 text-sm text-p-black/50">{label}</p>
+          <p className="mt-1 text-sm text-p-black/72">{label}</p>
         </div>
       </Card>
     </motion.div>
