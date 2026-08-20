@@ -23,9 +23,12 @@ import {
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "/api";
 
 const DEFAULT_TIMEOUT_MS = 10000;
-/** Shared hosting drops bodies when too many Django requests overlap. */
-const API_MAX_CONCURRENT = 2;
-const GET_MAX_ATTEMPTS = 4;
+/**
+ * Shared hosting (LiteSpeed + few Passenger workers) drops response bodies and
+ * hits NPROC when too many Django requests overlap through Next. Keep at 1.
+ */
+const API_MAX_CONCURRENT = 1;
+const GET_MAX_ATTEMPTS = 3;
 
 let apiInflight = 0;
 const apiWaiters: Array<() => void> = [];
@@ -418,7 +421,8 @@ async function apiFetchOnce<T>(
   let lastErr: unknown;
   for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
     if (attempt > 0) {
-      await new Promise((resolve) => setTimeout(resolve, 450 * attempt));
+      // Longer backoff so retries do not restorm the same crowded workers.
+      await new Promise((resolve) => setTimeout(resolve, 700 * attempt));
     }
 
     await acquireApiSlot();

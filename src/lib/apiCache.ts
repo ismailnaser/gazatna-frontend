@@ -1,7 +1,7 @@
 const memory = new Map<string, { data: unknown; expires: number }>();
 
 const PUBLIC_TTL_MS = 5 * 60 * 1000;
-const AUTH_TTL_MS = 2 * 60 * 1000;
+const AUTH_TTL_MS = 3 * 60 * 1000;
 
 const CACHEABLE_PREFIXES = [
   "/content/",

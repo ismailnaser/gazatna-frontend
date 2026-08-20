@@ -13,35 +13,13 @@ import { api } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import { isAdminRole } from "@/lib/adminRoles";
 import { mapGrades, mapSchoolClasses } from "@/lib/mapSchoolClass";
-import { teacherPathNeedsSchool, yieldToPageFetch } from "@/lib/pageFetchPriority";
+import {
+  adminPathNeedsCatalog,
+  adminPathNeedsStaff,
+  teacherPathNeedsSchool,
+  yieldToPageFetch,
+} from "@/lib/pageFetchPriority";
 import type { Grade, SchoolClass, Subject, TeacherProfile } from "@/types/teacher";
-
-function adminPathNeedsCatalog(pathname: string) {
-  if (!pathname.startsWith("/admin")) return false;
-  if (pathname === "/admin") return false;
-  if (pathname.startsWith("/admin/grade-schemes")) return false;
-  if (pathname.startsWith("/admin/analytics")) return false;
-  if (pathname.startsWith("/admin/notifications")) return false;
-  if (pathname.startsWith("/admin/users")) return false;
-  if (pathname.startsWith("/admin/content")) return false;
-  if (pathname.startsWith("/admin/messages")) return false;
-  if (pathname.startsWith("/admin/site")) return false;
-  return true;
-}
-
-function adminPathNeedsStaff(pathname: string) {
-  return (
-    pathname.startsWith("/admin/teachers") ||
-    pathname.startsWith("/admin/subjects") ||
-    pathname.startsWith("/admin/classes") ||
-    pathname.startsWith("/admin/schedules") ||
-    pathname.startsWith("/admin/academic") ||
-    pathname.startsWith("/admin/promotion-policies") ||
-    pathname.startsWith("/admin/certificate-settings") ||
-    pathname.startsWith("/admin/term-end") ||
-    pathname.startsWith("/admin/year-end")
-  );
-}
 
 type SchoolState = {
   teachers: TeacherProfile[];
@@ -185,21 +163,25 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
     if (showLoading) setLoading(true);
     try {
       if (isAdminRole(user.role)) {
-        await yieldToPageFetch();
+        // Give the current admin page the first API slot(s) before catalog/staff.
+        await yieldToPageFetch(500);
         const needCatalog = adminPathNeedsCatalog(pathname);
         const needStaff = adminPathNeedsStaff(pathname);
 
         if (needCatalog && !catalogLoadedRef.current) {
-          const [classesResult, gradesResult] = await Promise.allSettled([
-            api.getAdminClasses(),
-            api.getAdminGrades(),
-          ]);
-          const classesData =
-            classesResult.status === "fulfilled"
-              ? mapSchoolClasses(classesResult.value as unknown[])
-              : [];
-          const gradesData =
-            gradesResult.status === "fulfilled" ? mapGrades(gradesResult.value as unknown[]) : [];
+          // Sequential on purpose — shared hosting cannot absorb parallel bursts.
+          let classesData: SchoolClass[] = [];
+          let gradesData: Grade[] = [];
+          try {
+            classesData = mapSchoolClasses((await api.getAdminClasses()) as unknown[]);
+          } catch {
+            classesData = [];
+          }
+          try {
+            gradesData = mapGrades((await api.getAdminGrades()) as unknown[]);
+          } catch {
+            gradesData = [];
+          }
           setClasses(classesData);
           setGrades(gradesData);
           catalogLoadedRef.current = true;
@@ -209,16 +191,19 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
         setLoading(false);
 
         if (needStaff && !staffLoadedRef.current) {
-          const [teachersResult, subjectsResult] = await Promise.allSettled([
-            api.getAdminTeachers(),
-            api.getAdminSubjects(),
-          ]);
-          const teachers =
-            teachersResult.status === "fulfilled" ? mapTeachers(teachersResult.value as unknown[]) : [];
-          const subjectsData =
-            subjectsResult.status === "fulfilled"
-              ? (subjectsResult.value as Subject[]).map(normalizeSubject)
-              : [];
+          await yieldToPageFetch(900);
+          let teachers: TeacherProfile[] = [];
+          let subjectsData: Subject[] = [];
+          try {
+            teachers = mapTeachers((await api.getAdminTeachers()) as unknown[]);
+          } catch {
+            teachers = [];
+          }
+          try {
+            subjectsData = ((await api.getAdminSubjects()) as Subject[]).map(normalizeSubject);
+          } catch {
+            subjectsData = [];
+          }
           setCurrentTeacher(null);
           setState({ teachers, assignments: buildAssignments(teachers) });
           setSubjects(subjectsData);
@@ -227,7 +212,7 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
           setCurrentTeacher(null);
         }
       } else if (user.role === "teacher") {
-        await yieldToPageFetch();
+        await yieldToPageFetch(300);
         if (!teacherPathNeedsSchool(pathname)) {
           initialLoadDoneRef.current = true;
           setLoading(false);

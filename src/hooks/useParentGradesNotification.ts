@@ -32,7 +32,7 @@ export function useParentGradesNotification(role: UserRole, pathname: string) {
         .catch(() => {
           if (!cancelled) setNewGradesCount(0);
         });
-    }, 600);
+    }, 1500);
 
     return () => {
       cancelled = true;

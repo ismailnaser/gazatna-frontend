@@ -10,6 +10,9 @@ import { cn } from "@/lib/utils";
 import { isAdminRole } from "@/lib/adminRoles";
 import type { UserRole, TeacherAlert } from "@/types";
 
+/** One finance-badge analytics fetch per browser tab lifetime. */
+let adminFinanceBadgeFetched = false;
+
 export function DashboardSidebar({
   role,
   newGradesCount = 0,
@@ -28,12 +31,14 @@ export function DashboardSidebar({
 
   const basePath = isAdminRole(role) ? "/admin" : `/${role}`;
 
-  // Fetch badge counts once per session role — not on every route change
-  // (pathname-triggered analytics/alerts were hammering the API on shared hosting).
+  // Badge only — never compete with the first paint of an admin page.
+  // Prefer cache hit after /admin home loads analytics; otherwise one delayed fetch.
   useEffect(() => {
     if (!isAdminRole(role)) return;
-    if (pathname.startsWith("/admin/analytics")) return;
+    if (adminFinanceBadgeFetched) return;
     const timer = window.setTimeout(() => {
+      if (adminFinanceBadgeFetched) return;
+      adminFinanceBadgeFetched = true;
       api
         .getAdminAnalytics()
         .then((res) => {
@@ -42,9 +47,9 @@ export function DashboardSidebar({
           setPendingPayments(Number.isFinite(count) ? count : 0);
         })
         .catch(() => setPendingPayments(0));
-    }, pathname === "/admin" ? 800 : 500);
+    }, 2800);
     return () => window.clearTimeout(timer);
-  }, [role, pathname]);
+  }, [role]);
 
   useEffect(() => {
     if (role !== "teacher") return;
@@ -55,7 +60,7 @@ export function DashboardSidebar({
           setPendingSubmissions(countPendingTeacherAlerts(data as TeacherAlert[]));
         })
         .catch(() => setPendingSubmissions(0));
-    }, 500);
+    }, 1200);
     return () => window.clearTimeout(timer);
   }, [role]);
 

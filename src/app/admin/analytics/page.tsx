@@ -102,7 +102,7 @@ export default function AdminAnalyticsDetailsPage() {
         .getAdminGrades()
         .then((res) => setGrades((res as Grade[]) ?? []))
         .catch(() => setGrades([]));
-    }, 400);
+    }, 1500);
     return () => window.clearTimeout(timer);
   }, [schoolGrades]);
 

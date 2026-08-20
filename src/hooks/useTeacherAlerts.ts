@@ -40,7 +40,7 @@ export function useTeacherAlerts() {
   useEffect(() => {
     const timer = window.setTimeout(() => {
       void refresh({ force: true });
-    }, 400);
+    }, 900);
     const onFocus = () => {
       void refresh();
     };

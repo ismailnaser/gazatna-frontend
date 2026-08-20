@@ -119,7 +119,7 @@ export function AssignmentsProvider({ children }: { children: React.ReactNode })
       return;
     }
 
-    await yieldToPageFetch();
+    await yieldToPageFetch(350);
 
     if (force) {
       listsLoadedRef.current = false;
