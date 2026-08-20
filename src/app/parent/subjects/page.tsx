@@ -21,12 +21,27 @@ export default function ParentSubjectsPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([
-      api.getParentStudent().then((data) => setStudent(data as Student)).catch(() => setStudent(null)),
-      api.getParentSubjects()
-        .then((data) => setSubjects(data as ParentSubjectSummary[]))
-        .catch(() => setSubjects([])),
-    ]).finally(() => setLoading(false));
+    let cancelled = false;
+    async function load() {
+      setLoading(true);
+      try {
+        const s = await api.getParentStudent().catch(() => null);
+        if (cancelled) return;
+        setStudent(s as Student | null);
+        if (!s || isParentFeeRestricted(s as Student & ParentStudentResponse)) {
+          return;
+        }
+        const data = await api.getParentSubjects().catch(() => []);
+        if (cancelled) return;
+        setSubjects(data as ParentSubjectSummary[]);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+    void load();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const classLabel = student ? formatClassLabel(student.grade, student.section) : "";

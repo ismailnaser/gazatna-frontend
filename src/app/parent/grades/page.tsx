@@ -21,8 +21,7 @@ import {
 import { cn } from "@/lib/utils";
 import type { Grade, Student } from "@/types";
 import { mapAcademicContext } from "@/types/academic";
-import { mapFeeStatus } from "@/types/finance";
-import { Download, Lock } from "lucide-react";
+import { Download } from "lucide-react";
 
 const DEFAULT_SCHOOL_NAME = "مدرسة غَزتنا";
 
@@ -120,8 +119,6 @@ export default function ParentGradesPage() {
   const [exportError, setExportError] = useState("");
   const [academicContextLabel, setAcademicContextLabel] = useState("");
 
-  const [blocked, setBlocked] = useState(false);
-  const [blockMessage, setBlockMessage] = useState("");
   const { exporting, requestExport } = useGradesCertificateExport(
     useCallback((message: string) => setExportError(message), [])
   );
@@ -132,31 +129,60 @@ export default function ParentGradesPage() {
   );
 
   useEffect(() => {
-    Promise.all([
-      api.getParentStudent().then((s) => setStudent(s as Student)).catch(() => setStudent(null)),
-      api.getParentGrades().then((g) => setGrades(g as Grade[])).catch(() => setGrades([])),
-      api.getSiteSettings().then((res) => {
-        const hero = (res as { hero?: { schoolName?: string } }).hero;
-        if (hero?.schoolName?.trim()) setSchoolName(hero.schoolName.trim());
-      }).catch(() => {}),
-      api.getAcademicContext().then((res) => {
-        const label = formatAcademicPeriodCombined(mapAcademicContext(res as Record<string, unknown>));
-        if (label) setAcademicContextLabel(label);
-      }).catch(() => {}),
-      api.getParentFees().then((data) => {
-        const status = mapFeeStatus(data.feeStatus as Record<string, unknown>);
-        setBlocked(Boolean(status?.blocked));
-        setBlockMessage(status?.message ?? "");
-      }).catch(() => {
-        setBlocked(false);
-        setBlockMessage("");
-      }),
-    ]).finally(() => setLoading(false));
+    let cancelled = false;
+    async function load() {
+      setLoading(true);
+      try {
+        const [s, g] = await Promise.all([
+          api.getParentStudent().catch(() => null),
+          api.getParentGrades().catch(() => []),
+        ]);
+        if (cancelled) return;
+        setStudent(s as Student | null);
+        setGrades(g as Grade[]);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+    void load();
+    return () => {
+      cancelled = true;
+    };
   }, []);
+
+  async function ensureExportMeta() {
+    const tasks: Promise<void>[] = [];
+    if (schoolName === DEFAULT_SCHOOL_NAME) {
+      tasks.push(
+        api
+          .getSiteSettings()
+          .then((res) => {
+            const hero = (res as { hero?: { schoolName?: string } }).hero;
+            if (hero?.schoolName?.trim()) setSchoolName(hero.schoolName.trim());
+          })
+          .catch(() => {})
+      );
+    }
+    if (!academicContextLabel) {
+      tasks.push(
+        api
+          .getAcademicContext()
+          .then((res) => {
+            const label = formatAcademicPeriodCombined(
+              mapAcademicContext(res as Record<string, unknown>)
+            );
+            if (label) setAcademicContextLabel(label);
+          })
+          .catch(() => {})
+      );
+    }
+    if (tasks.length) await Promise.all(tasks);
+  }
 
   async function handleDownloadCertificate() {
     if (!student || grades.length === 0) return;
     setExportError("");
+    await ensureExportMeta();
     await requestExport({ student, grades, schoolName });
   }
 
@@ -180,20 +206,6 @@ export default function ParentGradesPage() {
           }
           studentName={student.name}
         />
-      </div>
-    );
-  }
-
-  if (blocked) {
-    return (
-      <div>
-        <PageHeader title="العلامات" description="كشف علامات الطالب لجميع المواد" />
-        <Alert variant="warning">
-          <div className="flex items-center gap-2">
-            <Lock className="h-5 w-5" />
-            <p>{blockMessage || "عذراً، يرجى تسديد القسط المستحق لعرض العلامات."}</p>
-          </div>
-        </Alert>
       </div>
     );
   }

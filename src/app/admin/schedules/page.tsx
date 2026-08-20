@@ -34,6 +34,7 @@ export default function AdminSchedulesPage() {
   const [tab, setTab] = useState<TabId>("exam");
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [rolloverContext, setRolloverContext] = useState<ScheduleRolloverContext | null>(null);
+  const [showRollover, setShowRollover] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -59,6 +60,9 @@ export default function AdminSchedulesPage() {
     } finally {
       setLoading(false);
     }
+  }, [tab]);
+
+  const loadRollover = useCallback(async () => {
     try {
       const contextRaw = await api.getAdminScheduleRolloverContext(tab);
       setRolloverContext(mapScheduleRolloverContext(contextRaw as Record<string, unknown>));
@@ -68,8 +72,15 @@ export default function AdminSchedulesPage() {
   }, [tab]);
 
   useEffect(() => {
+    setRolloverContext(null);
+    setShowRollover(false);
     void load();
   }, [load]);
+
+  async function openRollover() {
+    setShowRollover(true);
+    if (!rolloverContext) await loadRollover();
+  }
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -175,14 +186,23 @@ export default function AdminSchedulesPage() {
         </Button>
       </div>
 
-      {rolloverContext ? (
+      {showRollover && rolloverContext ? (
         <AdminScheduleRolloverPanel
           scheduleType={tab}
           context={rolloverContext}
-          onChanged={load}
+          onChanged={async () => {
+            await load();
+            await loadRollover();
+          }}
           onCreateFresh={(classId) => openCreate([classId])}
         />
-      ) : null}
+      ) : (
+        <div className="flex justify-end">
+          <Button type="button" variant="outline" onClick={() => void openRollover()}>
+            خيارات ترحيل الجداول
+          </Button>
+        </div>
+      )}
 
       {success ? <Alert variant="success">{success}</Alert> : null}
       {error && !showForm && !editing ? <Alert variant="error">{error}</Alert> : null}

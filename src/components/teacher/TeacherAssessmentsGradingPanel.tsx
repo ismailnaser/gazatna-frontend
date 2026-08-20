@@ -7,6 +7,7 @@ import { Card } from "@/components/atoms/Card";
 import { TeacherSubmissionAlerts } from "@/components/teacher/TeacherSubmissionAlerts";
 import { useTeacherAlerts } from "@/hooks/useTeacherAlerts";
 import { api } from "@/lib/api";
+import { cn } from "@/lib/utils";
 import { groupQuizList } from "@/lib/quizGroups";
 import { homeworkGradePath } from "@/lib/teacherHomeworkGrading";
 import { quizGradePath } from "@/lib/teacherQuizGrading";
@@ -60,24 +61,69 @@ function AssessmentRow({
   );
 }
 
+type PanelTab = "alerts" | "homework" | "quizzes";
+
 export function TeacherAssessmentsGradingPanel() {
-  const { alerts, refresh } = useTeacherAlerts();
+  const { alerts, refresh } = useTeacherAlerts({ enabled: true });
+  const [panelTab, setPanelTab] = useState<PanelTab>("alerts");
   const [homeworkItems, setHomeworkItems] = useState<TeacherAssessmentItem[]>([]);
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loadingHw, setLoadingHw] = useState(false);
+  const [loadingQuiz, setLoadingQuiz] = useState(false);
+  const [hwLoaded, setHwLoaded] = useState(false);
+  const [quizLoaded, setQuizLoaded] = useState(false);
 
   useEffect(() => {
-    Promise.all([api.getTeacherAssessments(), api.getTeacherQuizzes()])
-      .then(([hw, quiz]) => {
-        setHomeworkItems(hw as TeacherAssessmentItem[]);
-        setQuizzes(quiz as Quiz[]);
+    if (panelTab !== "homework" || hwLoaded) return;
+    let cancelled = false;
+    setLoadingHw(true);
+    api
+      .getTeacherAssessments()
+      .then((hw) => {
+        if (!cancelled) {
+          setHomeworkItems(hw as TeacherAssessmentItem[]);
+          setHwLoaded(true);
+        }
       })
       .catch(() => {
-        setHomeworkItems([]);
-        setQuizzes([]);
+        if (!cancelled) {
+          setHomeworkItems([]);
+          setHwLoaded(true);
+        }
       })
-      .finally(() => setLoading(false));
-  }, []);
+      .finally(() => {
+        if (!cancelled) setLoadingHw(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [panelTab, hwLoaded]);
+
+  useEffect(() => {
+    if (panelTab !== "quizzes" || quizLoaded) return;
+    let cancelled = false;
+    setLoadingQuiz(true);
+    api
+      .getTeacherQuizzes()
+      .then((quiz) => {
+        if (!cancelled) {
+          setQuizzes(quiz as Quiz[]);
+          setQuizLoaded(true);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setQuizzes([]);
+          setQuizLoaded(true);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingQuiz(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [panelTab, quizLoaded]);
 
   const homeworkRows = useMemo(
     () =>
@@ -128,64 +174,92 @@ export function TeacherAssessmentsGradingPanel() {
     [quizzes, quizPendingById]
   );
 
-  const hasRows = homeworkRows.length > 0 || quizRows.length > 0;
+  const tabs: Array<{ id: PanelTab; label: string }> = [
+    { id: "alerts", label: "التنبيهات" },
+    { id: "homework", label: "الواجبات" },
+    { id: "quizzes", label: "الاختبارات" },
+  ];
 
   return (
     <div className="space-y-4">
-      <TeacherSubmissionAlerts
-        alerts={alerts}
-        title="تسليمات تحتاج متابعة"
-        onAlertOpen={refresh}
-      />
+      <div className="flex flex-wrap gap-2 border-b border-neutral-200">
+        {tabs.map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            onClick={() => setPanelTab(t.id)}
+            className={cn(
+              "px-4 py-2.5 text-sm font-semibold transition-colors",
+              panelTab === t.id
+                ? "border-b-2 border-p-green text-p-green"
+                : "text-p-black/50 hover:text-p-black"
+            )}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
 
-      {loading ? (
-        <p className="text-neutral-500">جاري التحميل...</p>
-      ) : !hasRows ? (
-        <Card className="text-center text-neutral-500">
-          لا توجد تسليمات للتقييم حالياً. ستظهر هنا عندما يسلّم الطلاب واجباتهم أو يكملون الاختبارات.
-        </Card>
-      ) : (
-        <div className="space-y-6">
-          {homeworkRows.length > 0 ? (
-            <section className="space-y-3">
-              <h2 className="text-sm font-bold text-p-black">واجبات للتقييم</h2>
-              <div className="space-y-2">
-                {homeworkRows.map((row) => (
-                  <AssessmentRow
-                    key={row.id}
-                    href={row.href}
-                    icon={PenLine}
-                    typeLabel="واجب"
-                    title={row.title}
-                    subject={row.subject}
-                    meta={row.meta}
-                    pending={row.pending}
-                  />
-                ))}
-              </div>
-            </section>
-          ) : null}
+      {panelTab === "alerts" && (
+        <TeacherSubmissionAlerts
+          alerts={alerts}
+          title="تسليمات تحتاج متابعة"
+          onAlertOpen={refresh}
+        />
+      )}
 
-          {quizRows.length > 0 ? (
-            <section className="space-y-3">
-              <h2 className="text-sm font-bold text-p-black">اختبارات للتقييم</h2>
-              <div className="space-y-2">
-                {quizRows.map((row) => (
-                  <AssessmentRow
-                    key={row.id}
-                    href={row.href}
-                    icon={ClipboardList}
-                    typeLabel="اختبار"
-                    title={row.title}
-                    subject={row.subject}
-                    meta={row.meta}
-                    pending={row.pending}
-                  />
-                ))}
-              </div>
-            </section>
-          ) : null}
-        </div>
+      {panelTab === "homework" && (
+        <>
+          {loadingHw ? (
+            <p className="text-neutral-500">جاري التحميل...</p>
+          ) : homeworkRows.length === 0 ? (
+            <Card className="text-center text-neutral-500">
+              لا توجد واجبات للتقييم حالياً.
+            </Card>
+          ) : (
+            <div className="space-y-2">
+              {homeworkRows.map((row) => (
+                <AssessmentRow
+                  key={row.id}
+                  href={row.href}
+                  icon={PenLine}
+                  typeLabel="واجب"
+                  title={row.title}
+                  subject={row.subject}
+                  meta={row.meta}
+                  pending={row.pending}
+                />
+              ))}
+            </div>
+          )}
+        </>
+      )}
+
+      {panelTab === "quizzes" && (
+        <>
+          {loadingQuiz ? (
+            <p className="text-neutral-500">جاري التحميل...</p>
+          ) : quizRows.length === 0 ? (
+            <Card className="text-center text-neutral-500">
+              لا توجد اختبارات للتقييم حالياً.
+            </Card>
+          ) : (
+            <div className="space-y-2">
+              {quizRows.map((row) => (
+                <AssessmentRow
+                  key={row.id}
+                  href={row.href}
+                  icon={ClipboardList}
+                  typeLabel="اختبار"
+                  title={row.title}
+                  subject={row.subject}
+                  meta={row.meta}
+                  pending={row.pending}
+                />
+              ))}
+            </div>
+          )}
+        </>
       )}
     </div>
   );

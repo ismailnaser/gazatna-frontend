@@ -13,6 +13,11 @@ import {
 import { usePathname } from "next/navigation";
 import { api, formatClientFetchError } from "@/lib/api";
 import { useSchool } from "@/context/SchoolContext";
+import {
+  academicPathNeedsGrades,
+  academicPathNeedsSchoolName,
+  academicPathNeedsSubjects,
+} from "@/lib/pageFetchPriority";
 import { mapGrade, mapGrades } from "@/lib/mapSchoolClass";
 import { buildHonorsCertificateHtml, buildStudentCertificateHtml } from "@/lib/certificateHtml";
 import { exportHonorsCertificatePdf } from "@/lib/exportHonorsCertificatePdf";
@@ -320,6 +325,10 @@ export function AcademicAdminProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     void reload();
+  }, [reload]);
+
+  useEffect(() => {
+    if (!academicPathNeedsSchoolName(pathname)) return;
     api
       .getSiteSettings()
       .then((res) => {
@@ -327,9 +336,10 @@ export function AcademicAdminProvider({ children }: { children: ReactNode }) {
         if (name) setSchoolName(name);
       })
       .catch(() => {});
-  }, [reload]);
+  }, [pathname]);
 
   useEffect(() => {
+    if (!academicPathNeedsGrades(pathname)) return;
     if (schoolGrades.length) {
       const mapped = [...schoolGrades].sort(
         (a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0)
@@ -342,9 +352,10 @@ export function AcademicAdminProvider({ children }: { children: ReactNode }) {
     }
     if (schoolLoading) return;
     void reloadGrades();
-  }, [schoolGrades, schoolLoading, reloadGrades]);
+  }, [schoolGrades, schoolLoading, reloadGrades, pathname]);
 
   useEffect(() => {
+    if (!academicPathNeedsSubjects(pathname)) return;
     if (schoolSubjects.length) {
       setSubjects(
         schoolSubjects.map((row) => ({
@@ -368,7 +379,7 @@ export function AcademicAdminProvider({ children }: { children: ReactNode }) {
         );
       })
       .catch(() => setSubjects([]));
-  }, [schoolSubjects, schoolLoading]);
+  }, [schoolSubjects, schoolLoading, pathname]);
 
   useEffect(() => {
     const year = years.find((item) => item.id === selectedYearId) ?? null;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { BarChart3, GraduationCap, Star, Users, type LucideIcon } from "lucide-react";
 import { StatCard } from "@/components/molecules/StatCard";
@@ -32,9 +32,29 @@ type StatItem = {
 
 export function StatsSection() {
   const [items, setItems] = useState<StatItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [shouldLoad, setShouldLoad] = useState(false);
+  const sectionRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
+    const node = sectionRef.current;
+    if (!node) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          setShouldLoad(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: "200px 0px" }
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!shouldLoad) return;
+    setLoading(true);
     api.getStats()
       .then((data) => {
         const mapped = (data as StatFromApi[]).map((s) => ({
@@ -49,14 +69,14 @@ export function StatsSection() {
       })
       .catch(() => setItems([]))
       .finally(() => setLoading(false));
-  }, []);
+  }, [shouldLoad]);
 
-  if (!loading && items.length === 0) {
+  if (!loading && shouldLoad && items.length === 0) {
     return null;
   }
 
   return (
-    <section className="bg-white py-16 sm:py-20">
+    <section ref={sectionRef} className="bg-white py-16 sm:py-20">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 16 }}
@@ -75,7 +95,7 @@ export function StatsSection() {
           </div>
         </motion.div>
 
-        {loading ? (
+        {!shouldLoad || loading ? (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             <div className="h-28 animate-pulse rounded-2xl bg-neutral-100" />
             <div className="h-28 animate-pulse rounded-2xl bg-neutral-100" />

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Newspaper } from "lucide-react";
@@ -13,9 +13,29 @@ import { mapNewsItem, type NewsFilter, type PublicNewsItem } from "@/types/news"
 export function LatestNews() {
   const [filter, setFilter] = useState<NewsFilter>("الكل");
   const [items, setItems] = useState<PublicNewsItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [shouldLoad, setShouldLoad] = useState(false);
+  const sectionRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
+    const node = sectionRef.current;
+    if (!node) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          setShouldLoad(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: "200px 0px" }
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!shouldLoad) return;
+    setLoading(true);
     api.getNews()
       .then((data) => {
         const mapped = (data as Array<Record<string, unknown>>).map((n) => mapNewsItem(n));
@@ -23,7 +43,7 @@ export function LatestNews() {
       })
       .catch(() => setItems([]))
       .finally(() => setLoading(false));
-  }, []);
+  }, [shouldLoad]);
 
   const filtered = useMemo(() => {
     if (filter === "الكل") return items;
@@ -34,7 +54,7 @@ export function LatestNews() {
   const listItems = filtered.filter((item) => item.id !== featured?.id);
 
   return (
-    <section className="bg-white py-16 sm:py-20">
+    <section ref={sectionRef} className="bg-white py-16 sm:py-20">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mb-6 flex justify-end">
           <Link
@@ -46,7 +66,7 @@ export function LatestNews() {
           </Link>
         </div>
 
-        {loading ? (
+        {!shouldLoad || loading ? (
           <div className="grid gap-6 lg:grid-cols-5">
             <div className="h-40 animate-pulse rounded-2xl bg-neutral-100 lg:col-span-2" />
             <div className="h-72 animate-pulse rounded-2xl bg-neutral-100 lg:col-span-3" />

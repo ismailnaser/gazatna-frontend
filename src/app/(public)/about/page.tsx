@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { Heart, Sparkles, Target } from "lucide-react";
 import { PremiumPageHero, PremiumPanel } from "@/components/molecules/PremiumPageHero";
@@ -12,7 +12,9 @@ type SchoolValue = { id: string; title: string; desc: string; num: string };
 
 export default function AboutPage() {
   const [values, setValues] = useState<SchoolValue[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [shouldLoadValues, setShouldLoadValues] = useState(false);
+  const valuesRef = useRef<HTMLDivElement | null>(null);
   const [aboutSettings, setAboutSettings] = useState({
     description: "مدرسة غَزتنا مؤسسة تعليمية رقمية تهدف إلى تمكين الطلاب من خلال بيئة تعلم آمنة، مبتكرة، ومتصلة بالمستقبل.",
     vision: "أن نكون المدرسة الرقمية الرائدة في فلسطين، نُخرّج جيلاً قادراً على المنافسة عالمياً مع الحفاظ على الهوية والقيم الوطنية.",
@@ -20,17 +22,40 @@ export default function AboutPage() {
   });
 
   useEffect(() => {
-    api.getSchoolValues()
-      .then((data) => setValues(data as SchoolValue[]))
-      .catch(() => setValues([]))
-      .finally(() => setLoading(false));
-    api.getSiteSettings()
+    api
+      .getSiteSettings()
       .then((res) => {
         const s = res as { about?: typeof aboutSettings };
         if (s.about) setAboutSettings((prev) => ({ ...prev, ...s.about }));
       })
       .catch(() => {});
   }, []);
+
+  useEffect(() => {
+    const node = valuesRef.current;
+    if (!node) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          setShouldLoadValues(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: "160px 0px" }
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!shouldLoadValues) return;
+    setLoading(true);
+    api
+      .getSchoolValues()
+      .then((data) => setValues(data as SchoolValue[]))
+      .catch(() => setValues([]))
+      .finally(() => setLoading(false));
+  }, [shouldLoadValues]);
 
   return (
     <PublicPage title="" description="">
@@ -74,7 +99,10 @@ export default function AboutPage() {
         </motion.div>
       </div>
 
-      <div className="relative overflow-hidden rounded-3xl bg-neutral-950 px-6 py-12 sm:px-10 sm:py-14">
+      <div
+        ref={valuesRef}
+        className="relative overflow-hidden rounded-3xl bg-neutral-950 px-6 py-12 sm:px-10 sm:py-14"
+      >
         <div
           className="pointer-events-none absolute inset-0 opacity-30 pattern-tatreez"
           aria-hidden

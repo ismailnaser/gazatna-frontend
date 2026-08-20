@@ -8,16 +8,18 @@ import type { TeacherAlert } from "@/types";
 const FOCUS_REFETCH_MIN_MS = 60_000;
 
 /**
- * Teacher alerts: load once on mount, refresh on window focus (throttled).
+ * Teacher alerts: load once when enabled, refresh on window focus (throttled).
  * No background polling — repeated /teacher/alerts/ calls were stressing the server.
  */
-export function useTeacherAlerts() {
+export function useTeacherAlerts(options?: { enabled?: boolean }) {
+  const enabled = options?.enabled !== false;
   const [alerts, setAlerts] = useState<TeacherAlert[]>([]);
   const [loading, setLoading] = useState(true);
   const lastFetchAtRef = useRef(0);
   const inFlightRef = useRef(false);
 
   const refresh = useCallback(async (opts?: { force?: boolean }) => {
+    if (!enabled) return;
     const force = opts?.force === true;
     const now = Date.now();
     if (inFlightRef.current) return;
@@ -35,9 +37,13 @@ export function useTeacherAlerts() {
       inFlightRef.current = false;
       setLoading(false);
     }
-  }, []);
+  }, [enabled]);
 
   useEffect(() => {
+    if (!enabled) {
+      setLoading(false);
+      return;
+    }
     const timer = window.setTimeout(() => {
       void refresh({ force: true });
     }, 900);
@@ -49,7 +55,7 @@ export function useTeacherAlerts() {
       window.clearTimeout(timer);
       window.removeEventListener("focus", onFocus);
     };
-  }, [refresh]);
+  }, [refresh, enabled]);
 
   return {
     alerts,

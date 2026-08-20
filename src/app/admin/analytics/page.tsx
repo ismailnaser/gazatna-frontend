@@ -82,7 +82,8 @@ export default function AdminAnalyticsDetailsPage() {
   const [grades, setGrades] = useState<Grade[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [data, setData] = useState<AnalyticsDetails | null>(null);
+  const [dataByTab, setDataByTab] = useState<Partial<Record<AdminAnalyticsTab, AnalyticsDetails>>>({});
+  const data = dataByTab[activeTabState] ?? null;
 
   const gradeSelectId = "admin-analytics-grade";
   const fromId = "admin-analytics-from";
@@ -111,10 +112,18 @@ export default function AdminAnalyticsDetailsPage() {
     return Array.from(new Set(names));
   }, [grades]);
 
-  async function load(next?: { gradeLevel?: string; from?: string; to?: string }) {
+  async function load(
+    next?: { gradeLevel?: string; from?: string; to?: string; section?: AdminAnalyticsTab },
+    opts?: { force?: boolean }
+  ) {
     const nextGrade = next?.gradeLevel ?? gradeLevel;
     const nextFrom = next?.from ?? from;
     const nextTo = next?.to ?? to;
+    const section = next?.section ?? activeTabState;
+    if (!opts?.force && dataByTab[section] && next?.gradeLevel === undefined && next?.from === undefined && next?.to === undefined) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     setError("");
     try {
@@ -122,10 +131,10 @@ export default function AdminAnalyticsDetailsPage() {
         gradeLevel: nextGrade || undefined,
         from: nextFrom || undefined,
         to: nextTo || undefined,
+        section,
       })) as AnalyticsDetails;
-      setData(res);
+      setDataByTab((prev) => ({ ...prev, [section]: res }));
     } catch (e) {
-      setData(null);
       setError(e instanceof Error ? e.message : "تعذر تحميل التحليلات");
     } finally {
       setLoading(false);
@@ -133,9 +142,9 @@ export default function AdminAnalyticsDetailsPage() {
   }
 
   useEffect(() => {
-    load();
+    void load({ section: activeTabState }, { force: false });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [activeTabState]);
 
   function switchTab(tab: AdminAnalyticsTab) {
     if (!user || !isAdminRole(user.role) || !canAccessAdminAnalyticsTab(user.role, tab)) return;
@@ -223,7 +232,10 @@ export default function AdminAnalyticsDetailsPage() {
           <button
             type="button"
             className="rounded-xl bg-p-green px-4 py-2 text-sm font-semibold text-white hover:bg-p-green/90"
-            onClick={load}
+            onClick={() => {
+              setDataByTab({});
+              void load(undefined, { force: true });
+            }}
           >
             تطبيق الفلتر
           </button>
@@ -234,7 +246,8 @@ export default function AdminAnalyticsDetailsPage() {
               setGradeLevel("");
               setFrom("");
               setTo("");
-              void load({ gradeLevel: "", from: "", to: "" });
+              setDataByTab({});
+              void load({ gradeLevel: "", from: "", to: "", section: activeTabState }, { force: true });
             }}
           >
             إعادة تعيين
@@ -338,7 +351,7 @@ export default function AdminAnalyticsDetailsPage() {
               <h3 className="mb-4 font-bold text-p-black">نسب النجاح حسب المرحلة</h3>
               {loading ? (
                 <p className="text-sm text-neutral-500">جاري التحميل...</p>
-              ) : data && data.gradeChart.length > 0 ? (
+              ) : data && (data.gradeChart?.length ?? 0) > 0 ? (
                 <SimpleBarChart data={data.gradeChart} color="bg-p-green" />
               ) : (
                 <p className="text-sm text-neutral-500">لا توجد بيانات.</p>
@@ -349,7 +362,7 @@ export default function AdminAnalyticsDetailsPage() {
               <h3 className="mb-4 font-bold text-p-black">نسبة الرسوم المحصلة حسب المرحلة</h3>
               {loading ? (
                 <p className="text-sm text-neutral-500">جاري التحميل...</p>
-              ) : data && data.feesChart.length > 0 ? (
+              ) : data && (data.feesChart?.length ?? 0) > 0 ? (
                 <SimpleBarChart data={data.feesChart} color="bg-p-red" />
               ) : (
                 <p className="text-sm text-neutral-500">لا توجد بيانات.</p>

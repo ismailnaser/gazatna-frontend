@@ -96,43 +96,92 @@ export default function AdminFinancePage() {
     }
   }
 
+  const loadedTabsRef = useRef<Partial<Record<Tab, true>>>({});
+  const studentsLoadedRef = useRef(false);
+  const [sectionLoading, setSectionLoading] = useState(false);
+
+  async function ensureStudents() {
+    if (studentsLoadedRef.current) return;
+    studentsLoadedRef.current = true;
+    try {
+      const data = await api.getAdminStudents();
+      setStudents(
+        (data as Array<Record<string, unknown>>).map((s) => ({
+          id: String(s.id),
+          name: String(s.name),
+          grade: String(s.grade ?? ""),
+          studentNumber: String(s.studentNumber ?? ""),
+          nationalId: s.nationalId ? String(s.nationalId) : undefined,
+        }))
+      );
+    } catch {
+      studentsLoadedRef.current = false;
+      setStudents([]);
+      throw new Error("students");
+    }
+  }
+
   useEffect(() => {
-    Promise.all([
-      api.getAdminFinance().then((data) =>
-        setNotices((data as Array<Record<string, unknown>>).map(mapFinanceNotice))
-      ),
-      api.getAdminFeePlans().then((data) =>
-        setPlans((data as Array<Record<string, unknown>>).map(mapFeePlan))
-      ),
-      api.getAdminAcademicYears().then((data) =>
-        setAcademicYears(
-          (data as Array<Record<string, unknown>>).map(mapAcademicYear)
-        )
-      ),
-      api.getAdminStudents().then((data) =>
-        setStudents(
-          (data as Array<Record<string, unknown>>).map((s) => ({
-            id: String(s.id),
-            name: String(s.name),
-            grade: String(s.grade ?? ""),
-            studentNumber: String(s.studentNumber ?? ""),
-            nationalId: s.nationalId ? String(s.nationalId) : undefined,
-          }))
-        )
-      ),
-    ]).catch(() => setError("تعذر تحميل بيانات المالية"));
-    loadManualLogs();
-  }, []);
+    let cancelled = false;
+    async function loadTabData() {
+      if (loadedTabsRef.current[tab]) return;
+      setSectionLoading(true);
+      setError("");
+      try {
+        if (tab === "payments") {
+          const data = await api.getAdminFinance();
+          if (cancelled) return;
+          setNotices((data as Array<Record<string, unknown>>).map(mapFinanceNotice));
+        } else if (tab === "manual") {
+          await ensureStudents();
+          if (cancelled) return;
+          await loadManualLogs();
+        } else if (tab === "plans") {
+          const [plansData, yearsData] = await Promise.all([
+            api.getAdminFeePlans(),
+            api.getAdminAcademicYears(),
+          ]);
+          if (cancelled) return;
+          setPlans((plansData as Array<Record<string, unknown>>).map(mapFeePlan));
+          setAcademicYears(
+            (yearsData as Array<Record<string, unknown>>).map(mapAcademicYear)
+          );
+          if (!schoolGrades.length && !grades.length) {
+            try {
+              const gradeRows = await api.getAdminGrades();
+              if (!cancelled) {
+                setGrades(
+                  (gradeRows as Array<Record<string, unknown>>).map((g) => ({
+                    id: String(g.id),
+                    name: String(g.name ?? ""),
+                    sectionsCount: Number(g.sectionsCount ?? 0),
+                    sortOrder: Number(g.sortOrder ?? 0),
+                  }))
+                );
+              }
+            } catch {
+              /* plans still usable without grade labels */
+            }
+          }
+        } else if (tab === "access") {
+          await ensureStudents();
+        }
+        if (!cancelled) loadedTabsRef.current[tab] = true;
+      } catch {
+        if (!cancelled) setError("تعذر تحميل بيانات المالية");
+      } finally {
+        if (!cancelled) setSectionLoading(false);
+      }
+    }
+    void loadTabData();
+    return () => {
+      cancelled = true;
+    };
+  }, [tab]);
 
   useEffect(() => {
     if (schoolGrades.length) setGrades(schoolGrades);
   }, [schoolGrades]);
-
-  useEffect(() => {
-    if (tab === "manual") {
-      loadManualLogs();
-    }
-  }, [tab]);
 
   const gradeOptions = useMemo(
     () => grades.map((g) => ({ value: g.id, label: g.name })),
@@ -376,7 +425,13 @@ export default function AdminFinancePage() {
         ))}
       </div>
 
-      {tab === "payments" && (
+      {sectionLoading ? (
+        <Card className="mb-4">
+          <p className="text-sm text-neutral-500">جاري تحميل القسم...</p>
+        </Card>
+      ) : null}
+
+      {tab === "payments" && !sectionLoading && (
         <Card className="overflow-x-auto p-0">
           <table className="w-full text-sm">
             <thead>
@@ -471,7 +526,7 @@ export default function AdminFinancePage() {
         </Card>
       )}
 
-      {tab === "manual" && (
+      {tab === "manual" && !sectionLoading && (
         <div className="space-y-6">
           <Card className="max-w-lg">
             <h3 className="mb-2 flex items-center gap-2 font-bold text-p-black">
@@ -575,7 +630,7 @@ export default function AdminFinancePage() {
         </div>
       )}
 
-      {tab === "plans" && (
+      {tab === "plans" && !sectionLoading && (
         <div className="space-y-4">
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="flex items-center gap-3 rounded-2xl border border-brand-blue/15 bg-brand-blue/5 px-4 py-3">
@@ -670,7 +725,7 @@ export default function AdminFinancePage() {
         </div>
       )}
 
-      {tab === "access" && (
+      {tab === "access" && !sectionLoading && (
         <Card className="max-w-lg">
           <h3 className="mb-2 flex items-center gap-2 font-bold text-p-black">
             <Unlock className="h-5 w-5 text-p-green" />

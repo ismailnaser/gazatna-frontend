@@ -40,7 +40,7 @@ export function DashboardSidebar({
       if (adminFinanceBadgeFetched) return;
       adminFinanceBadgeFetched = true;
       api
-        .getAdminAnalytics()
+        .getAdminAnalytics({ section: "badge" })
         .then((res) => {
           const row = res as Record<string, unknown>;
           const count = Number(row.pendingPayments ?? 0);

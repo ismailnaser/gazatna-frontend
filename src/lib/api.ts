@@ -583,12 +583,20 @@ export const api = {
   getAdminBlockedStudents: () => apiList<unknown>("/admin/notifications/blocked-students/"),
   getAdminInactiveStudents: () => apiList<unknown>("/admin/notifications/inactive-students/"),
 
-  getAdminAnalytics: () => apiFetch<unknown>("/admin/analytics/"),
-  getAdminAnalyticsDetails: (params: { gradeLevel?: string; from?: string; to?: string } = {}) => {
+  getAdminAnalytics: (params: { section?: string } = {}) => {
+    const qs = new URLSearchParams();
+    if (params.section) qs.set("section", params.section);
+    const suffix = qs.toString() ? `?${qs.toString()}` : "";
+    return apiFetch<unknown>(`/admin/analytics/${suffix}`);
+  },
+  getAdminAnalyticsDetails: (
+    params: { gradeLevel?: string; from?: string; to?: string; section?: string } = {}
+  ) => {
     const qs = new URLSearchParams();
     if (params.gradeLevel) qs.set("gradeLevel", params.gradeLevel);
     if (params.from) qs.set("from", params.from);
     if (params.to) qs.set("to", params.to);
+    if (params.section) qs.set("section", params.section);
     const suffix = qs.toString() ? `?${qs.toString()}` : "";
     return apiFetch<unknown>(`/admin/analytics/details/${suffix}`);
   },

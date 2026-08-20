@@ -1,13 +1,15 @@
 ﻿"use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Card } from "@/components/atoms/Card";
 import { AcademicPeriodBanner } from "@/components/shared/AcademicPeriodBanner";
 import { TeacherSubmissionAlerts } from "@/components/teacher/TeacherSubmissionAlerts";
-import { useAssignments } from "@/context/AssignmentsContext";
 import { useAuth } from "@/context/AuthContext";
 import { useSchool } from "@/context/SchoolContext";
 import { useTeacherAlerts } from "@/hooks/useTeacherAlerts";
+import { api } from "@/lib/api";
+import { cn } from "@/lib/utils";
+import type { Homework, Quiz } from "@/types";
 import {
   BookOpen,
   ClipboardList,
@@ -76,94 +78,158 @@ function TeacherClassCard({
   );
 }
 
+type HomeTab = "classes" | "summary" | "alerts";
+
 export default function TeacherDashboard() {
   const { user } = useAuth();
   const { getTeacherClassesByUserId } = useSchool();
-  const { getHomeworkByClass, getQuizzesByClass } = useAssignments();
   const classes = user ? getTeacherClassesByUserId(user.id) : [];
-  const { alerts, refresh } = useTeacherAlerts();
+  const [activeTab, setActiveTab] = useState<HomeTab>("classes");
+  const [homework, setHomework] = useState<Homework[]>([]);
+  const [quizzes, setQuizzes] = useState<Quiz[]>([]);
+  const [summaryLoading, setSummaryLoading] = useState(false);
+  const [summaryLoaded, setSummaryLoaded] = useState(false);
+  const { alerts, refresh } = useTeacherAlerts({ enabled: activeTab === "alerts" });
+
+  useEffect(() => {
+    if (activeTab !== "summary" || summaryLoaded) return;
+    let cancelled = false;
+    setSummaryLoading(true);
+    Promise.all([api.getTeacherHomework(), api.getTeacherQuizzes()])
+      .then(([hw, quiz]) => {
+        if (cancelled) return;
+        setHomework(hw as Homework[]);
+        setQuizzes(quiz as Quiz[]);
+        setSummaryLoaded(true);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setHomework([]);
+        setQuizzes([]);
+        setSummaryLoaded(true);
+      })
+      .finally(() => {
+        if (!cancelled) setSummaryLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [activeTab, summaryLoaded]);
 
   const totals = useMemo(() => {
     let students = 0;
-    let homework = 0;
-    let quizzes = 0;
     for (const cls of classes) {
       students += cls.studentCount ?? 0;
-      homework += getHomeworkByClass(cls.id).length;
-      quizzes += getQuizzesByClass(cls.id).length;
     }
-    return { students, homework, quizzes };
-  }, [classes, getHomeworkByClass, getQuizzesByClass]);
+    const classIds = new Set(classes.map((c) => c.id));
+    const hwCount = homework.filter((h) => classIds.has(h.classId)).length;
+    const quizCount = quizzes.filter((q) => classIds.has(q.classId)).length;
+    return { students, homework: hwCount, quizzes: quizCount };
+  }, [classes, homework, quizzes]);
+
+  const tabs: Array<{ id: HomeTab; label: string }> = [
+    { id: "classes", label: "فصولي" },
+    { id: "summary", label: "الملخص" },
+    { id: "alerts", label: "تنبيهات التسليم" },
+  ];
 
   return (
     <div className="space-y-4 sm:space-y-5">
       <header>
         <h1 className="text-xl font-bold text-p-green sm:text-2xl">فصولي</h1>
-        <p className="mt-1 text-sm text-p-black/55">الفصول المسندة إليك من الإدارة</p>
+        <p className="mt-1 text-sm text-p-black/55">اختر قسماً لعرضه دون تحميل كل البيانات معاً</p>
       </header>
 
       <AcademicPeriodBanner />
 
-      {classes.length > 0 && (
+      <div className="flex flex-wrap gap-2 border-b border-neutral-200">
+        {tabs.map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            onClick={() => setActiveTab(t.id)}
+            className={cn(
+              "px-4 py-2.5 text-sm font-semibold transition-colors",
+              activeTab === t.id
+                ? "border-b-2 border-p-green text-p-green"
+                : "text-p-black/50 hover:text-p-black"
+            )}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {activeTab === "classes" && (
+        <>
+          {classes.length === 0 ? (
+            <Card className="border-neutral-100 p-6 text-center text-p-black/50">
+              لا توجد فصول مسندة إليك حالياً. تواصل مع الإدارة.
+            </Card>
+          ) : (
+            <section>
+              <div className="mb-3 flex items-center justify-between gap-2">
+                <h2 className="text-sm font-bold text-p-black/70">قائمة الفصول</h2>
+                <span className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-xs font-semibold text-p-black/50">
+                  {classes.length}
+                </span>
+              </div>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {classes.map((cls) => (
+                  <TeacherClassCard
+                    key={cls.id}
+                    name={cls.name}
+                    studentCount={cls.studentCount ?? 0}
+                  />
+                ))}
+              </div>
+            </section>
+          )}
+        </>
+      )}
+
+      {activeTab === "summary" && (
         <Card className="border-neutral-100 p-3 sm:p-4">
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-            <DashboardStat
-              icon={GraduationCap}
-              count={classes.length}
-              label={classes.length === 1 ? "فصل" : "فصول"}
-              tone="teal"
-            />
-            <DashboardStat
-              icon={Users}
-              count={totals.students}
-              label={totals.students === 1 ? "طالب" : "طلاب"}
-              tone="blue"
-            />
-            <DashboardStat
-              icon={BookOpen}
-              count={totals.homework}
-              label={totals.homework === 1 ? "واجب" : "واجبات"}
-              tone="orange"
-            />
-            <DashboardStat
-              icon={ClipboardList}
-              count={totals.quizzes}
-              label={totals.quizzes === 1 ? "اختبار" : "اختبارات"}
-              tone="neutral"
-            />
-          </div>
+          {summaryLoading ? (
+            <p className="text-sm text-neutral-500">جاري تحميل الملخص...</p>
+          ) : (
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+              <DashboardStat
+                icon={GraduationCap}
+                count={classes.length}
+                label={classes.length === 1 ? "فصل" : "فصول"}
+                tone="teal"
+              />
+              <DashboardStat
+                icon={Users}
+                count={totals.students}
+                label={totals.students === 1 ? "طالب" : "طلاب"}
+                tone="blue"
+              />
+              <DashboardStat
+                icon={BookOpen}
+                count={totals.homework}
+                label={totals.homework === 1 ? "واجب" : "واجبات"}
+                tone="orange"
+              />
+              <DashboardStat
+                icon={ClipboardList}
+                count={totals.quizzes}
+                label={totals.quizzes === 1 ? "اختبار" : "اختبارات"}
+                tone="neutral"
+              />
+            </div>
+          )}
         </Card>
       )}
 
-      <TeacherSubmissionAlerts
-        alerts={alerts}
-        limit={5}
-        alwaysShow
-        onAlertOpen={refresh}
-      />
-
-      {classes.length === 0 ? (
-        <Card className="border-neutral-100 p-6 text-center text-p-black/50">
-          لا توجد فصول مسندة إليك حالياً. تواصل مع الإدارة.
-        </Card>
-      ) : (
-        <section>
-          <div className="mb-3 flex items-center justify-between gap-2">
-            <h2 className="text-sm font-bold text-p-black/70">قائمة الفصول</h2>
-            <span className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-xs font-semibold text-p-black/50">
-              {classes.length}
-            </span>
-          </div>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {classes.map((cls) => (
-              <TeacherClassCard
-                key={cls.id}
-                name={cls.name}
-                studentCount={cls.studentCount ?? 0}
-              />
-            ))}
-          </div>
-        </section>
+      {activeTab === "alerts" && (
+        <TeacherSubmissionAlerts
+          alerts={alerts}
+          limit={5}
+          alwaysShow
+          onAlertOpen={refresh}
+        />
       )}
     </div>
   );

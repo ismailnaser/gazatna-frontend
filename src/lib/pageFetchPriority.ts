@@ -10,6 +10,7 @@ export function adminPathNeedsCatalog(pathname: string) {
   if (!pathname.startsWith("/admin")) return false;
   if (pathname === "/admin") return false;
   if (pathname.startsWith("/admin/analytics")) return false;
+  if (pathname.startsWith("/admin/finance")) return false;
   if (pathname.startsWith("/admin/grade-schemes")) return false;
   if (pathname.startsWith("/admin/notifications")) return false;
   if (pathname.startsWith("/admin/users")) return false;
@@ -43,7 +44,6 @@ export function teacherPathNeedsSchool(pathname: string) {
 
 export function teacherPathNeedsAssignmentLists(pathname: string) {
   return (
-    pathname === "/teacher" ||
     pathname.startsWith("/teacher/homework") ||
     pathname.startsWith("/teacher/quizzes")
   );
@@ -54,8 +54,31 @@ export function teacherPathNeedsAssessments(pathname: string) {
 }
 
 export function parentPathNeedsAssignments(pathname: string) {
+  // Subject detail already loads its own payload — avoid fan-out of all lists.
+  if (pathname.startsWith("/parent/homework/subject/")) return false;
   return (
     pathname.startsWith("/parent/homework/") ||
     pathname.startsWith("/parent/quizzes")
+  );
+}
+
+/** Academic workspace: only load grades/policies on these routes. */
+export function academicPathNeedsGrades(pathname: string) {
+  return (
+    pathname.startsWith("/admin/promotion-policies") ||
+    pathname.startsWith("/admin/term-end") ||
+    pathname.startsWith("/admin/year-end")
+  );
+}
+
+export function academicPathNeedsSubjects(pathname: string) {
+  return pathname.startsWith("/admin/promotion-policies");
+}
+
+export function academicPathNeedsSchoolName(pathname: string) {
+  return (
+    pathname.startsWith("/admin/certificate-settings") ||
+    pathname.startsWith("/admin/term-end") ||
+    pathname.startsWith("/admin/year-end")
   );
 }
