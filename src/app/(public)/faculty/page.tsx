@@ -69,22 +69,22 @@ export default function FacultyPage() {
       />
 
       <div className="mb-8 grid gap-4 sm:grid-cols-2">
-        <div className="flex items-center gap-4 rounded-2xl border border-brand-blue/15 bg-brand-blue/5 px-5 py-4">
-          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white shadow-sm ring-1 ring-brand-blue/10">
+        <div className="flex items-center gap-4 rounded-[1.5rem_0.7rem_1.5rem_0.9rem] border-[3px] border-black/10 bg-brand-blue/10 px-5 py-4 shadow-[-4px_5px_0_0_rgba(66,76,243,0.16)]">
+          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white shadow-[-2px_2px_0_0_rgba(66,76,243,0.25)]">
             <Users className="h-6 w-6 text-brand-blue" />
           </span>
           <div>
-            <p className="text-2xl font-bold text-neutral-950">{teachers.length}</p>
-            <p className="text-sm text-neutral-600">عضو في الكادر التعليمي</p>
+            <p className="font-display text-2xl font-extrabold text-p-black">{teachers.length}</p>
+            <p className="text-sm font-semibold text-p-black/60">عضو في الكادر التعليمي</p>
           </div>
         </div>
-        <div className="flex items-center gap-4 rounded-2xl border border-brand-orange/15 bg-brand-orange/5 px-5 py-4">
-          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white shadow-sm ring-1 ring-brand-orange/10">
+        <div className="flex items-center gap-4 rounded-[1.5rem_0.7rem_1.5rem_0.9rem] border-[3px] border-black/10 bg-brand-yellow/40 px-5 py-4 shadow-[-4px_5px_0_0_rgba(249,180,40,0.4)]">
+          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white shadow-[-2px_2px_0_0_rgba(234,102,34,0.3)]">
             <GraduationCap className="h-6 w-6 text-brand-orange" />
           </span>
           <div>
-            <p className="text-2xl font-bold text-neutral-950">{subjects.length}</p>
-            <p className="text-sm text-neutral-600">تخصص أكاديمي مُغطّى</p>
+            <p className="font-display text-2xl font-extrabold text-p-black">{subjects.length}</p>
+            <p className="text-sm font-semibold text-p-black/60">تخصص أكاديمي مُغطّى</p>
           </div>
         </div>
       </div>
@@ -98,7 +98,7 @@ export default function FacultyPage() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="ابحث بالاسم أو التخصص..."
-              className="w-full rounded-2xl border border-neutral-200 bg-white py-3 pe-4 ps-11 text-sm text-neutral-900 shadow-sm outline-none transition-colors focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/15"
+              className="w-full rounded-2xl border-[3px] border-black/10 bg-white py-3 pe-4 ps-11 text-sm font-semibold text-p-black shadow-[-3px_3px_0_0_rgba(66,76,243,0.1)] outline-none transition-colors focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/15"
             />
           </div>
 
@@ -108,10 +108,10 @@ export default function FacultyPage() {
                 type="button"
                 onClick={() => setSubjectFilter(null)}
                 className={cn(
-                  "rounded-full px-4 py-2 text-sm font-semibold transition-colors",
+                  "font-display rounded-full px-4 py-2 text-sm font-extrabold transition-transform hover:-translate-y-0.5",
                   subjectFilter === null
-                    ? "bg-brand-blue text-white shadow-sm"
-                    : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200"
+                    ? "bg-brand-yellow text-p-black shadow-[-2px_2px_0_0_rgba(234,102,34,0.45)]"
+                    : "border-2 border-black/10 bg-white text-p-black/70 hover:border-brand-yellow"
                 )}
               >
                 الكل
@@ -122,10 +122,10 @@ export default function FacultyPage() {
                   type="button"
                   onClick={() => setSubjectFilter(subject)}
                   className={cn(
-                    "rounded-full px-4 py-2 text-sm font-semibold transition-colors",
+                    "font-display rounded-full px-4 py-2 text-sm font-extrabold transition-transform hover:-translate-y-0.5",
                     subjectFilter === subject
-                      ? "bg-brand-blue text-white shadow-sm"
-                      : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200"
+                      ? "bg-brand-yellow text-p-black shadow-[-2px_2px_0_0_rgba(234,102,34,0.45)]"
+                      : "border-2 border-black/10 bg-white text-p-black/70 hover:border-brand-yellow"
                   )}
                 >
                   {subject}
@@ -137,7 +137,7 @@ export default function FacultyPage() {
       )}
 
       {loading ? (
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="card-grid card-grid-4">
           {Array.from({ length: 8 }, (_, i) => (
             <FacultyTeacherCardSkeleton key={i} />
           ))}
@@ -158,7 +158,7 @@ export default function FacultyPage() {
           <p className="mt-2 text-sm text-neutral-700">جرّب تغيير كلمة البحث أو التخصص.</p>
         </div>
       ) : (
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="card-grid card-grid-4">
           {filtered.map((teacher, index) => (
             <motion.div
               key={teacher.id}

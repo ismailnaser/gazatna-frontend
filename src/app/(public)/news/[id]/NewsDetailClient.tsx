@@ -2,12 +2,11 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Badge } from "@/components/atoms/Badge";
 import { Button } from "@/components/atoms/Button";
-import { NewsImageCarousel } from "@/components/molecules/NewsImageCarousel";
+import { FeaturedNewsCard } from "@/components/molecules/FeaturedNewsCard";
 import { api } from "@/lib/api";
-import { mapNewsItem, newsSlideUrls, type PublicNewsItem } from "@/types/news";
-import { ArrowRight, Calendar } from "lucide-react";
+import { mapNewsItem, type PublicNewsItem } from "@/types/news";
+import { ArrowRight } from "lucide-react";
 
 export function NewsDetailClient({ id }: { id: string }) {
   const [item, setItem] = useState<PublicNewsItem | null>(null);
@@ -27,61 +26,34 @@ export function NewsDetailClient({ id }: { id: string }) {
 
   if (loading) {
     return (
-      <article className="mx-auto max-w-4xl px-4 pb-10 pt-[var(--nav-height)] sm:px-6 sm:pb-10 lg:px-8">
-        <div className="h-8 w-40 animate-pulse rounded bg-neutral-100" />
-        <div className="mt-6 h-12 w-3/4 animate-pulse rounded bg-neutral-100" />
-        <div className="mt-8 h-56 animate-pulse rounded-2xl bg-neutral-100 sm:h-80" />
-      </article>
+      <div className="mx-auto max-w-lg px-4 pb-10 pt-[var(--nav-height)] sm:px-6">
+        <div className="h-8 w-40 animate-pulse rounded bg-white/70" />
+        <div className="mt-6 aspect-square animate-pulse rounded-[1.6rem] bg-white/70" />
+      </div>
     );
   }
 
   if (!item) {
     return (
       <div className="mx-auto max-w-3xl px-4 py-20 text-center">
-        <p className="text-neutral-700">{error || "الخبر غير موجود"}</p>
-        <Button href="/" variant="outline" className="mt-6">
-          العودة للرئيسية
+        <p className="font-semibold text-p-black/70">{error || "الخبر غير موجود"}</p>
+        <Button href="/news" variant="outline" className="mt-6">
+          العودة للأخبار
         </Button>
       </div>
     );
   }
 
-  const slideUrls = newsSlideUrls(item);
-
   return (
-    <article className="mx-auto max-w-4xl px-4 pb-10 pt-[var(--nav-height)] sm:px-6 sm:pb-10 lg:px-8">
+    <article className="mx-auto max-w-lg px-4 pb-12 pt-[var(--nav-height)] sm:px-6">
       <Link
         href="/news"
-        className="mb-6 inline-flex items-center gap-2 text-sm font-semibold text-[var(--brand-teal)] hover:underline"
+        className="mb-5 inline-flex items-center gap-2 text-sm font-extrabold text-brand-blue hover:underline"
       >
         <ArrowRight className="h-4 w-4" />
-        العودة للأخبار
+        العودة للبوستات
       </Link>
-
-      <div className="mb-4 flex flex-wrap items-center gap-2">
-        <Badge variant="info">{item.category}</Badge>
-        {item.featured && <Badge variant="success">مميز</Badge>}
-      </div>
-
-      <h1 className="text-3xl font-bold leading-tight text-[#1a1a1a] sm:text-4xl">{item.title}</h1>
-
-      <p className="mt-3 flex items-center gap-2 text-sm text-[#1a1a1a]/50">
-        <Calendar className="h-4 w-4" />
-        {item.date}
-      </p>
-
-      <NewsImageCarousel
-        images={slideUrls}
-        gradient={item.gradient}
-        className="mt-8 h-56 rounded-2xl sm:h-80 lg:h-[28rem]"
-        alt={item.title}
-      />
-
-      <div className="mt-8 space-y-4 whitespace-pre-line text-base leading-8 text-[#1a1a1a]/80">
-        {(item.body || item.description).split("\n").map((paragraph, index) => (
-          <p key={index}>{paragraph}</p>
-        ))}
-      </div>
+      <FeaturedNewsCard item={item} showFullBody />
     </article>
   );
 }

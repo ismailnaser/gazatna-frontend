@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { PageBusy, PageHeader } from "@/components/molecules/PageHeader";
+import { WorkspacePage } from "@/components/dashboard/WorkspacePage";
 import { ParentCertificatesPanel } from "@/components/parent/ParentCertificatesPanel";
 import { api } from "@/lib/api";
 import type { ParentCertificatesResponse } from "@/types/academic";
@@ -45,28 +45,22 @@ export default function ParentCertificateArchivePage() {
       .catch(() => {});
   }, [loadCertificates]);
 
-  if (loading) {
-    return (
-      <PageBusy
-        title="أرشيف الشهادات"
-        description="شهادات الفصول المنتهية والسنوات المؤرشفة — للقراءة والتحميل فقط"
-      />
-    );
-  }
-
   return (
-    <div>
-      <PageHeader
-        title="أرشيف الشهادات"
-        description="شهادات الفصول المنتهية والسنوات المؤرشفة — للقراءة والتحميل فقط"
-      />
-
+    <WorkspacePage
+      title="أرشيف الشهادات"
+      description="شهادات الفصول المنتهية والسنوات المؤرشفة — للقراءة والتحميل فقط"
+      breadcrumbs={[
+        { label: "الرئيسية", href: "/parent" },
+        { label: "أرشيف الشهادات" },
+      ]}
+      loading={loading}
+    >
       <ParentCertificatesPanel
         data={data}
         schoolName={schoolName}
         emptyTitle="لا توجد شهادات مؤرشفة بعد."
         emptyDescription="بعد إغلاق فصل دراسي أو إنهاء سنة دراسية ستظهر الشهادات هنا."
       />
-    </div>
+    </WorkspacePage>
   );
 }

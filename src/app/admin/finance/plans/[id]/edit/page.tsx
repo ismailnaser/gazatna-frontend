@@ -107,7 +107,7 @@ export default function AdminFeePlanEditPage() {
     setValidationError("");
     try {
       await api.updateAdminFeePlan(plan.id, formatPlanPayload(planForm));
-      router.push("/admin/finance?tab=plans");
+      router.push("/admin/finance/plans");
     } catch (err) {
       setError(err instanceof Error ? err.message : "تعذر حفظ خطة الرسوم");
     } finally {
@@ -123,7 +123,7 @@ export default function AdminFeePlanEditPage() {
     return (
       <div className="space-y-4">
         <PageHeader title="تعديل خطة الرسوم" description="تعذر العثور على الخطة" />
-        <Button href="/admin/finance?tab=plans" variant="outline">
+        <Button href="/admin/finance/plans" variant="outline">
           العودة للمالية
         </Button>
       </div>
@@ -134,7 +134,7 @@ export default function AdminFeePlanEditPage() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <PageHeader title="تعديل خطة الرسوم" description={plan.name} />
-        <Button href="/admin/finance?tab=plans" variant="outline" className="gap-2">
+        <Button href="/admin/finance/plans" variant="outline" className="gap-2">
           <ArrowRight className="h-4 w-4" />
           العودة للمالية
         </Button>
@@ -154,7 +154,7 @@ export default function AdminFeePlanEditPage() {
           saving={saving}
           validationError={validationError}
           onSubmit={savePlan}
-          onCancel={() => router.push("/admin/finance?tab=plans")}
+          onCancel={() => router.push("/admin/finance/plans")}
         />
       </Card>
     </div>

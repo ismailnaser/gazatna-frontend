@@ -2,13 +2,20 @@
 
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { Heart, Sparkles, Target } from "lucide-react";
+import { Heart, Sparkles, Star, Target } from "lucide-react";
 import { PremiumPageHero, PremiumPanel } from "@/components/molecules/PremiumPageHero";
 import { ExpandableText } from "@/components/molecules/ExpandableText";
 import { PublicPage } from "@/components/molecules/PublicPage";
 import { api } from "@/lib/api";
+import { cn } from "@/lib/utils";
 
 type SchoolValue = { id: string; title: string; desc: string; num: string };
+
+const VALUE_TONES = [
+  "bg-brand-yellow/45 border-brand-orange/30",
+  "bg-brand-blue/10 border-brand-blue/25",
+  "bg-[#ffe4d4] border-brand-orange/25",
+];
 
 export default function AboutPage() {
   const [values, setValues] = useState<SchoolValue[]>([]);
@@ -73,9 +80,9 @@ export default function AboutPage() {
           transition={{ duration: 0.5 }}
         >
           <PremiumPanel
-            label="Vision"
+            label="رؤيتنا للمستقبل"
             title="رؤيتنا"
-            gradient="from-brand-blue/10 via-white to-white"
+            gradient="from-brand-yellow/30 via-white to-white"
             icon={<Target className="h-7 w-7 text-brand-blue" />}
           >
             <ExpandableText maxLines={4}>{aboutSettings.vision}</ExpandableText>
@@ -89,9 +96,9 @@ export default function AboutPage() {
           transition={{ duration: 0.5, delay: 0.1 }}
         >
           <PremiumPanel
-            label="Mission"
+            label="ما نعمل لأجله"
             title="رسالتنا"
-            gradient="from-brand-orange/10 via-white to-brand-yellow/10"
+            gradient="from-brand-orange/15 via-white to-brand-yellow/20"
             icon={<Heart className="h-7 w-7 text-brand-orange" />}
           >
             <ExpandableText maxLines={4}>{aboutSettings.mission}</ExpandableText>
@@ -99,31 +106,23 @@ export default function AboutPage() {
         </motion.div>
       </div>
 
-      <div
-        ref={valuesRef}
-        className="relative overflow-hidden rounded-3xl bg-neutral-950 px-6 py-12 sm:px-10 sm:py-14"
-      >
-        <div
-          className="pointer-events-none absolute inset-0 opacity-30 pattern-tatreez"
-          aria-hidden
-        />
-        <div className="relative">
-          <div className="mb-10 flex items-end justify-between gap-4">
-            <div>
-              <span className="text-xs font-bold tracking-[0.25em] text-brand-yellow">
-                CORE VALUES
-              </span>
-              <h2 className="mt-2 text-2xl font-bold text-white sm:text-3xl">قيمنا</h2>
-            </div>
-            <Sparkles className="hidden h-8 w-8 text-brand-yellow sm:block" />
+      <div ref={valuesRef} className="relative">
+        <div className="mb-8 flex items-center gap-3">
+          <span className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-yellow shadow-[-3px_3px_0_0_rgba(234,102,34,0.4)]">
+            <Sparkles className="h-6 w-6 text-p-black" />
+          </span>
+          <div>
+            <h2 className="font-display text-2xl font-extrabold text-brand-blue sm:text-3xl">قيمنا</h2>
+            <p className="text-sm font-semibold text-p-black/55">ما نزرعه في قلوب طلابنا كل يوم</p>
           </div>
+        </div>
 
-          <div className="grid gap-6 md:grid-cols-3">
-            {loading ? (
-              <p className="col-span-full text-center text-white/60">جاري التحميل...</p>
-            ) : values.length === 0 ? (
-              <p className="col-span-full text-center text-white/60">لا توجد قيم معروضة حالياً.</p>
-            ) : (
+        <div className="grid gap-6 md:grid-cols-3">
+          {loading ? (
+            <p className="col-span-full text-center font-semibold text-p-black/60">جاري التحميل...</p>
+          ) : values.length === 0 ? (
+            <p className="col-span-full text-center font-semibold text-p-black/60">لا توجد قيم معروضة حالياً.</p>
+          ) : (
             values.map((v, i) => (
               <motion.div
                 key={v.id}
@@ -131,17 +130,24 @@ export default function AboutPage() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.4, delay: i * 0.08 }}
-                className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm"
+                className={cn(
+                  "rounded-[1.8rem_0.8rem_1.8rem_1rem] border-[3px] p-6 shadow-[-5px_6px_0_0_rgba(26,26,26,0.08)]",
+                  VALUE_TONES[i % VALUE_TONES.length]
+                )}
               >
-                <span className="text-3xl font-extrabold text-brand-yellow/80">{v.num}</span>
-                <h3 className="mt-4 text-lg font-bold text-white">{v.title}</h3>
-                <ExpandableText maxLines={3} className="mt-3 text-sm text-white/70">
+                <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-white font-display text-xl font-extrabold text-brand-orange shadow-[-2px_2px_0_0_rgba(234,102,34,0.3)]">
+                  {v.num}
+                </span>
+                <h3 className="font-display mt-4 flex items-center gap-2 text-lg font-extrabold text-p-black">
+                  <Star className="h-4 w-4 fill-brand-yellow text-brand-yellow" />
+                  {v.title}
+                </h3>
+                <ExpandableText maxLines={3} className="mt-3 text-sm font-semibold text-p-black/70">
                   {v.desc}
                 </ExpandableText>
               </motion.div>
             ))
-            )}
-          </div>
+          )}
         </div>
       </div>
     </PublicPage>

@@ -1,6 +1,8 @@
 export const TOKEN_KEY = "ghazatna_access";
 export const REFRESH_KEY = "ghazatna_refresh";
 export const USER_KEY = "ghazatna_auth";
+export const PERSIST_KEY = "ghazatna_persist";
+export const REMEMBERED_USERNAME_KEY = "ghazatna_remembered_username";
 export const AUTH_STORAGE_KEYS = [TOKEN_KEY, REFRESH_KEY, USER_KEY] as const;
 
 const CHANNEL_NAME = "ghazatna-auth";
@@ -12,6 +14,7 @@ type SessionPayload = {
   access: string;
   refresh: string;
   user: string;
+  persist?: boolean;
 };
 
 type AuthChannelMessage = { type: "request" } | { type: "logout" } | SessionPayload;
@@ -98,6 +101,48 @@ function storageRemove(store: Storage, key: string) {
   }
 }
 
+function persistFlag(): string | null {
+  return storageGet(window.localStorage, PERSIST_KEY);
+}
+
+export function isPersistentAuth() {
+  if (!canUseDom()) return true;
+  const flag = persistFlag();
+  if (flag === "1") return true;
+  if (flag === "0") return false;
+  return Boolean(storageGet(window.localStorage, TOKEN_KEY) || readCookie(TOKEN_KEY));
+}
+
+export function getRememberMePreference() {
+  if (!canUseDom()) return true;
+  return persistFlag() !== "0";
+}
+
+export function getRememberedUsername() {
+  if (!canUseDom()) return "";
+  return storageGet(window.localStorage, REMEMBERED_USERNAME_KEY) ?? "";
+}
+
+export function setRememberedUsername(username: string | null) {
+  if (!canUseDom()) return;
+  const cleaned = username?.trim() ?? "";
+  if (cleaned) {
+    storageSet(window.localStorage, REMEMBERED_USERNAME_KEY, cleaned);
+  } else {
+    storageRemove(window.localStorage, REMEMBERED_USERNAME_KEY);
+  }
+}
+
+export function setAuthPersistence(remember: boolean) {
+  if (!canUseDom()) return;
+  storageSet(window.localStorage, PERSIST_KEY, remember ? "1" : "0");
+  if (remember) return;
+  for (const key of AUTH_STORAGE_KEYS) {
+    storageRemove(window.localStorage, key);
+    clearCookie(key);
+  }
+}
+
 export function hasStoredAuthTokens() {
   return Boolean(authGet(TOKEN_KEY));
 }
@@ -105,31 +150,33 @@ export function hasStoredAuthTokens() {
 export function authGet(key: string): string | null {
   if (!canUseDom()) return null;
 
-  const local = storageGet(window.localStorage, key);
-  if (local) return local;
+  if (isPersistentAuth()) {
+    const local = storageGet(window.localStorage, key);
+    if (local) return local;
 
-  const session = storageGet(window.sessionStorage, key);
-  if (session) {
-    storageSet(window.localStorage, key, session);
-    writeCookie(key, session);
-    return session;
+    const cookie = readCookie(key);
+    if (cookie) {
+      storageSet(window.localStorage, key, cookie);
+      return cookie;
+    }
+
+    return storageGet(window.sessionStorage, key);
   }
 
-  const cookie = readCookie(key);
-  if (cookie) {
-    storageSet(window.localStorage, key, cookie);
-    storageSet(window.sessionStorage, key, cookie);
-    return cookie;
-  }
-
-  return null;
+  return storageGet(window.sessionStorage, key);
 }
 
 export function authSet(key: string, value: string) {
   if (!canUseDom()) return;
-  storageSet(window.localStorage, key, value);
+  if (isPersistentAuth()) {
+    storageSet(window.localStorage, key, value);
+    storageSet(window.sessionStorage, key, value);
+    writeCookie(key, value);
+    return;
+  }
   storageSet(window.sessionStorage, key, value);
-  writeCookie(key, value);
+  storageRemove(window.localStorage, key);
+  clearCookie(key);
 }
 
 export function authRemove(key: string) {
@@ -144,10 +191,11 @@ function currentSessionPayload(): SessionPayload | null {
   const refresh = authGet(REFRESH_KEY);
   const user = authGet(USER_KEY);
   if (!access || !refresh || !user) return null;
-  return { type: "session", access, refresh, user };
+  return { type: "session", access, refresh, user, persist: isPersistentAuth() };
 }
 
 function applySessionSilent(payload: SessionPayload) {
+  setAuthPersistence(payload.persist ?? isPersistentAuth());
   authSet(TOKEN_KEY, payload.access);
   authSet(REFRESH_KEY, payload.refresh);
   authSet(USER_KEY, payload.user);

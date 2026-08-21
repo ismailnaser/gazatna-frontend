@@ -163,10 +163,18 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
     if (showLoading) setLoading(true);
     try {
       if (isAdminRole(user.role)) {
-        // Give the current admin page the first API slot(s) before catalog/staff.
-        await yieldToPageFetch(500);
         const needCatalog = adminPathNeedsCatalog(pathname);
         const needStaff = adminPathNeedsStaff(pathname);
+        const needsWork =
+          (needCatalog && !catalogLoadedRef.current) || (needStaff && !staffLoadedRef.current);
+
+        if (!needsWork) {
+          initialLoadDoneRef.current = true;
+          setLoading(false);
+          return;
+        }
+
+        await yieldToPageFetch();
 
         if (needCatalog && !catalogLoadedRef.current) {
           // Sequential on purpose — shared hosting cannot absorb parallel bursts.
@@ -191,7 +199,7 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
         setLoading(false);
 
         if (needStaff && !staffLoadedRef.current) {
-          await yieldToPageFetch(900);
+          await yieldToPageFetch();
           let teachers: TeacherProfile[] = [];
           let subjectsData: Subject[] = [];
           try {
@@ -212,7 +220,7 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
           setCurrentTeacher(null);
         }
       } else if (user.role === "teacher") {
-        await yieldToPageFetch(300);
+        await yieldToPageFetch();
         if (!teacherPathNeedsSchool(pathname)) {
           initialLoadDoneRef.current = true;
           setLoading(false);

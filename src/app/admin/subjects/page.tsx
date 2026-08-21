@@ -1,145 +1,27 @@
 "use client";
 
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Alert } from "@/components/atoms/Alert";
+import { useMemo, useState } from "react";
 import { Button } from "@/components/atoms/Button";
 import { Card } from "@/components/atoms/Card";
+import { WorkspacePage } from "@/components/dashboard/WorkspacePage";
 import { AdminSubjectsGrid } from "@/components/admin/AdminSubjectsGrid";
-import { ConfirmDialog } from "@/components/molecules/ConfirmDialog";
-import { PageHeader } from "@/components/molecules/PageHeader";
-import { SubjectClassAssigner } from "@/components/admin/SubjectClassAssigner";
-import { SubjectSectionTeacherAssigner, buildSubjectSectionDrafts, sectionDraftsToPayload, type SubjectSectionDraft } from "@/components/admin/SubjectSectionTeacherAssigner";
+import { SearchField } from "@/components/molecules/SearchField";
+import { EmptyState } from "@/components/molecules/EmptyState";
 import { useSchool } from "@/context/SchoolContext";
-import { useAuth } from "@/context/AuthContext";
-import { api } from "@/lib/api";
-import { canManageAdminClasses, isAdminRole } from "@/lib/adminRoles";
-import { mapGrades, mapSchoolClasses } from "@/lib/mapSchoolClass";
 import { teacherCountLabel } from "@/lib/adminSubjects";
-import { cn } from "@/lib/utils";
-import type { Grade, SchoolClass, Subject } from "@/types/teacher";
-import { BookMarked, BookOpen, GraduationCap, Plus, Save, Search, Users, X } from "lucide-react";
-
-function StatChip({
-  icon: Icon,
-  label,
-  value,
-  tone = "default",
-}: {
-  icon: typeof BookOpen;
-  label: string;
-  value: string | number;
-  tone?: "default" | "success";
-}) {
-  const tones = {
-    default: "bg-brand-blue/10 text-brand-blue",
-    success: "bg-p-green/10 text-p-green",
-  };
-
-  return (
-    <div className="flex min-w-0 flex-1 items-center gap-2.5 rounded-xl border border-neutral-100 bg-neutral-50 px-3 py-2.5 shadow-sm">
-      <span
-        className={cn(
-          "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg",
-          tones[tone]
-        )}
-      >
-        <Icon className="h-4 w-4" />
-      </span>
-      <div className="min-w-0">
-        <p className="text-[11px] text-p-black/45">{label}</p>
-        <p className="text-sm font-bold text-p-black">{value}</p>
-      </div>
-    </div>
-  );
-}
+import { Plus } from "lucide-react";
 
 export default function AdminSubjectsPage() {
-  const router = useRouter();
-  const { user } = useAuth();
-  const canManageClasses =
-    user && isAdminRole(user.role) && canManageAdminClasses(user.role);
-  const {
-    subjects,
-    teachers,
-    classes,
-    grades,
-    loading,
-    refresh,
-    syncSubjectSections,
-    setSubjectClasses,
-    removeSubject,
-  } = useSchool();
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
-  const pageTopRef = useRef<HTMLDivElement>(null);
+  const { subjects, teachers, loading, refresh } = useSchool();
   const [search, setSearch] = useState("");
-  const [confirmDeleteSubject, setConfirmDeleteSubject] = useState<Subject | null>(null);
-  const [deletingSubject, setDeletingSubject] = useState(false);
-  const [modalSubject, setModalSubject] = useState<Subject | null>(null);
-  const [assignMode, setAssignMode] = useState<"classes" | "teachers" | null>(null);
-  const [selectedClassIds, setSelectedClassIds] = useState<string[]>([]);
-  const [sectionDrafts, setSectionDrafts] = useState<Record<string, SubjectSectionDraft>>({});
-  const [savingSections, setSavingSections] = useState(false);
-  const [savingClasses, setSavingClasses] = useState(false);
-  const [modalClasses, setModalClasses] = useState<SchoolClass[]>([]);
-  const [modalGrades, setModalGrades] = useState<Grade[]>([]);
-
-  useEffect(() => {
-    if (!modalSubject) return;
-    if (classes.length && grades.length) {
-      setModalClasses(classes);
-      setModalGrades(grades);
-      return;
-    }
-    let active = true;
-    Promise.all([api.getAdminClasses(), api.getAdminGrades()])
-      .then(([classesData, gradesData]) => {
-        if (!active) return;
-        setModalClasses(mapSchoolClasses(classesData as unknown[]));
-        setModalGrades(mapGrades(gradesData as unknown[]));
-      })
-      .catch(() => {
-        if (!active) return;
-        setModalClasses(classes);
-        setModalGrades(grades);
-      });
-    return () => {
-      active = false;
-    };
-  }, [modalSubject, classes, grades]);
 
   const subjectsWithCounts = useMemo(
     () =>
       subjects.map((subject) => ({
         ...subject,
-        teacherCount: teachers.filter((teacher) => teacher.subjectIds?.includes(subject.id))
-          .length,
+        teacherCount: teachers.filter((teacher) => teacher.subjectIds?.includes(subject.id)).length,
       })),
     [subjects, teachers]
-  );
-
-  const modalSubjectTeachers = useMemo(
-    () =>
-      modalSubject
-        ? teachers.filter((teacher) => teacher.subjectIds?.includes(modalSubject.id))
-        : [],
-    [teachers, modalSubject]
-  );
-
-  const availableClasses = modalClasses.length > 0 ? modalClasses : classes;
-  const availableGrades = modalGrades.length > 0 ? modalGrades : grades;
-
-  const assignedClasses = useMemo(() => {
-    if (!modalSubject) return [];
-    const ids = new Set(modalSubject.classIds ?? []);
-    return availableClasses.filter((schoolClass) => ids.has(schoolClass.id));
-  }, [modalSubject, availableClasses]);
-
-  const totalTeachers = useMemo(
-    () => subjectsWithCounts.reduce((sum, subject) => sum + subject.teacherCount, 0),
-    [subjectsWithCounts]
   );
 
   const filteredSubjects = useMemo(() => {
@@ -148,402 +30,42 @@ export default function AdminSubjectsPage() {
     return subjectsWithCounts.filter((subject) => subject.name.toLowerCase().includes(q));
   }, [subjectsWithCounts, search]);
 
-  function closeAssignModal() {
-    setModalSubject(null);
-    setAssignMode(null);
-    setSelectedClassIds([]);
-    setSectionDrafts({});
-  }
-
-  function openAssignClasses(subject: Subject) {
-    setModalSubject(subject);
-    setAssignMode("classes");
-    setSelectedClassIds(subject.classIds ?? []);
-    setSectionDrafts({});
-    setError("");
-    setSuccess("");
-  }
-
-  function openAssignTeachers(subject: Subject) {
-    setModalSubject(subject);
-    setAssignMode("teachers");
-    setSelectedClassIds(subject.classIds ?? []);
-    setSectionDrafts(
-      buildSubjectSectionDrafts(
-        availableClasses.filter((schoolClass) => (subject.classIds ?? []).includes(schoolClass.id)),
-        subject.classIds ?? [],
-        teachers,
-        subject.name
-      )
-    );
-    setError("");
-    setSuccess("");
-  }
-
-  useEffect(() => {
-    if (!modalSubject || assignMode !== "teachers" || availableClasses.length === 0) return;
-    setSectionDrafts((prev) => {
-      const assigned = availableClasses.filter((schoolClass) =>
-        (modalSubject.classIds ?? []).includes(schoolClass.id)
-      );
-      const expectedKeys = assigned.map((schoolClass) => schoolClass.id);
-      if (
-        expectedKeys.length > 0 &&
-        expectedKeys.every((id) => id in prev) &&
-        Object.keys(prev).length === expectedKeys.length
-      ) {
-        return prev;
-      }
-      return buildSubjectSectionDrafts(
-        assigned,
-        modalSubject.classIds ?? [],
-        teachers,
-        modalSubject.name
-      );
-    });
-  }, [modalSubject?.id, modalSubject?.name, modalSubject?.classIds, assignMode, availableClasses, teachers]);
-
-  function updateSectionDraft(classId: string, patch: Partial<SubjectSectionDraft>) {
-    setSectionDrafts((prev) => ({
-      ...prev,
-      [classId]: { ...(prev[classId] ?? { enabled: true, teacherId: "" }), ...patch },
-    }));
-  }
-
-  function scrollToPageTop() {
-    pageTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-  }
-
-  async function saveSubjectClasses() {
-    if (!modalSubject) return;
-    if (selectedClassIds.length === 0) {
-      setError("اختر فصلاً أو شعبة واحدة على الأقل.");
-      return;
-    }
-
-    setSavingClasses(true);
-    setError("");
-    try {
-      const updated = await setSubjectClasses(modalSubject.id, selectedClassIds);
-      setSuccess(`تم حفظ إسناد مادة ${updated.name} للفصول والشعب بنجاح.`);
-      closeAssignModal();
-      scrollToPageTop();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "فشل حفظ إسناد الفصول");
-    } finally {
-      setSavingClasses(false);
-    }
-  }
-
-  async function saveSubjectTeachers() {
-    if (!modalSubject) return;
-
-    const payload = sectionDraftsToPayload(sectionDrafts);
-    const missingTeacher = payload.some((row) => !row.teacherId);
-    if (payload.length === 0) {
-      setError("لا توجد شعب مسندة لهذه المادة.");
-      return;
-    }
-    if (missingTeacher) {
-      setError("اختر معلماً لكل شعبة.");
-      return;
-    }
-
-    setSavingSections(true);
-    setError("");
-    try {
-      const updated = await syncSubjectSections(modalSubject.id, payload);
-      setSuccess(`تم حفظ إسناد مادة ${updated.name} للمعلمين بنجاح.`);
-      closeAssignModal();
-      scrollToPageTop();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "فشل حفظ إسناد المعلمين");
-    } finally {
-      setSavingSections(false);
-    }
-  }
-
-
-
-
-  async function confirmDeleteSubjectAction() {
-    if (!confirmDeleteSubject) return;
-    setDeletingSubject(true);
-    setError("");
-    try {
-      await removeSubject(confirmDeleteSubject.id);
-      setConfirmDeleteSubject(null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "فشل حذف المادة");
-    } finally {
-      setDeletingSubject(false);
-    }
-  }
-
   return (
-    <div ref={pageTopRef}>
-      <PageHeader
-        title="إدارة المواد الدراسية"
-        description="أضف المواد واسند كل مادة للفصول والشعب، ثم عيّن المعلمين لكل شعبة"
-        className="mb-6"
-      />
-
-      {success ? (
-        <Alert variant="success" className="mb-4">
-          {success}
-        </Alert>
-      ) : null}
-
-      <div className="mb-4 grid gap-2 sm:grid-cols-2">
-        <StatChip icon={BookMarked} label="عدد المواد" value={subjectsWithCounts.length} />
-        <StatChip
-          icon={Users}
-          label="إسنادات المعلمين"
-          value={totalTeachers}
-          tone="success"
-        />
-      </div>
-
-      <div className="mb-4 flex flex-wrap items-center justify-end gap-3">
-        <Button type="button" onClick={() => router.push("/admin/subjects/create")}>
+    <WorkspacePage
+      title="المواد الدراسية"
+      description="المواد الدراسية وإسناد الفصول والمعلمين."
+      actions={
+        <Button href="/admin/subjects/create">
           <Plus className="h-4 w-4" />
           إضافة مادة
         </Button>
+      }
+      loading={loading}
+      loadingMessage="جاري تحميل المواد..."
+    >
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <p className="text-sm text-p-black/65">
+          {subjectsWithCounts.length} مادة · {teacherCountLabel(
+            subjectsWithCounts.reduce((sum, s) => sum + s.teacherCount, 0)
+          )}
+        </p>
+        <SearchField value={search} onChange={setSearch} placeholder="بحث باسم المادة..." />
       </div>
 
-      {error && !confirmDeleteSubject && !modalSubject ? (
-        <Alert variant="error" className="mb-4">
-          {error}
-        </Alert>
-      ) : null}
-
-      <Card className="p-4 sm:p-5">
-        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h3 className="font-bold text-p-black">المواد المسجّلة</h3>
-            <p className="mt-1 text-sm text-p-black/55">
-              {subjectsWithCounts.length === 0
-                ? "لا توجد مواد بعد"
-                : `${subjectsWithCounts.length} مادة — ${teacherCountLabel(totalTeachers)} مرتبطون`}
-            </p>
-          </div>
-          <div className="relative w-full sm:max-w-xs">
-            <Search className="pointer-events-none absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-p-black/35" />
-            <input
-              type="search"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="بحث باسم المادة..."
-              className="w-full rounded-xl border border-neutral-200 py-2.5 pe-3 ps-9 text-sm outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20"
-            />
-          </div>
-        </div>
-
-        {loading ? (
-          <p className="py-10 text-center text-sm text-p-black/50">جاري تحميل المواد...</p>
-        ) : (
-          <AdminSubjectsGrid
-            subjects={filteredSubjects}
-            hasActiveFilters={Boolean(search.trim())}
-            onView={openAssignClasses}
-            onAssignClasses={openAssignClasses}
-            onAssignTeachers={openAssignTeachers}
-            onEdit={(subject) => router.push(`/admin/subjects/${subject.id}/edit`)}
-            onDelete={(subject) => {
-              setError("");
-              setConfirmDeleteSubject(subject);
-            }}
-          />
-        )}
-
-        {!loading && subjectsWithCounts.length === 0 ? (
-          <div className="mt-4 flex justify-center">
-            <Button type="button" variant="outline" onClick={() => void refresh()}>
-              إعادة تحميل المواد
+      {subjectsWithCounts.length === 0 ? (
+        <EmptyState
+          title="لا توجد مواد بعد"
+          action={
+            <Button variant="outline" onClick={() => void refresh()}>
+              إعادة تحميل
             </Button>
-          </div>
-        ) : null}
-      </Card>
-
-      {modalSubject && assignMode && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
-          role="dialog"
-          aria-modal="true"
-          onClick={closeAssignModal}
-        >
-          <div
-            className="max-h-[min(90vh,720px)] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-6"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="mb-4 flex items-start justify-between gap-3">
-              <div>
-                <h3 className="text-lg font-bold text-p-black">
-                  {assignMode === "classes" ? "إسناد للفصول والشعب" : "إسناد للمعلمين"}
-                </h3>
-                <p className="mt-1 text-sm font-semibold text-brand-blue">{modalSubject.name}</p>
-                <p className="mt-1 text-xs text-p-black/50">
-                  {assignMode === "classes"
-                    ? "حدّد الفصول والشعب التي تُدرَّس فيها المادة ثم احفظ."
-                    : "اختر معلماً لكل شعبة مسندة لهذه المادة ثم احفظ."}
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={closeAssignModal}
-                aria-label="إغلاق"
-                className="rounded-full p-1 text-p-black/40 hover:bg-neutral-100 hover:text-p-black"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            {error && (
-              <Alert variant="error" className="mb-4">
-                {error}
-              </Alert>
-            )}
-
-            <div className="rounded-xl border border-neutral-100 bg-neutral-50/80 p-4">
-              {assignMode === "classes" ? (
-                <>
-                  <h4 className="mb-4 flex items-center gap-2 text-sm font-bold text-p-black">
-                    <GraduationCap className="h-4 w-4 text-brand-teal" />
-                    الفصول والشعب
-                  </h4>
-                  {availableClasses.length === 0 ? (
-                    <p className="text-sm text-p-black/60">
-                      لا توجد فصول مسجّلة.{" "}
-                      {canManageClasses ? (
-                        <Link href="/admin/classes" className="font-semibold text-brand-blue hover:underline">
-                          أضف فصولاً أولاً
-                        </Link>
-                      ) : (
-                        <span>تواصل مع الإدارة الكلية لإضافة المراحل والفصول.</span>
-                      )}
-                    </p>
-                  ) : (
-                    <>
-                      <SubjectClassAssigner
-                        classes={availableClasses}
-                        grades={availableGrades}
-                        selectedClassIds={selectedClassIds}
-                        onChange={setSelectedClassIds}
-                      />
-                      <div className="mt-4 flex justify-end">
-                        <Button
-                          type="button"
-                          onClick={saveSubjectClasses}
-                          disabled={savingClasses || selectedClassIds.length === 0}
-                          className="sm:min-w-[160px]"
-                        >
-                          <Save className="h-4 w-4" />
-                          {savingClasses ? "جاري الحفظ..." : "حفظ الفصول"}
-                        </Button>
-                      </div>
-                    </>
-                  )}
-                </>
-              ) : (
-                <>
-                  <h4 className="mb-2 flex items-center gap-2 text-sm font-bold text-p-black">
-                    <Users className="h-4 w-4 text-brand-blue" />
-                    المعلمون
-                  </h4>
-                  <p className="mb-4 text-xs leading-relaxed text-p-black/55">
-                    {teacherCountLabel(modalSubjectTeachers.length)} — {assignedClasses.length}{" "}
-                    {assignedClasses.length === 1 ? "شعبة مسندة" : "شعب مسندة"}
-                  </p>
-
-                  {assignedClasses.length === 0 ? (
-                    <p className="text-sm text-p-black/60">
-                      لم تُسند المادة لأي فصل بعد.{" "}
-                      <button
-                        type="button"
-                        className="font-semibold text-brand-blue hover:underline"
-                        onClick={() => openAssignClasses(modalSubject)}
-                      >
-                        اسندها للفصول أولاً
-                      </button>
-                    </p>
-                  ) : teachers.length === 0 ? (
-                    <p className="text-sm text-p-black/60">
-                      لا يوجد معلمون في النظام.{" "}
-                      <Link href="/admin/teachers" className="font-semibold text-brand-blue hover:underline">
-                        أضف معلماً أولاً
-                      </Link>
-                    </p>
-                  ) : (
-                    <>
-                      <SubjectSectionTeacherAssigner
-                        classes={assignedClasses}
-                        grades={availableGrades}
-                        teachers={teachers}
-                        sectionDrafts={sectionDrafts}
-                        onChange={updateSectionDraft}
-                        teachersOnly
-                        emptyMessage="لا توجد شعب مسندة لهذه المادة."
-                      />
-                      <div className="mt-4 flex justify-end">
-                        <Button
-                          type="button"
-                          onClick={saveSubjectTeachers}
-                          disabled={savingSections || assignedClasses.length === 0}
-                          className="sm:min-w-[160px]"
-                        >
-                          <Save className="h-4 w-4" />
-                          {savingSections ? "جاري الحفظ..." : "حفظ المعلمين"}
-                        </Button>
-                      </div>
-                    </>
-                  )}
-                </>
-              )}
-            </div>
-
-            <div className="mt-5 flex justify-end">
-              <Button type="button" variant="outline" onClick={closeAssignModal}>
-                إغلاق
-              </Button>
-            </div>
-          </div>
-        </div>
+          }
+        />
+      ) : (
+        <Card>
+          <AdminSubjectsGrid subjects={filteredSubjects} hasActiveFilters={Boolean(search.trim())} />
+        </Card>
       )}
-
-      <ConfirmDialog
-        open={Boolean(confirmDeleteSubject)}
-        title="تأكيد حذف المادة"
-        description={
-          confirmDeleteSubject ? (
-            <>
-              هل أنت متأكد من حذف مادة{" "}
-              <span className="font-semibold">{confirmDeleteSubject.name}</span>؟
-              {(confirmDeleteSubject.teacherCount > 0 ||
-                (confirmDeleteSubject.classIds?.length ?? 0) > 0) && (
-                <>
-                  {" "}
-                  سيتم إلغاء إسنادها من{" "}
-                  {confirmDeleteSubject.teacherCount > 0 &&
-                  (confirmDeleteSubject.classIds?.length ?? 0) > 0
-                    ? "المعلمين والفصول"
-                    : confirmDeleteSubject.teacherCount > 0
-                      ? "المعلمين"
-                      : "الفصول"}
-                  .
-                </>
-              )}{" "}
-              لا يمكن التراجع عن هذا الإجراء.
-            </>
-          ) : null
-        }
-        loading={deletingSubject}
-        error={confirmDeleteSubject ? error : undefined}
-        onCancel={() => {
-          setError("");
-          setConfirmDeleteSubject(null);
-        }}
-        onConfirm={confirmDeleteSubjectAction}
-      />
-    </div>
+    </WorkspacePage>
   );
 }

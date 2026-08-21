@@ -1,5 +1,5 @@
 function parseTime24(value: string): { hour: number; minute: string } | null {
-  const match = value.trim().match(/^(\d{1,2}):(\d{2})$/);
+  const match = String(value ?? "").trim().match(/^(\d{1,2}):(\d{2})$/);
   if (!match) return null;
   const hour = Number(match[1]);
   const minute = match[2];
@@ -43,10 +43,11 @@ export function classLessonRangesOverlap(
 }
 
 /** يحوّل وقت 24 ساعة (مثل 17:30) إلى 12 ساعة مع صباحاً / مساءً */
-export function formatScheduleTime12(value?: string | null): string {
-  if (!value?.trim()) return "—";
-  const parsed = parseTime24(value);
-  if (!parsed) return value.trim();
+export function formatScheduleTime12(value?: string | number | null): string {
+  if (value == null || String(value).trim() === "") return "—";
+  const text = String(value).trim();
+  const parsed = parseTime24(text);
+  if (!parsed) return text;
 
   const { hour, minute } = parsed;
   const isPm = hour >= 12;
@@ -55,12 +56,13 @@ export function formatScheduleTime12(value?: string | null): string {
   return `${hour12}:${minute} ${period}`;
 }
 
-export function formatClassLessonTimeRange(startTime?: string | null, durationMinutes?: number): string {
-  if (!startTime?.trim()) return "—";
+export function formatClassLessonTimeRange(startTime?: string | number | null, durationMinutes?: number): string {
+  if (startTime == null || String(startTime).trim() === "") return "—";
+  const start = String(startTime).trim();
   const duration = durationMinutes && durationMinutes > 0 ? durationMinutes : 60;
-  const endTime = getClassLessonEndTime(startTime, duration);
-  if (!endTime) return formatScheduleTime12(startTime);
-  return `${formatScheduleTime12(startTime)} – ${formatScheduleTime12(endTime)}`;
+  const endTime = getClassLessonEndTime(start, duration);
+  if (!endTime) return formatScheduleTime12(start);
+  return `${formatScheduleTime12(start)} – ${formatScheduleTime12(endTime)}`;
 }
 
 /** يحوّل الأوقات داخل نص الحصة (مثل 08:00-08:45) */

@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import Script from "next/script";
-import { Cairo } from "next/font/google";
+import { Baloo_Bhaijaan_2, Cairo } from "next/font/google";
 import { AppBootstrap } from "@/components/AppBootstrap";
 import { ClearStaleServiceWorkers } from "@/components/dev/ClearStaleServiceWorkers";
 import { AssignmentsProvider } from "@/context/AssignmentsContext";
@@ -11,6 +11,13 @@ import "./globals.css";
 const cairo = Cairo({
   subsets: ["arabic", "latin"],
   variable: "--font-cairo",
+  display: "swap",
+});
+
+const kids = Baloo_Bhaijaan_2({
+  subsets: ["arabic", "latin"],
+  weight: ["400", "600", "700", "800"],
+  variable: "--font-kids",
   display: "swap",
 });
 
@@ -75,7 +82,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ar" dir="rtl" className={`${cairo.variable} h-full`}>
+    <html lang="ar" dir="rtl" className={`${cairo.variable} ${kids.variable} h-full`}>
       <head>
         <link
           rel="preload"

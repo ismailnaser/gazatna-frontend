@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Card } from "@/components/atoms/Card";
-import { PageHeader } from "@/components/molecules/PageHeader";
-import { api } from "@/lib/api";
+import { WorkspacePage } from "@/components/dashboard/WorkspacePage";
+import { EmptyState } from "@/components/molecules/EmptyState";
+import { api, peekCachedList } from "@/lib/api";
 import type { ParentSubjectSummary } from "@/types";
 import { BookOpen, ChevronLeft, ClipboardList, FolderOpen, Megaphone, PenLine } from "lucide-react";
 
@@ -27,7 +28,11 @@ function SubjectStat({
   };
 
   return (
-    <div className="flex min-w-0 items-center gap-2 rounded-xl bg-neutral-50 px-3 py-2.5">
+    <div
+      className={`flex h-14 min-w-0 items-center gap-2 rounded-xl bg-neutral-50 px-3 py-2.5 ${
+        count === 0 ? "opacity-45" : ""
+      }`}
+    >
       <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${tones[tone]}`}>
         <Icon className="h-4 w-4" />
       </span>
@@ -40,78 +45,74 @@ function SubjectStat({
 }
 
 export default function ParentHomeworkSubjectsPage() {
-  const [subjects, setSubjects] = useState<ParentSubjectSummary[]>([]);
-  const [loading, setLoading] = useState(true);
+  const cached = peekCachedList<ParentSubjectSummary>("/parent/subjects/");
+  const [subjects, setSubjects] = useState<ParentSubjectSummary[]>(cached ?? []);
+  const [loading, setLoading] = useState(!cached);
 
   useEffect(() => {
     api
       .getParentSubjects()
       .then((data) => setSubjects(data as ParentSubjectSummary[]))
-      .catch(() => setSubjects([]))
+      .catch(() => {
+        if (!cached) setSubjects([]);
+      })
       .finally(() => setLoading(false));
   }, []);
 
   return (
-    <div>
-      <PageHeader
-        title="محتوى المواد"
-        description="اختر المادة لعرض واجباتها واختباراتها وإعلاناتها ومرفقاتها"
-      />
-
-      {loading ? (
-        <div className="space-y-3">
-          <div className="h-24 animate-pulse rounded-2xl bg-neutral-100" />
-          <div className="h-24 animate-pulse rounded-2xl bg-neutral-100" />
-        </div>
-      ) : subjects.length === 0 ? (
-        <Card className="text-center text-neutral-700">لا توجد مواد أو واجبات حالياً.</Card>
+    <WorkspacePage
+      title="مهام المغامرة"
+      description="اختار مادتك وشوف الواجبات والاختبارات والكنوز."
+      breadcrumbs={[
+        { label: "الرئيسية", href: "/parent" },
+        { label: "مهام المغامرة" },
+      ]}
+      loading={loading}
+    >
+      {subjects.length === 0 ? (
+        <EmptyState title="لسه ما في مهام. أول ما المعلم يحط شي، بيظهر هون." />
       ) : (
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4">
+        <div className="card-grid card-grid-2">
           {subjects.map((row) => {
             const stats = [
-              row.homeworkCount > 0 && {
+              {
                 key: "hw",
                 icon: PenLine,
                 count: row.homeworkCount,
                 label: row.homeworkCount === 1 ? "واجب" : "واجبات",
                 tone: "orange" as const,
               },
-              row.quizCount > 0 && {
+              {
                 key: "quiz",
                 icon: ClipboardList,
                 count: row.quizCount,
                 label: row.quizCount === 1 ? "اختبار" : "اختبارات",
                 tone: "blue" as const,
               },
-              (row.announcementCount ?? 0) > 0 && {
+              {
                 key: "ann",
                 icon: Megaphone,
                 count: row.announcementCount ?? 0,
                 label: (row.announcementCount ?? 0) === 1 ? "إعلان" : "إعلانات",
                 tone: "amber" as const,
               },
-              (row.materialCount ?? 0) > 0 && {
+              {
                 key: "mat",
                 icon: FolderOpen,
                 count: row.materialCount ?? 0,
                 label: (row.materialCount ?? 0) === 1 ? "مرفق" : "مرفقات",
                 tone: "teal" as const,
               },
-            ].filter(Boolean) as Array<{
-              key: string;
-              icon: typeof BookOpen;
-              count: number;
-              label: string;
-              tone: "orange" | "blue" | "amber" | "teal";
-            }>;
+            ];
 
             return (
             <Link
               key={row.subject}
               href={`/parent/homework/subject/${encodeURIComponent(row.subject)}`}
-              className="block"
+              prefetch={false}
+              className="flex"
             >
-              <Card className="p-4 transition-shadow hover:shadow-md sm:p-5">
+              <Card className="flex min-h-full w-full flex-1 flex-col p-4 transition-shadow hover:shadow-md sm:p-5">
                 <div className="mb-3 flex items-center justify-between gap-3">
                   <div className="flex min-w-0 items-center gap-2.5">
                     <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-orange/10">
@@ -121,27 +122,23 @@ export default function ParentHomeworkSubjectsPage() {
                   </div>
                   <ChevronLeft className="h-5 w-5 shrink-0 text-p-black/30" />
                 </div>
-                {stats.length > 0 ? (
-                  <div className="grid grid-cols-2 gap-2">
-                    {stats.map((item) => (
-                      <SubjectStat
-                        key={item.key}
-                        icon={item.icon}
-                        count={item.count}
-                        label={item.label}
-                        tone={item.tone}
-                      />
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-sm text-p-black/70">لا يوجد محتوى بعد</p>
-                )}
+                <div className="mt-auto grid grid-cols-2 gap-2">
+                  {stats.map((item) => (
+                    <SubjectStat
+                      key={item.key}
+                      icon={item.icon}
+                      count={item.count}
+                      label={item.label}
+                      tone={item.tone}
+                    />
+                  ))}
+                </div>
               </Card>
             </Link>
             );
           })}
         </div>
       )}
-    </div>
+    </WorkspacePage>
   );
 }

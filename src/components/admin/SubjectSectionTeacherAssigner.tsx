@@ -1,6 +1,7 @@
 ﻿"use client";
 
 import { useMemo } from "react";
+import { Checkbox } from "@/components/atoms/Checkbox";
 import { selectControlClassName } from "@/components/atoms/Select";
 import { cn } from "@/lib/utils";
 import { ChevronDown } from "lucide-react";
@@ -127,16 +128,14 @@ export function SubjectSectionTeacherAssigner({
                     </span>
                   ) : (
                     <label className="flex min-w-0 flex-1 cursor-pointer items-center gap-3">
-                      <input
-                        type="checkbox"
+                      <Checkbox
                         checked={draft.enabled}
-                        onChange={(event) =>
+                        onChange={(checkedValue) =>
                           onChange(schoolClass.id, {
-                            enabled: event.target.checked,
-                            ...(event.target.checked ? {} : { teacherId: "" }),
+                            enabled: checkedValue,
+                            ...(checkedValue ? {} : { teacherId: "" }),
                           })
                         }
-                        className="h-4 w-4 shrink-0 accent-brand-teal"
                       />
                       <span className="font-semibold text-p-black">
                         {getClassDisplayLabel(schoolClass)}

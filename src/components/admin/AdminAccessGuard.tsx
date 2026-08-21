@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import { AppLoadingScreen } from "@/components/molecules/AppLoadingScreen";
 import { useAuth } from "@/context/AuthContext";
 import { canAccessAdminPath, isAdminRole } from "@/lib/adminRoles";
 
@@ -18,9 +19,7 @@ export function AdminAccessGuard({ children }: { children: React.ReactNode }) {
   }, [user, loading, pathname, router]);
 
   if (loading && !user) {
-    return (
-      <div className="py-10 text-center text-sm text-neutral-700">جاري التحقق من الصلاحية...</div>
-    );
+    return <AppLoadingScreen />;
   }
 
   if (!user || !isAdminRole(user.role)) {
@@ -28,11 +27,7 @@ export function AdminAccessGuard({ children }: { children: React.ReactNode }) {
   }
 
   if (!canAccessAdminPath(user.role, pathname)) {
-    return (
-      <div className="flex min-h-[40vh] items-center justify-center text-sm text-neutral-700">
-        جاري التحويل...
-      </div>
-    );
+    return <AppLoadingScreen />;
   }
 
   return <>{children}</>;

@@ -21,6 +21,7 @@ export function ParentFeeGuard({ children }: { children: React.ReactNode }) {
   const inFlightRef = useRef(false);
 
   const onFeesPage = pathname === "/parent/fees" || pathname.startsWith("/parent/fees/");
+  const allowedWhileBlocked = onFeesPage;
 
   const loadStatus = useCallback(async (opts?: { force?: boolean }) => {
     const force = opts?.force === true;
@@ -65,7 +66,7 @@ export function ParentFeeGuard({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (loadError && !onFeesPage) {
+  if (loadError && !allowedWhileBlocked) {
     return (
       <div className="flex min-h-[60vh] flex-col items-center justify-center px-4 text-center">
         <h2 className="text-xl font-bold text-p-black">تعذر التحقق من الرسوم</h2>
@@ -85,7 +86,7 @@ export function ParentFeeGuard({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (feeStatus?.blocked && !onFeesPage) {
+  if (feeStatus?.blocked && !allowedWhileBlocked) {
     return (
       <div className="flex min-h-[60vh] flex-col items-center justify-center px-4 text-center">
         <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-amber-50">

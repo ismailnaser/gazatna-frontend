@@ -1,146 +1,43 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { Card } from "@/components/atoms/Card";
-import { PageBusy, PageHeader } from "@/components/molecules/PageHeader";
-import { AcademicPeriodBanner } from "@/components/shared/AcademicPeriodBanner";
+import { HubCard, HubGrid } from "@/components/dashboard/HubCard";
+import { WorkspacePage } from "@/components/dashboard/WorkspacePage";
 import {
   isParentFeeRestricted,
   ParentAccessBlockedCard,
   ParentNoStudentCard,
   type ParentStudentResponse,
 } from "@/components/parent/ParentAccessCards";
-import { InstallmentNotifications } from "@/components/parent/InstallmentPanel";
-import { useAuth } from "@/context/AuthContext";
-import { formatClassLabel } from "@/lib/adminStudents";
-import { api } from "@/lib/api";
-import { cn } from "@/lib/utils";
-import type { ParentAlert, ParentSubjectSummary, Student } from "@/types";
-import type { FeeInstallmentNotification } from "@/types/finance";
+import { StudentHero } from "@/components/parent/StudentHero";
+import { AcademicPeriodBanner } from "@/components/shared/AcademicPeriodBanner";
+import { useParentStudent } from "@/hooks/useParentStudent";
+import type { Student } from "@/types";
 import {
+  Archive,
   Bell,
   BookMarked,
   BookOpen,
-  ChevronLeft,
-  ClipboardList,
+  BookOpenCheck,
+  CalendarDays,
   CreditCard,
-  GraduationCap,
-  FolderOpen,
-  Hash,
-  Megaphone,
-  Users,
+  FolderArchive,
+  Medal,
+  PenLine,
 } from "lucide-react";
 
-function subjectContentPath(subject?: string) {
-  if (!subject) return "/parent/homework";
-  return `/parent/homework/subject/${encodeURIComponent(subject)}`;
-}
-
-function alertHref(alert: ParentAlert) {
-  if (alert.type === "homework" && alert.homeworkId) {
-    return `/parent/homework/${alert.homeworkId}`;
-  }
-  if (alert.type === "quiz" && alert.quizId) {
-    return `/parent/quizzes/${alert.quizId}`;
-  }
-  if (alert.subject) return subjectContentPath(alert.subject);
-  return "/parent/homework";
-}
-
-type ParentHomeTab = "student" | "subjects" | "alerts";
-
 export default function ParentDashboard() {
-  const { user } = useAuth();
-  const router = useRouter();
-  const [student, setStudent] = useState<Student | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<ParentHomeTab>("student");
-  const [sectionLoading, setSectionLoading] = useState(false);
-  const [alerts, setAlerts] = useState<ParentAlert[]>([]);
-  const [installmentNotices, setInstallmentNotices] = useState<FeeInstallmentNotification[]>([]);
-  const [subjects, setSubjects] = useState<ParentSubjectSummary[]>([]);
-  const loadedRef = useRef<Partial<Record<ParentHomeTab, true>>>({ student: true });
+  const { student, loading } = useParentStudent();
+  const access = student as (Student & ParentStudentResponse) | null;
 
-  useEffect(() => {
-    if (!user) return;
-    api
-      .getParentStudent()
-      .then((s) => setStudent(s as Student))
-      .catch(() => setStudent(null))
-      .finally(() => setLoading(false));
-  }, [user]);
-
-  const loadTab = useCallback(async (tab: ParentHomeTab) => {
-    if (tab === "student" || loadedRef.current[tab]) return;
-    loadedRef.current[tab] = true;
-    setSectionLoading(true);
-    try {
-      if (tab === "subjects") {
-        const data = await api.getParentSubjects();
-        setSubjects(data as ParentSubjectSummary[]);
-      } else if (tab === "alerts") {
-        const data = await api.getParentAlerts();
-        const rows = data as Array<Record<string, unknown>>;
-        const nonInstallment = rows.filter((a) => a.type !== "installment");
-        setAlerts(
-          nonInstallment.map((a) => ({
-            id: String(a.id),
-            text: String(a.text),
-            type: String(a.type),
-            homeworkId: a.homeworkId ? String(a.homeworkId) : undefined,
-            quizId: a.quizId ? String(a.quizId) : undefined,
-            announcementId: a.announcementId ? String(a.announcementId) : undefined,
-            materialId: a.materialId ? String(a.materialId) : undefined,
-            subject: a.subject ? String(a.subject) : undefined,
-          }))
-        );
-        setInstallmentNotices(
-          rows
-            .filter((a) => a.type === "installment")
-            .map((a) => ({
-              id: String(a.id),
-              order: Number(a.order),
-              amount: Number(a.amount),
-              remaining: Number(a.remaining),
-              startDate: String(a.startDate),
-              endDate: String(a.endDate),
-              status: a.status as FeeInstallmentNotification["status"],
-              type: "installment" as const,
-              text: String(a.text),
-            }))
-        );
-      }
-    } catch {
-      if (tab === "subjects") setSubjects([]);
-      if (tab === "alerts") {
-        setAlerts([]);
-        setInstallmentNotices([]);
-      }
-    } finally {
-      setSectionLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void loadTab(activeTab);
-  }, [activeTab, loadTab]);
-
-  if (loading) {
-    return <PageBusy title="الرئيسية" />;
-  }
-
-  if (!student) {
+  if (!student && !loading) {
     return <ParentNoStudentCard />;
   }
 
-  const studentAccess = student as Student & ParentStudentResponse;
-  if (isParentFeeRestricted(studentAccess)) {
+  if (student && isParentFeeRestricted(access)) {
     return (
       <ParentAccessBlockedCard
         message={
-          studentAccess.accessRestrictionMessage ||
+          access?.accessRestrictionMessage ||
           "تم إيقاف الوصول إلى حساب الطالب بسبب الرسوم المستحقة. يرجى مراجعة صفحة المالية."
         }
         studentName={student.name}
@@ -148,250 +45,86 @@ export default function ParentDashboard() {
     );
   }
 
-  const contentAlerts = alerts.filter((a) =>
-    ["homework", "quiz", "announcement", "material"].includes(a.type)
-  );
-  const otherAlerts = alerts.filter(
-    (a) => !["homework", "quiz", "announcement", "material"].includes(a.type)
-  );
-
-  function alertIcon(type: string) {
-    if (type === "quiz") return <ClipboardList className="h-5 w-5 text-brand-blue" />;
-    if (type === "announcement") return <Megaphone className="h-5 w-5 text-amber-600" />;
-    if (type === "material") return <FolderOpen className="h-5 w-5 text-brand-blue" />;
-    return <BookOpen className="h-5 w-5 text-brand-orange" />;
-  }
-
-  function alertHint(type: string) {
-    if (type === "quiz") return "اختبار — اضغط للمتابعة";
-    if (type === "announcement") return "إعلان جديد — اضغط للعرض";
-    if (type === "material") return "مرفق جديد — اضغط للتحميل";
-    return "واجب — اضغط للعرض";
-  }
-
-  async function handleContentAlertClick(alert: ParentAlert) {
-    if (alert.type === "announcement" || alert.type === "material") {
-      setAlerts((prev) => prev.filter((a) => a.id !== alert.id));
-      try {
-        await api.dismissParentAlert(alert.id);
-      } catch {
-        /* keep hidden locally even if request fails */
-      }
-    }
-    router.push(alertHref(alert));
-  }
-
-  const tabs: Array<{ id: ParentHomeTab; label: string }> = [
-    { id: "student", label: "بيانات الطالب" },
-    { id: "subjects", label: "المواد" },
-    { id: "alerts", label: "التنبيهات" },
-  ];
-
   return (
-    <div>
-      <PageHeader
-        title="الرئيسية"
-        description="اختر قسماً لعرضه — لا يتم جلب كل البيانات دفعة واحدة"
-      />
-
+    <WorkspacePage
+      title="مغامرتي"
+      description="تعلم، تابع موادك، واجمع إنجازاتك كل يوم."
+      loading={loading}
+    >
       <AcademicPeriodBanner />
 
-      <div className="mb-6 flex flex-wrap gap-2 border-b border-neutral-200">
-        {tabs.map((t) => (
-          <button
-            key={t.id}
-            type="button"
-            onClick={() => setActiveTab(t.id)}
-            className={cn(
-              "px-4 py-2.5 text-sm font-semibold transition-colors",
-              activeTab === t.id
-                ? "border-b-2 border-p-green text-p-green"
-                : "text-p-black/72 hover:text-p-black"
-            )}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
-
-      {sectionLoading ? (
-        <Card className="mb-6">
-          <p className="text-sm text-neutral-700">جاري تحميل القسم...</p>
-        </Card>
+      {student ? (
+        <StudentHero
+          name={student.name}
+          grade={student.grade}
+          section={student.section}
+          studentNumber={student.studentNumber}
+        />
       ) : null}
 
-      {activeTab === "student" && (
-        <div className="mb-8 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-          <Card className="col-span-2 flex min-w-0 items-center gap-2 p-4 sm:gap-3 sm:p-6 lg:col-span-4">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-p-green/10 sm:h-10 sm:w-10">
-              <GraduationCap className="h-4 w-4 text-p-green sm:h-5 sm:w-5" />
-            </span>
-            <div className="min-w-0 flex-1">
-              <p className="text-[11px] text-p-black/72 sm:text-xs">اسم الطالب</p>
-              <p className="text-sm font-semibold leading-snug text-p-black sm:text-base">{student.name}</p>
-            </div>
-          </Card>
-          {[
-            { icon: Users, label: "الصف", value: student.grade },
-            { icon: Hash, label: "الشعبة", value: student.section },
-          ].map((item) => (
-            <Card key={item.label} className="flex min-w-0 items-center gap-2 p-4 sm:gap-3 sm:p-6">
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-p-green/10 sm:h-10 sm:w-10">
-                <item.icon className="h-4 w-4 text-p-green sm:h-5 sm:w-5" />
-              </span>
-              <div className="min-w-0">
-                <p className="text-[11px] text-p-black/72 sm:text-xs">{item.label}</p>
-                <p className="truncate text-sm font-semibold text-p-black sm:text-base">{item.value}</p>
-              </div>
-            </Card>
-          ))}
-          <Card className="col-span-2 flex min-w-0 items-center gap-2 p-4 sm:gap-3 sm:p-6 lg:col-span-4">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-p-green/10 sm:h-10 sm:w-10">
-              <Hash className="h-4 w-4 text-p-green sm:h-5 sm:w-5" />
-            </span>
-            <div className="min-w-0 flex-1">
-              <p className="text-[11px] text-p-black/72 sm:text-xs">رقم الطالب</p>
-              <p className="text-sm font-semibold text-p-black sm:text-base">{student.studentNumber}</p>
-            </div>
-          </Card>
-        </div>
-      )}
-
-      {activeTab === "subjects" && !sectionLoading && (
-        <>
-          <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-p-black">
-            <BookMarked className="h-5 w-5 text-brand-blue" />
-            المواد المسندة
-          </h2>
-
-          {subjects.length === 0 ? (
-            <Card className="mb-8 space-y-2 text-center text-neutral-700">
-              <p>لا توجد مواد مسندة لفصل الطالب حالياً.</p>
-              <p className="text-sm text-p-black/78">
-                فصل الطالب:{" "}
-                <span className="font-semibold text-p-black">
-                  {formatClassLabel(student.grade, student.section)}
-                </span>
-              </p>
-            </Card>
-          ) : (
-            <div className="mb-8 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {subjects.map((row) => (
-                <Link
-                  key={row.subject}
-                  href={subjectContentPath(row.subject)}
-                  prefetch={false}
-                  className="block"
-                >
-                  <Card className="h-full p-4 transition-shadow hover:shadow-md sm:p-5">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <h3 className="truncate text-base font-bold text-p-black">{row.subject}</h3>
-                        {row.teacherName ? (
-                          <p className="mt-1 text-xs text-p-black/75">المعلم: {row.teacherName}</p>
-                        ) : null}
-                        {row.totalCount > 0 ? (
-                          <p className="mt-2 text-xs font-medium text-brand-orange">
-                            {row.totalCount} عنصر جديد
-                          </p>
-                        ) : (
-                          <p className="mt-2 text-xs text-p-black/70">لا يوجد محتوى بعد</p>
-                        )}
-                      </div>
-                      <ChevronLeft className="h-5 w-5 shrink-0 text-p-black/30" />
-                    </div>
-                  </Card>
-                </Link>
-              ))}
-            </div>
-          )}
-
-          <Link href="/parent/homework" prefetch={false} className="mb-8 block">
-            <Card className="transition-shadow hover:shadow-md">
-              <BookOpen className="mb-2 h-7 w-7 text-brand-orange" />
-              <h3 className="font-bold text-neutral-950">فتح محتوى المواد</h3>
-              <p className="mt-1 text-sm text-neutral-600">
-                تصفّح المواد — واجبات، اختبارات، إعلانات، ومرفقات المعلم
-              </p>
-            </Card>
-          </Link>
-        </>
-      )}
-
-      {activeTab === "alerts" && !sectionLoading && (
-        <>
-          <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-p-black">
-            <BookOpen className="h-5 w-5 text-brand-orange" />
-            محتوى المواد
-            {contentAlerts.length > 0 && (
-              <span className="rounded-full bg-brand-orange/15 px-2 py-0.5 text-xs font-bold text-brand-orange">
-                {contentAlerts.length}
-              </span>
-            )}
-          </h2>
-
-          {contentAlerts.length === 0 ? (
-            <Card className="mb-6 text-center text-neutral-700">
-              لا توجد إشعارات جديدة في المواد حالياً.
-            </Card>
-          ) : (
-            <div className="mb-6 space-y-3">
-              {contentAlerts.map((alert) => (
-                <button
-                  key={alert.id}
-                  type="button"
-                  onClick={() => handleContentAlertClick(alert)}
-                  className="block w-full text-start"
-                >
-                  <Card className="flex items-center justify-between gap-3 py-4 transition-shadow hover:shadow-md">
-                    <div className="flex items-center gap-3">
-                      {alertIcon(alert.type)}
-                      <div>
-                        <p className="font-semibold text-p-black">{alert.text}</p>
-                        <p className="text-xs text-p-black/72">{alertHint(alert.type)}</p>
-                      </div>
-                    </div>
-                    <ChevronLeft className="h-5 w-5 text-p-black/30" />
-                  </Card>
-                </button>
-              ))}
-            </div>
-          )}
-
-          <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-p-black">
-            <Bell className="h-5 w-5 text-amber-500" />
-            تنبيهات أخرى
-          </h2>
-
-          {installmentNotices.length > 0 && (
-            <div className="mb-6">
-              <InstallmentNotifications notifications={installmentNotices} />
-              <Link
-                href="/parent/fees"
-                prefetch={false}
-                className="mt-2 inline-block text-sm font-semibold text-p-green hover:underline"
-              >
-                الذهاب إلى صفحة المالية
-              </Link>
-            </div>
-          )}
-
-          <div className="space-y-3">
-            {otherAlerts.length === 0 && installmentNotices.length === 0 ? (
-              <Card className="text-center text-neutral-700">لا توجد تنبيهات أخرى.</Card>
-            ) : (
-              otherAlerts.map((alert) => (
-                <Card key={alert.id} className="flex items-center gap-3 py-4">
-                  {alert.type === "payment" && <CreditCard className="h-5 w-5 text-p-green" />}
-                  {alert.type === "note" && <Bell className="h-5 w-5 text-p-green" />}
-                  {alert.type === "grade" && <GraduationCap className="h-5 w-5 text-amber-500" />}
-                  <p className="text-sm text-p-black/80">{alert.text}</p>
-                </Card>
-              ))
-            )}
-          </div>
-        </>
-      )}
-    </div>
+      <HubGrid>
+        <HubCard
+          href="/parent/alerts"
+          icon={Bell}
+          title="إشعارات"
+          description="تنبيهات المحتوى والعلامات."
+        />
+        <HubCard
+          href="/parent/subjects"
+          icon={BookMarked}
+          title="موادي"
+          description="موادك الملونة ومعلموك."
+        />
+        <HubCard
+          href="/parent/homework"
+          icon={PenLine}
+          title="مهام المغامرة"
+          description="واجبات، اختبارات، وكنوز المرفقات."
+        />
+        <HubCard
+          href="/parent/assessments"
+          icon={BookOpenCheck}
+          title="التقييمات"
+          description="شوف كم نجمة جمعت بالواجبات والاختبارات."
+        />
+        <HubCard
+          href="/parent/grades"
+          icon={BookOpen}
+          title="العلامات"
+          description="كشف العلامات — كل علامة إنجاز."
+          tone="success"
+        />
+        <HubCard
+          href="/parent/schedules"
+          icon={CalendarDays}
+          title="جدول يومي"
+          description="الحصص والاختبارات على شكل رحلة."
+        />
+        <HubCard
+          href="/parent/certificates"
+          icon={Medal}
+          title="أوسمتي"
+          description="شهادات الفصل الحالي."
+        />
+        <HubCard
+          href="/parent/certificate-archive"
+          icon={FolderArchive}
+          title="صندوق الأوسمة"
+          description="شهادات السنوات السابقة."
+        />
+        <HubCard
+          href="/parent/archive"
+          icon={Archive}
+          title="ذكريات السنوات"
+          description="علامات الفصول المنتهية."
+        />
+        <HubCard
+          href="/parent/fees"
+          icon={CreditCard}
+          title="المالية"
+          description="الرصيد والأقساط لولي الأمر."
+        />
+      </HubGrid>
+    </WorkspacePage>
   );
 }

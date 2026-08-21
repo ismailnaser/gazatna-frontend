@@ -8,6 +8,8 @@ import { cn } from "@/lib/utils";
 type PwaInstallButtonProps = {
   className?: string;
   compact?: boolean;
+  /** Round icon on the header edge. */
+  iconOnly?: boolean;
 };
 
 function InstallGuide({
@@ -43,7 +45,11 @@ function InstallGuide({
   );
 }
 
-export function PwaInstallButton({ className, compact = false }: PwaInstallButtonProps) {
+export function PwaInstallButton({
+  className,
+  compact = false,
+  iconOnly = false,
+}: PwaInstallButtonProps) {
   const { canShow, showIosHint, installing, install } = usePwaInstall();
   const [guide, setGuide] = useState<"ios" | null>(null);
   const guideRef = useRef<HTMLDivElement>(null);
@@ -91,20 +97,26 @@ export function PwaInstallButton({ className, compact = false }: PwaInstallButto
         onClick={handleClick}
         disabled={installing}
         className={cn(
-          "group inline-flex items-center justify-center gap-2 rounded-full border border-brand-blue/25 bg-gradient-to-l from-brand-blue/[0.08] to-brand-blue-light/[0.12] px-3 py-2 text-sm font-semibold text-brand-blue shadow-sm transition-all hover:border-brand-blue/40 hover:from-brand-blue/[0.12] hover:to-brand-blue-light/[0.18] hover:shadow-md disabled:opacity-60",
-          compact && "px-2.5 py-1.5 text-xs"
+          "group inline-flex items-center justify-center gap-2 font-extrabold transition disabled:opacity-60",
+          iconOnly
+            ? "h-9 w-9 rounded-full bg-brand-blue text-white shadow-[-2px_2px_0_0_rgba(66,76,243,0.28)] hover:bg-brand-blue/90"
+            : "rounded-full border-2 border-black/5 bg-white px-3 py-2 text-sm text-brand-blue hover:border-brand-blue/25",
+          compact && !iconOnly && "px-2.5 py-1.5 text-xs"
         )}
         aria-label="تثبيت التطبيق على الجهاز"
+        title="تثبيت التطبيق"
       >
-        <span className="flex h-7 w-7 items-center justify-center rounded-full bg-brand-blue text-white shadow-sm transition group-hover:scale-105">
-          {installing ? (
-            <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-          ) : (
-            <Download className="h-3.5 w-3.5" />
-          )}
-        </span>
-        {!compact ? <span>تثبيت التطبيق</span> : <span className="hidden sm:inline">تثبيت</span>}
-        <Smartphone className={cn("h-4 w-4 text-brand-blue/70", compact && "hidden sm:block")} />
+        {installing ? (
+          <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+        ) : (
+          <Download className={cn(iconOnly ? "h-4 w-4" : "h-3.5 w-3.5")} />
+        )}
+        {!iconOnly ? (
+          <>
+            {!compact ? <span>تثبيت التطبيق</span> : <span className="hidden sm:inline">تثبيت</span>}
+            <Smartphone className={cn("h-4 w-4 text-brand-blue/70", compact && "hidden sm:block")} />
+          </>
+        ) : null}
       </button>
 
       {guide === "ios" ? (

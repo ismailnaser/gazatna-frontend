@@ -1,524 +1,189 @@
 "use client";
 
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Alert } from "@/components/atoms/Alert";
+import { useParams } from "next/navigation";
 import { Badge } from "@/components/atoms/Badge";
 import { Button } from "@/components/atoms/Button";
-import { Card } from "@/components/atoms/Card";
-import { Input } from "@/components/atoms/Input";
-import { Select } from "@/components/atoms/Select";
-import { Textarea } from "@/components/atoms/Textarea";
-import { StaffProfileFieldsForm } from "@/components/admin/StaffProfileFieldsForm";
-import { useAdminStaffTypes } from "@/components/admin/AdminTeacherAddForm";
-import { TeacherClassPicker } from "@/components/admin/TeacherClassPicker";
-import { cropTeacherImageFile, TeacherCropModal } from "@/components/admin/TeacherCropModal";
-import { TeacherFormSection } from "@/components/admin/TeacherFormSection";
-import { TeacherProfileImageField } from "@/components/admin/TeacherProfileImageField";
-import { TeacherSubjectPicker } from "@/components/admin/TeacherSubjectPicker";
-import { PageHeader } from "@/components/molecules/PageHeader";
+import { WorkspacePage } from "@/components/dashboard/WorkspacePage";
+import { ProfileField, ProfileSection, formatProfileDate } from "@/components/dashboard/ProfileFields";
 import { useSchool } from "@/context/SchoolContext";
-import { api } from "@/lib/api";
-import { teacherInitial } from "@/lib/adminTeachers";
-import { buildOccupiedPairs, findAssignmentConflicts } from "@/lib/adminTeacherAssignments";
+import { genderOptions, maritalStatusOptions } from "@/lib/staffProfile";
 import { resolveMediaUrl } from "@/lib/media";
-import { emptyStaffProfileFields, type StaffProfileFields } from "@/lib/staffProfile";
+import { teacherInitial } from "@/lib/adminTeachers";
 import { cn } from "@/lib/utils";
-import type { AccountCredentials } from "@/types";
-import { BookMarked, KeyRound, Layers, Save, Shield, Trash2, UserRound } from "lucide-react";
+import { Layers, Pencil } from "lucide-react";
 
-const teacherStatusOptions = [
-  { value: "active", label: "نشط" },
-  { value: "inactive", label: "غير نشط" },
-];
+function optionLabel(
+  options: Array<{ value: string; label: string }>,
+  value?: string | null
+) {
+  if (!value) return "";
+  return options.find((item) => item.value === value)?.label ?? value;
+}
 
-export default function AdminTeacherDetailPage() {
+export default function AdminStaffViewPage() {
   const params = useParams<{ id: string }>();
-  const router = useRouter();
-  const teacherId = String(params.id);
-
-  const { teachers, classes, grades, subjects, assignments, updateTeacher, removeTeacher } = useSchool();
-  const { staffTypes } = useAdminStaffTypes();
+  const teacherId = String(params.id ?? "");
+  const { teachers, classes, assignments, loading } = useSchool();
   const current = teachers.find((teacher) => teacher.id === teacherId);
-  const occupiedPairs = useMemo(
-    () => buildOccupiedPairs(teachers, teacherId),
-    [teachers, teacherId]
-  );
-
-  const [profileFields, setProfileFields] = useState<StaffProfileFields>(emptyStaffProfileFields());
-  const [experience, setExperience] = useState("");
-  const [bio, setBio] = useState("");
-  const [status, setStatus] = useState<"active" | "inactive">("active");
-  const [draftClasses, setDraftClasses] = useState<string[]>([]);
-  const [draftSubjects, setDraftSubjects] = useState<string[]>([]);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
-
-  const [savingProfile, setSavingProfile] = useState(false);
-  const [savingAssignments, setSavingAssignments] = useState(false);
-  const [profileSaved, setProfileSaved] = useState(false);
-  const [success, setSuccess] = useState("");
-  const [error, setError] = useState("");
-  const pageTopRef = useRef<HTMLDivElement>(null);
-
-  const [resetCredentials, setResetCredentials] = useState<AccountCredentials | null>(null);
-  const [resettingPassword, setResettingPassword] = useState(false);
-  const [confirmReset, setConfirmReset] = useState(false);
-  const [confirmDelete, setConfirmDelete] = useState(false);
-  const [deletingTeacher, setDeletingTeacher] = useState(false);
-  const [uploadingImage, setUploadingImage] = useState(false);
-
-  const [cropOpen, setCropOpen] = useState(false);
-  const [cropImageUrl, setCropImageUrl] = useState<string | null>(null);
-  const [cropFileName, setCropFileName] = useState("teacher.jpg");
-  const [cropZoom, setCropZoom] = useState(1);
-  const [cropPos, setCropPos] = useState({ x: 0, y: 0 });
-  const [cropPixels, setCropPixels] = useState<{
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-  } | null>(null);
-
-  useEffect(() => {
-    if (!current) return;
-    setProfileFields({
-      staffTypeId: current.staffTypeId ?? "",
-      name: current.name ?? "",
-      nameEn: current.nameEn ?? "",
-      nationalId: current.nationalId ?? "",
-      dateOfBirth: current.dateOfBirth ? String(current.dateOfBirth) : "",
-      gender: current.gender ?? "",
-      maritalStatus: current.maritalStatus ?? "",
-      mobile: current.mobile ?? "",
-      altMobile: current.altMobile ?? "",
-      address: current.address ?? "",
-      joinDate: current.joinDate ? String(current.joinDate) : "",
-      notes: current.notes ?? "",
-    });
-    setExperience(current.experience);
-    setBio(current.bio);
-    setStatus(current.status === "inactive" ? "inactive" : "active");
-    setDraftClasses(assignments[current.id] ?? []);
-    setDraftSubjects(current.subjectIds ?? []);
-    setImagePreview(current.imageUrl ?? null);
-  }, [current?.id, assignments, current]);
-
-  useEffect(() => {
-    setProfileSaved(false);
-    setSuccess("");
-    setResetCredentials(null);
-    setError("");
-  }, [current?.id]);
-
-  function handleFileSelect(file: File | null) {
-    if (!file || !current) return;
-    const url = URL.createObjectURL(file);
-    setCropFileName(file.name || "teacher.jpg");
-    setCropZoom(1);
-    setCropPos({ x: 0, y: 0 });
-    setCropPixels(null);
-    setCropImageUrl(url);
-    setCropOpen(true);
-  }
-
-  async function applyCropAndUpload() {
-    if (!current?.id || !cropImageUrl || !cropPixels) return;
-    setUploadingImage(true);
-    setError("");
-    try {
-      const cropped = await cropTeacherImageFile(cropImageUrl, cropPixels, cropFileName);
-      const updated = await updateTeacher(current.id, {}, cropped);
-      setImagePreview(updated.imageUrl ?? null);
-      setCropOpen(false);
-      URL.revokeObjectURL(cropImageUrl);
-      setCropImageUrl(null);
-    } catch {
-      setError("فشل حفظ الصورة");
-    } finally {
-      setUploadingImage(false);
-    }
-  }
-
-  function cancelCrop() {
-    if (cropImageUrl) URL.revokeObjectURL(cropImageUrl);
-    setCropImageUrl(null);
-    setCropOpen(false);
-  }
-
-  async function saveProfile() {
-    if (!current) return;
-    setSavingProfile(true);
-    setError("");
-    setProfileSaved(false);
-    try {
-      await updateTeacher(current.id, {
-        staffTypeId: profileFields.staffTypeId,
-        name: profileFields.name.trim(),
-        nameEn: profileFields.nameEn.trim(),
-        nationalId: profileFields.nationalId.trim(),
-        dateOfBirth: profileFields.dateOfBirth || null,
-        gender: profileFields.gender,
-        maritalStatus: profileFields.maritalStatus,
-        mobile: profileFields.mobile.trim(),
-        altMobile: profileFields.altMobile.trim(),
-        address: profileFields.address.trim(),
-        joinDate: profileFields.joinDate || null,
-        notes: profileFields.notes.trim(),
-        experience: experience.trim(),
-        bio: bio.trim(),
-        status: current.isTeacher ? status : undefined,
-      });
-      setProfileSaved(true);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "فشل حفظ الملف الشخصي");
-    } finally {
-      setSavingProfile(false);
-    }
-  }
-
-  async function saveAssignments() {
-    if (!current || draftSubjects.length === 0) return;
-
-    const conflicts = findAssignmentConflicts(
-      teachers,
-      subjects,
-      classes,
-      draftSubjects,
-      draftClasses,
-      current.id
-    );
-    if (conflicts.length > 0) {
-      setError(conflicts[0]);
-      setSuccess("");
-      return;
-    }
-
-    setSavingAssignments(true);
-    setError("");
-    setSuccess("");
-    try {
-      await updateTeacher(current.id, {
-        subjectIds: draftSubjects,
-        classIds: draftClasses,
-      });
-      setSuccess("تم حفظ الإسناد بنجاح.");
-      pageTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "فشل حفظ الإسناد");
-    } finally {
-      setSavingAssignments(false);
-    }
-  }
-
-  async function resetTeacherPassword() {
-    if (!current?.id) return;
-    setResettingPassword(true);
-    setResetCredentials(null);
-    try {
-      const data = (await api.resetAdminTeacherPassword(current.id)) as Record<string, unknown>;
-      const username = String(data.username ?? current.username ?? "");
-      const password = String(data.password ?? "");
-      if (username && password) {
-        setResetCredentials({ name: current.name, username, password, role: "teacher" });
-        pageTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-      }
-    } finally {
-      setResettingPassword(false);
-    }
-  }
-
-  async function confirmDeleteTeacher() {
-    if (!current?.id) return;
-    setDeletingTeacher(true);
-    try {
-      await removeTeacher(current.id);
-      router.push("/admin/teachers");
-    } finally {
-      setDeletingTeacher(false);
-    }
-  }
-
-  if (!current) {
-    return (
-      <div className="mx-auto max-w-lg">
-        <PageHeader
-          title="تعديل عضو الكادر"
-          description="المعلم غير موجود أو لم يتم تحميل البيانات بعد."
-          className="mb-6"
-        />
-        <Card className="p-5">
-          <p className="text-sm text-neutral-700">
-            ارجع إلى{" "}
-            <Link href="/admin/teachers" className="font-semibold text-brand-blue hover:underline">
-              قائمة الكادر
-            </Link>
-            .
-          </p>
-        </Card>
-      </div>
-    );
-  }
-
-  const previewSrc = imagePreview?.startsWith("blob:")
-    ? imagePreview
-    : resolveMediaUrl(imagePreview ?? current.imageUrl);
+  const classNames = (assignments[teacherId] ?? [])
+    .map((classId) => classes.find((row) => row.id === classId)?.name)
+    .filter(Boolean) as string[];
+  const subjects =
+    current?.subjects?.length
+      ? current.subjects
+      : current?.subject
+        ? current.subject.split("، ").map((item) => item.trim()).filter(Boolean)
+        : [];
+  const imageSrc = resolveMediaUrl(current?.imageUrl);
+  const isActive = current?.status !== "inactive";
 
   return (
-    <div ref={pageTopRef} className="mx-auto max-w-4xl">
-      <PageHeader title="تعديل عضو الكادر" description={current.name} className="mb-6" />
-
-      {success ? (
-        <Alert variant="success" className="mb-4">
-          {success}
-        </Alert>
-      ) : null}
-
-      {error ? (
-        <Alert variant="error" className="mb-4">
-          {error}
-        </Alert>
-      ) : null}
-
-      {resetCredentials ? (
-        <Alert variant="success" className="mb-4">
-          <p className="mb-2 font-semibold">تم إعادة تعيين كلمة مرور المعلم — احفظ بيانات الدخول:</p>
-          <p>الاسم: {resetCredentials.name}</p>
-          <p>
-            اسم المستخدم: <span dir="ltr">{resetCredentials.username}</span>
-          </p>
-          <p>
-            كلمة المرور الجديدة: <span dir="ltr">{resetCredentials.password}</span>
-          </p>
-        </Alert>
-      ) : null}
-
-      <Card className="mb-5 overflow-hidden p-0">
-        <div className="flex flex-col gap-4 bg-gradient-to-br from-brand-blue/5 to-indigo-50 p-5 sm:flex-row sm:items-center sm:p-6">
-          <div
-            className={cn(
-              "flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl text-2xl font-bold text-white shadow-md",
-              !previewSrc && `bg-gradient-to-br ${current.imageGradient}`
-            )}
-          >
-            {previewSrc ? (
-              <img src={previewSrc} alt={current.name} className="h-full w-full object-cover" />
-            ) : (
-              teacherInitial(current.name)
-            )}
-          </div>
-          <div className="min-w-0 flex-1">
-            <h2 className="text-xl font-bold text-p-black">{current.name}</h2>
-            <p className="mt-1 text-sm text-p-black/75">
-              {current.staffTypeName || "—"}
-              {current.isTeacher && current.subject ? ` • ${current.subject}` : ""}
-            </p>
-            <div className="mt-2 flex flex-wrap gap-2">
-              {current.username ? (
-                <Badge variant="default" className="font-mono" dir="ltr">
-                  {current.username}
-                </Badge>
+    <WorkspacePage
+      title={current?.name ?? "ملف عضو الكادر"}
+      description={current?.staffTypeName || "بيانات عضو الكادر التعليمي."}
+      breadcrumbs={[
+        { label: "الكادر", href: "/admin/teachers" },
+        { label: current?.name ?? "الملف" },
+      ]}
+      loading={loading && !current}
+      loadingMessage="جاري تحميل الملف..."
+      actions={
+        current ? (
+          <Button href={`/admin/teachers/${current.id}/edit`}>
+            <Pencil className="h-4 w-4" />
+            تعديل
+          </Button>
+        ) : null
+      }
+    >
+      {!current && !loading ? (
+        <p className="text-sm text-p-black/70">
+          العضو غير موجود. ارجع إلى{" "}
+          <Link href="/admin/teachers" prefetch={false} className="font-semibold text-brand-blue hover:underline">
+            قائمة الكادر
+          </Link>
+          .
+        </p>
+      ) : current ? (
+        <div className="space-y-5">
+          <div className="flex flex-wrap items-center gap-4 rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
+            <span
+              className={cn(
+                "flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl text-xl font-bold text-white",
+                !imageSrc && `bg-gradient-to-br ${current.imageGradient}`
+              )}
+            >
+              {imageSrc ? (
+                <img src={imageSrc} alt="" className="h-full w-full object-cover" />
+              ) : (
+                teacherInitial(current.name)
+              )}
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-xl font-bold text-p-black">{current.name}</p>
+              {current.nameEn ? (
+                <p className="mt-1 text-sm text-p-black/60" dir="ltr">
+                  {current.nameEn}
+                </p>
               ) : null}
-              {current.isTeacher ? (
-                <>
-                  <Badge variant="info">{draftSubjects.length} مادة</Badge>
-                  <Badge variant="success">{draftClasses.length} فصل</Badge>
-                  <Badge variant={status === "active" ? "success" : "default"}>
-                    {status === "active" ? "نشط" : "غير نشط"}
+              <div className="mt-2 flex flex-wrap gap-2">
+                <Badge variant="info">{current.staffTypeName || "—"}</Badge>
+                {current.isTeacher ? (
+                  <Badge variant={isActive ? "success" : "default"}>
+                    {isActive ? "نشط" : "غير نشط"}
                   </Badge>
-                </>
-              ) : null}
-            </div>
-          </div>
-        </div>
-      </Card>
-
-      <div className="space-y-5">
-        <TeacherFormSection
-          icon={UserRound}
-          title="بيانات عضو الكادر"
-          description="البيانات الأساسية والتواصل"
-          tone="blue"
-        >
-          <div className="space-y-4">
-            <StaffProfileFieldsForm
-              fields={profileFields}
-              staffTypes={staffTypes}
-              onChange={setProfileFields}
-            />
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Input label="الخبرة (اختياري)" value={experience} onChange={(e) => setExperience(e.target.value)} />
-              {current.isTeacher ? (
-                <Select
-                  label="الحالة"
-                  name="status"
-                  options={teacherStatusOptions}
-                  value={status}
-                  onChange={(e) => setStatus(e.target.value as "active" | "inactive")}
-                />
-              ) : null}
-            </div>
-            <TeacherProfileImageField
-              name={profileFields.name}
-              imageGradient={current.imageGradient}
-              previewUrl={imagePreview}
-              disabled={uploadingImage}
-              onFileSelect={handleFileSelect}
-            />
-            <Textarea
-              label="نبذة / سيرة ذاتية (اختياري)"
-              value={bio}
-              onChange={(e) => setBio(e.target.value)}
-              rows={5}
-            />
-            <div className="flex flex-wrap items-center gap-3 border-t border-neutral-100 pt-4">
-              <Button type="button" onClick={saveProfile} disabled={savingProfile}>
-                <Save className="h-4 w-4" />
-                {savingProfile ? "جاري الحفظ..." : "حفظ الملف الشخصي"}
-              </Button>
-              {profileSaved ? <span className="text-sm text-p-green">تم الحفظ بنجاح</span> : null}
-            </div>
-          </div>
-        </TeacherFormSection>
-
-        {current.isTeacher ? (
-          <>
-            <TeacherFormSection
-              icon={BookMarked}
-              title="المواد الدراسية"
-              description="يمكن للمعلم تدريس أكثر من مادة — لكل فصل معلم واحد فقط لكل مادة"
-              tone="violet"
-            >
-              <TeacherSubjectPicker
-                subjects={subjects}
-                value={draftSubjects}
-                onChange={setDraftSubjects}
-                classIds={draftClasses}
-                occupiedPairs={occupiedPairs}
-              />
-            </TeacherFormSection>
-
-            <TeacherFormSection
-              icon={Layers}
-              title="فصول تدريس المواد"
-              description="الفصول التي يدرّس فيها المعلم مواده — مستقل عن مربي الصف"
-              tone="green"
-            >
-              <TeacherClassPicker
-                classes={classes}
-                grades={grades}
-                subjects={subjects}
-                value={draftClasses}
-                onChange={setDraftClasses}
-                subjectIds={draftSubjects}
-                occupiedPairs={occupiedPairs}
-              />
-              <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-neutral-100 pt-4">
-                <Button type="button" onClick={saveAssignments} disabled={savingAssignments || draftSubjects.length === 0}>
-                  <Save className="h-4 w-4" />
-                  {savingAssignments ? "جاري الحفظ..." : "حفظ الإسناد"}
-                </Button>
+                ) : null}
               </div>
-            </TeacherFormSection>
-          </>
-        ) : null}
-
-        <TeacherFormSection
-          icon={Shield}
-          title="الحساب والإجراءات"
-          description={current.isTeacher ? "كلمة المرور وحذف العضو" : "حذف العضو"}
-          tone="orange"
-        >
-          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-            {current.isTeacher ? (
-              <Button type="button" variant="outline" onClick={() => setConfirmReset(true)} disabled={resettingPassword}>
-                <KeyRound className="h-4 w-4" />
-                إعادة تعيين كلمة المرور
-              </Button>
-            ) : null}
-            <Button type="button" variant="danger" onClick={() => setConfirmDelete(true)}>
-              <Trash2 className="h-4 w-4" />
-              حذف العضو
-            </Button>
+            </div>
           </div>
-        </TeacherFormSection>
-      </div>
 
-      {confirmReset ? (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
-          role="dialog"
-          aria-modal="true"
-          onClick={() => setConfirmReset(false)}
-        >
-          <Card className="w-full max-w-lg p-6" onClick={(e) => e.stopPropagation()}>
-            <p className="text-base font-bold text-p-black">تأكيد تغيير كلمة المرور</p>
-            <p className="mt-2 text-sm text-p-black/70">
-              هل أنت متأكد من إعادة تعيين كلمة مرور المعلم{" "}
-              <span className="font-semibold">{current.name}</span>؟
-            </p>
-            <div className="mt-6 flex flex-wrap justify-end gap-3">
-              <Button type="button" variant="outline" onClick={() => setConfirmReset(false)}>
-                إلغاء
-              </Button>
-              <Button
-                type="button"
-                onClick={async () => {
-                  setConfirmReset(false);
-                  await resetTeacherPassword();
-                }}
-                disabled={resettingPassword}
-              >
-                {resettingPassword ? "جاري التغيير..." : "تأكيد"}
-              </Button>
-            </div>
-          </Card>
+          <ProfileSection title="البيانات الشخصية">
+            <ProfileField label="الاسم بالعربية" value={current.name} />
+            <ProfileField label="الاسم بالإنجليزية" value={current.nameEn} dir="ltr" />
+            <ProfileField label="التخصص / الوظيفة" value={current.staffTypeName} />
+            <ProfileField label="رقم الهوية" value={current.nationalId} dir="ltr" />
+            <ProfileField label="تاريخ الميلاد" value={formatProfileDate(current.dateOfBirth)} />
+            <ProfileField label="العمر" value={current.age != null ? `${current.age} سنة` : ""} />
+            <ProfileField label="الجنس" value={optionLabel(genderOptions, current.gender)} />
+            <ProfileField
+              label="الحالة الاجتماعية"
+              value={optionLabel(maritalStatusOptions, current.maritalStatus)}
+            />
+            <ProfileField label="تاريخ الالتحاق" value={formatProfileDate(current.joinDate)} />
+          </ProfileSection>
+
+          <ProfileSection title="التواصل">
+            <ProfileField label="الجوال" value={current.mobile} dir="ltr" />
+            <ProfileField label="جوال بديل" value={current.altMobile} dir="ltr" />
+            <ProfileField label="اسم المستخدم" value={current.username} dir="ltr" />
+            <ProfileField label="العنوان" value={current.address} wide />
+          </ProfileSection>
+
+          {current.isTeacher ? (
+            <ProfileSection title="التدريس">
+              <ProfileField
+                label="المواد"
+                value={
+                  subjects.length > 0 ? (
+                    <div className="flex flex-wrap gap-1.5">
+                      {subjects.map((subject) => (
+                        <Badge key={subject} variant="info">
+                          {subject}
+                        </Badge>
+                      ))}
+                    </div>
+                  ) : (
+                    ""
+                  )
+                }
+                wide
+              />
+              <ProfileField
+                label="الفصول المسندة"
+                value={
+                  classNames.length > 0 ? (
+                    <div className="space-y-2">
+                      <p className="inline-flex items-center gap-1 text-xs font-semibold text-brand-blue">
+                        <Layers className="h-3.5 w-3.5" />
+                        {classNames.length} فصل
+                      </p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {classNames.map((name) => (
+                          <span
+                            key={name}
+                            className="rounded-lg border border-neutral-200 bg-white px-2.5 py-1 text-xs font-medium"
+                          >
+                            {name}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    ""
+                  )
+                }
+                wide
+              />
+              <ProfileField label="الخبرة" value={current.experience} wide />
+              <ProfileField label="مربي الصف" value={current.homeroomClassName} />
+            </ProfileSection>
+          ) : null}
+
+          <ProfileSection title="ملاحظات">
+            <ProfileField
+              label="السيرة / النبذة"
+              value={current.bio ? <p className="whitespace-pre-wrap">{current.bio}</p> : ""}
+              wide
+            />
+            <ProfileField
+              label="ملاحظات داخلية"
+              value={current.notes ? <p className="whitespace-pre-wrap">{current.notes}</p> : ""}
+              wide
+            />
+          </ProfileSection>
         </div>
       ) : null}
-
-      {confirmDelete ? (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
-          role="dialog"
-          aria-modal="true"
-          onClick={() => setConfirmDelete(false)}
-        >
-          <Card className="w-full max-w-lg p-6" onClick={(e) => e.stopPropagation()}>
-            <p className="text-base font-bold text-p-black">تأكيد حذف المعلم</p>
-            <p className="mt-2 text-sm text-p-black/70">
-              هل أنت متأكد من حذف المعلم <span className="font-semibold">{current.name}</span>؟ سيتم حذف
-              حسابه وإزالة جميع إسناداته.
-            </p>
-            <div className="mt-6 flex flex-wrap justify-end gap-3">
-              <Button type="button" variant="outline" onClick={() => setConfirmDelete(false)}>
-                إلغاء
-              </Button>
-              <Button
-                type="button"
-                onClick={confirmDeleteTeacher}
-                disabled={deletingTeacher}
-                className="bg-p-red hover:bg-p-red/90 focus-visible:ring-p-red"
-              >
-                {deletingTeacher ? "جاري الحذف..." : "حذف"}
-              </Button>
-            </div>
-          </Card>
-        </div>
-      ) : null}
-
-      <TeacherCropModal
-        open={cropOpen}
-        imageUrl={cropImageUrl}
-        zoom={cropZoom}
-        cropPos={cropPos}
-        cropPixels={cropPixels}
-        saving={uploadingImage}
-        onZoomChange={setCropZoom}
-        onCropChange={setCropPos}
-        onCropComplete={setCropPixels}
-        onCancel={cancelCrop}
-        onConfirm={applyCropAndUpload}
-      />
-    </div>
+    </WorkspacePage>
   );
 }

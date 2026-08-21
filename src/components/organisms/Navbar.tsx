@@ -10,18 +10,19 @@ import { Button } from "@/components/atoms/Button";
 import { Logo } from "@/components/atoms/Logo";
 import { useAuth } from "@/context/AuthContext";
 import { publicNavLinks } from "@/data/navigation";
-import { getDashboardPath, getStoredAuthUser } from "@/lib/auth";
+import { getDashboardPath } from "@/lib/auth";
 import { cn } from "@/lib/utils";
+
+const headerLinks = publicNavLinks.filter((link) => link.href !== "/register");
 
 export function Navbar() {
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const pathname = usePathname();
-  const { user, loading } = useAuth();
-  const sessionUser = user ?? (loading ? getStoredAuthUser() : null);
-  const isLoggedIn = Boolean(sessionUser);
-  const authHref = isLoggedIn ? getDashboardPath(sessionUser!.role) : "/login";
-  const authLabel = isLoggedIn ? "لوحة التحكم" : "تسجيل الدخول";
+  const { user } = useAuth();
+  const isLoggedIn = Boolean(user);
+  const authHref = isLoggedIn ? getDashboardPath(user!.role) : "/login";
+  const authLabel = isLoggedIn ? "لوحة التحكم" : "دخول";
   const AuthIcon = isLoggedIn ? LayoutDashboard : LogIn;
 
   useEffect(() => {
@@ -34,47 +35,42 @@ export function Navbar() {
   return (
     <header
       className={cn(
-        "fixed inset-x-0 top-0 z-50 transition-colors duration-150",
-        scrolled ? "bg-white shadow-sm" : "bg-transparent"
+        "fixed inset-x-0 top-0 z-50 rounded-b-[1.75rem] border-b-[3px] border-brand-yellow bg-[#fff8ec]/95 transition-shadow duration-150",
+        scrolled && "shadow-[-4px_6px_0_0_rgba(249,180,40,0.35)] backdrop-blur-md"
       )}
     >
-      <nav className="mx-auto grid h-16 max-w-7xl grid-cols-[minmax(0,1fr)_auto] items-center gap-2 px-4 sm:gap-4 sm:px-6 lg:h-[4.5rem] lg:grid-cols-[auto_minmax(0,1fr)_auto] lg:px-8">
-        <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+      <nav className="flex h-16 items-center gap-3 px-3 sm:px-5 lg:h-[4.25rem] lg:px-6">
+        <div className="flex min-w-0 shrink-0 items-center">
           <Logo variant="full" />
         </div>
 
-        <div className="hidden items-center justify-center gap-5 lg:flex">
-          <ul className="flex items-center">
-            {publicNavLinks.map((link, i) => (
-              <li key={link.href} className="flex items-center">
-                {i > 0 && (
-                  <span className="mx-3 text-brand-black/20" aria-hidden>
-                    |
-                  </span>
-                )}
+        <ul className="hidden min-w-0 flex-1 items-center justify-center gap-1 lg:flex">
+          {headerLinks.map((link) => {
+            const active = pathname === link.href;
+            return (
+              <li key={link.href}>
                 <Link
                   href={link.href}
                   prefetch={false}
                   className={cn(
-                    "text-sm font-semibold transition-colors",
-                    pathname === link.href
-                      ? "text-brand-blue"
-                      : "text-brand-black/80 hover:text-brand-blue"
+                    "font-display inline-flex rounded-full px-3 py-1.5 text-sm font-extrabold transition",
+                    active
+                      ? "bg-brand-yellow text-p-black"
+                      : "text-p-black/70 hover:bg-white hover:text-brand-blue"
                   )}
                 >
                   {link.label}
                 </Link>
               </li>
-            ))}
-          </ul>
-          <PwaInstallButton />
-        </div>
+            );
+          })}
+        </ul>
 
-        <div className="flex shrink-0 items-center justify-end gap-1.5 sm:gap-3">
+        <div className="ms-auto flex shrink-0 items-center gap-1.5 sm:gap-2">
           <Link
             href={authHref}
             prefetch={false}
-            className="hidden items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold text-brand-black/80 transition-colors hover:text-brand-blue lg:flex"
+            className="hidden items-center gap-1.5 px-2 py-1.5 text-sm font-extrabold text-p-black/70 hover:text-brand-blue lg:flex"
           >
             <AuthIcon className="h-4 w-4" />
             {authLabel}
@@ -83,7 +79,7 @@ export function Navbar() {
             href={authHref}
             prefetch={false}
             aria-label={authLabel}
-            className="flex h-9 w-9 items-center justify-center rounded-lg text-brand-black/80 transition-colors hover:bg-black/5 hover:text-brand-blue lg:hidden"
+            className="flex h-9 w-9 items-center justify-center rounded-full text-p-black/75 hover:bg-white hover:text-brand-blue lg:hidden"
           >
             <AuthIcon className="h-5 w-5" />
           </Link>
@@ -91,20 +87,22 @@ export function Navbar() {
           <Button
             href="/register"
             variant="primary"
-            className="rounded-full px-3 py-2 text-xs shadow-md sm:px-5 sm:py-2.5 sm:text-sm lg:px-6"
+            className="rounded-full px-3 py-2 text-xs sm:px-4 sm:text-sm"
           >
             سجّل الآن
           </Button>
 
           <button
             type="button"
-            className="flex h-9 w-9 items-center justify-center rounded-lg text-brand-black hover:bg-black/5 lg:hidden"
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-yellow text-p-black lg:hidden"
             onClick={() => setOpen((v) => !v)}
             aria-label={open ? "إغلاق القائمة" : "فتح القائمة"}
             aria-expanded={open}
           >
             {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
+
+          <PwaInstallButton iconOnly />
         </div>
       </nav>
 
@@ -115,24 +113,29 @@ export function Navbar() {
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="overflow-hidden border-t border-brand-black/10 bg-white lg:hidden"
+            className="overflow-hidden border-t border-brand-yellow/40 bg-[#fff8ec] lg:hidden"
           >
-            <ul className="flex flex-col gap-1 px-4 py-3">
-              {publicNavLinks.map((link) => (
-                <li key={link.href}>
-                  <Link
-                    href={link.href}
-                    prefetch={false}
-                    onClick={() => setOpen(false)}
-                    className="block rounded-lg px-3 py-2.5 text-sm font-semibold text-brand-black/80 hover:text-brand-blue"
-                  >
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
-              <li className="px-3 py-2">
-                <PwaInstallButton className="w-full [&>button]:w-full" />
-              </li>
+            <ul className="flex flex-col gap-1 px-3 py-3">
+              {publicNavLinks.map((link) => {
+                const Icon = link.icon;
+                const active = pathname === link.href;
+                return (
+                  <li key={link.href}>
+                    <Link
+                      href={link.href}
+                      prefetch={false}
+                      onClick={() => setOpen(false)}
+                      className={cn(
+                        "font-display flex items-center gap-2 rounded-2xl px-3 py-2.5 text-sm font-extrabold",
+                        active ? "bg-brand-yellow text-p-black" : "text-p-black/80 hover:bg-white"
+                      )}
+                    >
+                      <Icon className="h-4 w-4" />
+                      {link.label}
+                    </Link>
+                  </li>
+                );
+              })}
             </ul>
           </motion.div>
         )}

@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 
 /** Shared native-select look with a clear custom chevron (site-wide filters). */
 export const selectControlClassName = cn(
-  "w-full appearance-none rounded-xl border border-neutral-200 bg-white py-2.5 pe-10 ps-4 text-sm font-medium text-p-black",
+  "w-full appearance-none rounded-2xl border-2 border-black/10 bg-white py-2.5 pe-10 ps-4 text-sm font-semibold text-p-black",
   "focus:border-p-green focus:outline-none focus:ring-2 focus:ring-p-green/20",
   "cursor-pointer disabled:cursor-not-allowed disabled:bg-neutral-100 disabled:text-p-black/70"
 );

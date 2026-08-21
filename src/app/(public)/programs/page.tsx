@@ -48,9 +48,9 @@ export default function ProgramsPage() {
         description="مسارات تعليمية متكاملة من الابتدائية إلى الثانوية، مصمّمة بمعايير عالمية وروح محلية أصيلة."
       />
 
-      <div className="mb-10 flex items-center gap-4 rounded-2xl border border-brand-blue/15 bg-brand-blue/5 px-5 py-4">
+      <div className="mb-10 flex items-center gap-4 rounded-[1.5rem_0.7rem_1.5rem_0.9rem] border-[3px] border-black/10 bg-brand-yellow/35 px-5 py-4 shadow-[-4px_5px_0_0_rgba(249,180,40,0.35)]">
         <GraduationCap className="h-6 w-6 shrink-0 text-brand-blue" />
-        <p className="text-sm leading-relaxed text-neutral-800 sm:text-base">
+        <p className="text-sm font-semibold leading-relaxed text-p-black/80 sm:text-base">
           كل مرحلة دراسية تُبنى على سابقتها — من الأساسيات إلى التخصص والجاهزية
           الجامعية.
         </p>
@@ -71,7 +71,7 @@ export default function ProgramsPage() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5, delay: i * 0.08 }}
-            className="group overflow-hidden rounded-3xl border border-neutral-200/80 bg-white shadow-[0_20px_50px_-24px_rgba(0,0,0,0.2)] transition-shadow hover:shadow-[0_28px_60px_-24px_rgba(66,76,243,0.3)]"
+            className="group overflow-hidden rounded-[1.8rem_0.8rem_1.8rem_1rem] border-[3px] border-black/10 bg-white shadow-[-6px_8px_0_0_rgba(66,76,243,0.14)]"
           >
             <div
               className={cn(
@@ -84,7 +84,7 @@ export default function ProgramsPage() {
                   {String(i + 1).padStart(2, "0")}
                 </span>
                 <div>
-                  <h3 className="text-xl font-bold text-white sm:text-2xl">برنامج الصف {p.grade}</h3>
+                  <h3 className="font-display text-xl font-extrabold text-white sm:text-2xl">برنامج الصف {p.grade}</h3>
                   <p className="mt-1 text-sm font-semibold text-white/90">{p.grade}</p>
                 </div>
               </div>

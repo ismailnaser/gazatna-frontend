@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { Button } from "@/components/atoms/Button";
 import { Card } from "@/components/atoms/Card";
+import { Checkbox } from "@/components/atoms/Checkbox";
 import { Input } from "@/components/atoms/Input";
 import { Select } from "@/components/atoms/Select";
 import { Textarea } from "@/components/atoms/Textarea";
@@ -433,24 +434,22 @@ export function QuizForm({
             { value: "closed", label: "مغلق يدوياً" },
           ]}
         />
-        <label className="flex items-start gap-2.5 rounded-xl border border-neutral-100 bg-neutral-50 px-3 py-3 text-sm text-p-black/80">
-          <input
-            type="checkbox"
-            name="gradesVisible"
-            defaultChecked={initial?.gradesVisible}
-            className="mt-0.5 rounded text-brand-blue"
-          />
-          <span>إظهار العلامة للطالب في صفحة التقييمات</span>
-        </label>
-        <label className="flex items-start gap-2.5 rounded-xl border border-neutral-100 bg-neutral-50 px-3 py-3 text-sm text-p-black/80">
-          <input
-            type="checkbox"
-            name="reviewAllowed"
-            defaultChecked={initial?.reviewAllowed}
-            className="mt-0.5 rounded text-brand-blue"
-          />
-          <span>السماح للطالب بمراجعة الإجابات والأخطاء بعد التسليم</span>
-        </label>
+        <div className="space-y-2">
+          <div className="rounded-xl border border-neutral-100 bg-neutral-50 px-3 py-3">
+            <Checkbox
+              name="gradesVisible"
+              defaultChecked={initial?.gradesVisible}
+              label="إظهار العلامة للطالب في صفحة التقييمات"
+            />
+          </div>
+          <div className="rounded-xl border border-neutral-100 bg-neutral-50 px-3 py-3">
+            <Checkbox
+              name="reviewAllowed"
+              defaultChecked={initial?.reviewAllowed}
+              label="السماح للطالب بمراجعة الإجابات والأخطاء بعد التسليم"
+            />
+          </div>
+        </div>
       </FormSection>
 
       <FormSection

@@ -31,7 +31,7 @@ export function TeacherCV({
       <Link
         href={backHref}
         prefetch={false}
-        className="mb-6 inline-flex items-center gap-2 text-sm font-medium text-[var(--brand-teal)] hover:underline"
+        className="mb-6 inline-flex items-center gap-2 rounded-full bg-brand-yellow px-3 py-1.5 text-sm font-extrabold text-p-black shadow-[-2px_2px_0_0_rgba(234,102,34,0.35)]"
       >
         <ArrowRight className="h-4 w-4" />
         {backLabel}
@@ -56,15 +56,18 @@ export function TeacherCV({
         </div>
 
         <div className="p-6 sm:p-8">
-          <h1 className="text-2xl font-bold text-[#1a1a1a] sm:text-3xl">
+          <h1 className="font-display text-2xl font-extrabold text-p-black sm:text-3xl">
             {teacher.name}
           </h1>
-          <div className="mt-2 h-1 w-16 rounded-full bg-[var(--brand-magenta)]" />
+          <div className="mt-2 flex items-center gap-2">
+            <span className="h-1.5 w-16 rounded-full bg-brand-orange" />
+            <span className="h-1.5 w-6 rounded-full bg-brand-yellow" />
+          </div>
 
           <div className="mt-6 space-y-4">
             <div className="flex items-start gap-3">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--brand-teal)]/10">
-                <GraduationCap className="h-5 w-5 text-[var(--brand-teal)]" />
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-brand-yellow text-p-black">
+                <GraduationCap className="h-5 w-5" />
               </span>
               <div>
                 <p className="text-sm font-semibold text-[#1a1a1a]/50">التخصص</p>
@@ -73,8 +76,8 @@ export function TeacherCV({
             </div>
 
             <div className="flex items-start gap-3">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--brand-teal)]/10">
-                <Briefcase className="h-5 w-5 text-[var(--brand-teal)]" />
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-brand-blue/10 text-brand-blue">
+                <Briefcase className="h-5 w-5" />
               </span>
               <div>
                 <p className="text-sm font-semibold text-[#1a1a1a]/50">الخبرة</p>
@@ -88,7 +91,7 @@ export function TeacherCV({
           </ExpandableText>
 
           <div className="mt-8 border-t border-neutral-100 pt-6">
-            <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-[var(--brand-teal)]">
+            <h2 className="font-display mb-4 flex items-center gap-2 text-lg font-extrabold text-brand-blue">
               <BookOpen className="h-5 w-5" />
               الفصول التي يدرّسها
             </h2>
@@ -116,12 +119,12 @@ export function TeacherCV({
                         <Link
                           href={href}
                           prefetch={false}
-                          className="block rounded-xl border border-neutral-100 bg-[var(--brand-teal)]/5 px-4 py-3 transition hover:border-[var(--brand-teal)]/30 hover:bg-[var(--brand-teal)]/10"
+                          className="block rounded-[1.2rem] border-[3px] border-black/10 bg-brand-yellow/25 px-4 py-3 transition hover:-translate-y-0.5"
                         >
                           {content}
                         </Link>
                       ) : (
-                        <div className="rounded-xl border border-neutral-100 bg-[var(--brand-teal)]/5 px-4 py-3">
+                        <div className="rounded-[1.2rem] border-[3px] border-black/10 bg-brand-yellow/25 px-4 py-3">
                           {content}
                         </div>
                       )}

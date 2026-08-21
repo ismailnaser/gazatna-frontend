@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Alert } from "@/components/atoms/Alert";
 import { Button } from "@/components/atoms/Button";
 import { Card } from "@/components/atoms/Card";
-import { PageHeader } from "@/components/molecules/PageHeader";
+import { WorkspacePage } from "@/components/dashboard/WorkspacePage";
 import { TeacherScheduleTable } from "@/components/schedules/TeacherScheduleTable";
 import { useSchedulePdfExport } from "@/hooks/useSchedulePdfExport";
 import { api } from "@/lib/api";
@@ -41,12 +41,14 @@ export default function TeacherSchedulesPage() {
   }
 
   return (
-    <div className="space-y-4">
-      <PageHeader
-        title="جدول حصصي"
-        description="حصصك الأسبوعية حسب الجداول المنشورة للفصول والشعب المسندة إليك."
-      />
-
+    <WorkspacePage
+      title="جدول حصصي"
+      description="حصصك الأسبوعية حسب الجداول المنشورة للفصول والشعب المسندة إليك."
+      breadcrumbs={[
+        { label: "فصولي", href: "/teacher" },
+        { label: "جدول حصصي" },
+      ]}
+    >
       {error ? <Alert variant="error">{error}</Alert> : null}
 
       <Card className="overflow-hidden">
@@ -73,6 +75,6 @@ export default function TeacherSchedulesPage() {
           )}
         </div>
       </Card>
-    </div>
+    </WorkspacePage>
   );
 }

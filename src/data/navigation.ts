@@ -1,5 +1,10 @@
 import type { UserRole } from "@/types";
-import { getAdminNav, isAdminRole } from "@/lib/adminRoles";
+import {
+  adminNavGroupLabels,
+  getAdminNav,
+  isAdminRole,
+  type AdminNavGroup,
+} from "@/lib/adminRoles";
 import {
   Bell,
   BookMarked,
@@ -16,47 +21,92 @@ import {
   Archive,
   FolderArchive,
   PenLine,
+  Phone,
+  Sparkles,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+
+export type DashboardNavGroup =
+  | AdminNavGroup
+  | "teaching"
+  | "records"
+  | "study"
+  | "documents"
+  | "finance";
+
+export const dashboardNavGroupLabels: Record<DashboardNavGroup, string> = {
+  ...adminNavGroupLabels,
+  teaching: "التدريس",
+  records: "السجلات",
+  study: "عالمي الدراسي",
+  documents: "الوثائق",
+  finance: "المالية",
+};
 
 export type NavItem = {
   href: string;
   label: string;
   icon: LucideIcon;
+  group?: DashboardNavGroup;
 };
 
+const NAV_GROUP_ORDER: DashboardNavGroup[] = [
+  "overview",
+  "people",
+  "academics",
+  "operations",
+  "teaching",
+  "records",
+  "study",
+  "documents",
+  "finance",
+];
+
+export function groupDashboardNav(items: NavItem[]): Array<{
+  id: DashboardNavGroup;
+  label: string;
+  items: NavItem[];
+}> | null {
+  if (!items.some((item) => item.group)) return null;
+  return NAV_GROUP_ORDER.map((id) => ({
+    id,
+    label: dashboardNavGroupLabels[id],
+    items: items.filter((item) => item.group === id),
+  })).filter((group) => group.items.length > 0);
+}
+
 export const publicNavLinks = [
-  { href: "/", label: "الرئيسية" },
-  { href: "/about", label: "من نحن" },
-  { href: "/programs", label: "البرامج" },
-  { href: "/faculty", label: "الكادر التعليمي" },
-  { href: "/register", label: "التسجيل" },
-  { href: "/contact", label: "تواصل" },
+  { href: "/", label: "الرئيسية", icon: Home },
+  { href: "/about", label: "من نحن", icon: Sparkles },
+  { href: "/programs", label: "البرامج", icon: BookOpen },
+  { href: "/faculty", label: "الكادر التعليمي", icon: GraduationCap },
+  { href: "/register", label: "التسجيل", icon: ClipboardList },
+  { href: "/contact", label: "تواصل", icon: Phone },
 ] as const;
 
 const parentNav: NavItem[] = [
-  { href: "/parent", label: "الرئيسية", icon: Home },
-  { href: "/parent/subjects", label: "المواد المسندة", icon: BookMarked },
-  { href: "/parent/homework", label: "محتوى المواد", icon: PenLine },
-  { href: "/parent/assessments", label: "التقييمات", icon: BookOpenCheck },
-  { href: "/parent/grades", label: "العلامات", icon: BookOpen },
-  { href: "/parent/certificates", label: "الشهادات", icon: Medal },
-  { href: "/parent/certificate-archive", label: "أرشيف الشهادات", icon: FolderArchive },
-  { href: "/parent/schedules", label: "الجداول", icon: CalendarDays },
-  { href: "/parent/archive", label: "أرشيف السنوات السابقة", icon: Archive },
-  { href: "/parent/fees", label: "المالية", icon: CreditCard },
+  { href: "/parent", label: "الرئيسية", icon: Home, group: "overview" },
+  { href: "/parent/subjects", label: "موادي", icon: BookMarked, group: "study" },
+  { href: "/parent/homework", label: "مهام المغامرة", icon: PenLine, group: "study" },
+  { href: "/parent/assessments", label: "التقييمات", icon: BookOpenCheck, group: "study" },
+  { href: "/parent/grades", label: "العلامات", icon: BookOpen, group: "study" },
+  { href: "/parent/schedules", label: "الجداول", icon: CalendarDays, group: "study" },
+  { href: "/parent/certificates", label: "الشهادات", icon: Medal, group: "documents" },
+  { href: "/parent/certificate-archive", label: "أرشيف الشهادات", icon: FolderArchive, group: "documents" },
+  { href: "/parent/archive", label: "أرشيف السنوات السابقة", icon: Archive, group: "documents" },
+  { href: "/parent/fees", label: "المالية", icon: CreditCard, group: "finance" },
 ];
 
 const teacherNav: NavItem[] = [
-  { href: "/teacher", label: "فصولي", icon: GraduationCap },
-  { href: "/teacher/schedules", label: "جدول حصصي", icon: CalendarDays },
-  { href: "/teacher/homework", label: "الواجبات", icon: PenLine },
-  { href: "/teacher/quizzes", label: "الاختبارات", icon: ClipboardList },
-  { href: "/teacher/grade-entry", label: "إضافة التقييمات والعلامات للطلاب", icon: BookOpenCheck },
-  { href: "/teacher/announcements", label: "الإعلانات", icon: Bell },
-  { href: "/teacher/materials", label: "مرفقات المواد", icon: FolderOpen },
-  { href: "/teacher/archive", label: "أرشيف السنوات السابقة", icon: Archive },
-  { href: "/teacher/profile", label: "سيرتي الذاتية", icon: FileText },
+  { href: "/teacher", label: "فصولي", icon: GraduationCap, group: "overview" },
+  { href: "/teacher/homework", label: "الواجبات", icon: PenLine, group: "teaching" },
+  { href: "/teacher/quizzes", label: "الاختبارات", icon: ClipboardList, group: "teaching" },
+  { href: "/teacher/grade-entry", label: "التقييمات والعلامات", icon: BookOpenCheck, group: "teaching" },
+  { href: "/teacher/announcements", label: "الإعلانات", icon: Bell, group: "teaching" },
+  { href: "/teacher/materials", label: "مرفقات المواد", icon: FolderOpen, group: "teaching" },
+  { href: "/teacher/schedules", label: "جدول حصصي", icon: CalendarDays, group: "records" },
+  { href: "/teacher/archive", label: "أرشيف السنوات السابقة", icon: Archive, group: "records" },
+  { href: "/teacher/profile", label: "سيرتي الذاتية", icon: FileText, group: "records" },
 ];
 
 export const roleLabels: Record<UserRole, string> = {

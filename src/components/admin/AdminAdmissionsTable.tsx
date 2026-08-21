@@ -1,10 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import Link from "next/link";
 import { Badge } from "@/components/atoms/Badge";
-import { Button } from "@/components/atoms/Button";
 import {
-  ExpandRowButton,
   TABLE_BASE,
   TABLE_TD,
   TABLE_TH,
@@ -12,10 +10,9 @@ import {
   TablePagination,
   useClientPagination,
 } from "@/components/shared/DataTable";
-import { ExpandableText } from "@/components/molecules/ExpandableText";
 import { formatMetaDate } from "@/lib/dateDisplay";
 import { cn } from "@/lib/utils";
-import { Check, Eye, RotateCcw, Trash2 } from "lucide-react";
+import { ChevronLeft } from "lucide-react";
 
 export type AdminAdmissionRow = {
   id: string;
@@ -39,10 +36,6 @@ type AdminAdmissionsTableProps = {
   rows: AdminAdmissionRow[];
   variant: "pending" | "approved" | "all";
   hasActiveFilters: boolean;
-  onApprove: (row: AdminAdmissionRow) => void;
-  onUnapprove: (row: AdminAdmissionRow) => void;
-  onDelete: (row: AdminAdmissionRow) => void;
-  onView: (row: AdminAdmissionRow) => void;
 };
 
 function statusBadge(status: AdminAdmissionRow["status"]) {
@@ -51,42 +44,21 @@ function statusBadge(status: AdminAdmissionRow["status"]) {
   return <Badge variant="warning">قيد المراجعة</Badge>;
 }
 
-function DateCell({ value }: { value: string | null | undefined }) {
-  const { date, time } = formatMetaDate(value);
-  return (
-    <>
-      <p>{date}</p>
-      {time ? (
-        <p className="mt-0.5 text-p-black/72" dir="ltr">
-          {time}
-        </p>
-      ) : null}
-    </>
-  );
-}
-
 export function AdminAdmissionsTable({
   rows,
   variant,
   hasActiveFilters,
-  onApprove,
-  onUnapprove,
-  onDelete,
-  onView,
 }: AdminAdmissionsTableProps) {
-  const [expandedId, setExpandedId] = useState<string | null>(null);
   const { page, totalPages, pageItems, pageSize, total, next, prev, setPage } =
     useClientPagination(rows, 10);
 
   if (rows.length === 0) {
     return (
-      <p className="py-10 text-center text-sm text-p-black/72">
+      <p className="py-10 text-center text-sm text-p-black/70">
         {hasActiveFilters ? "لا توجد نتائج مطابقة للبحث." : "لا توجد طلبات في هذا القسم."}
       </p>
     );
   }
-
-  const showStatus = variant === "all";
 
   return (
     <div className={TABLE_WRAP}>
@@ -95,176 +67,46 @@ export function AdminAdmissionsTable({
           <thead>
             <tr>
               <th className={TABLE_TH}>اسم الطالب</th>
-              <th className={cn(TABLE_TH, "w-40")}>رقم الهوية</th>
+              <th className={TABLE_TH}>ولي الأمر</th>
+              <th className={TABLE_TH}>المرحلة</th>
+              {variant === "all" ? <th className={TABLE_TH}>الحالة</th> : null}
+              <th className={TABLE_TH}>التاريخ</th>
+              <th className={TABLE_TH}></th>
             </tr>
           </thead>
           <tbody>
             {pageItems.map((row, index) => {
-              const open = expandedId === row.id;
+              const { date } = formatMetaDate(row.createdAt);
               return (
-                <tr key={row.id} className={cn(index % 2 === 1 && "bg-neutral-50/70")}>
-                  <td className={TABLE_TD} colSpan={open ? 2 : 1}>
-                    {!open ? (
-                      <ExpandRowButton
-                        open={false}
-                        label={row.studentName}
-                        onClick={() => setExpandedId(row.id)}
-                      />
-                    ) : (
-                      <div className="space-y-4">
-                        <div className="flex flex-wrap items-start justify-between gap-3">
-                          <div>
-                            <p className="text-lg font-bold text-p-black">{row.studentName}</p>
-                            {row.nationalId ? (
-                              <p className="mt-1 text-sm text-p-black/72" dir="ltr">
-                                هوية: {row.nationalId}
-                              </p>
-                            ) : null}
-                          </div>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            className="px-3 py-1.5 text-xs"
-                            onClick={() => setExpandedId(null)}
-                          >
-                            إغلاق
-                          </Button>
-                        </div>
-
-                        <dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                          <div>
-                            <dt className="text-xs font-semibold text-p-black/72">ولي الأمر</dt>
-                            <dd className="mt-0.5 font-medium">{row.parentName}</dd>
-                          </div>
-                          <div>
-                            <dt className="text-xs font-semibold text-p-black/72">الجوال</dt>
-                            <dd className="mt-0.5 font-medium" dir="ltr">
-                              {row.phone || "—"}
-                            </dd>
-                          </div>
-                          {row.email ? (
-                            <div>
-                              <dt className="text-xs font-semibold text-p-black/72">البريد</dt>
-                              <dd className="mt-0.5 font-medium" dir="ltr">
-                                {row.email}
-                              </dd>
-                            </div>
-                          ) : null}
-                          <div>
-                            <dt className="text-xs font-semibold text-p-black/72">المرحلة المطلوبة</dt>
-                            <dd className="mt-0.5 font-medium">{row.grade || "—"}</dd>
-                          </div>
-                          {row.birthDate ? (
-                            <div>
-                              <dt className="text-xs font-semibold text-p-black/72">تاريخ الميلاد</dt>
-                              <dd className="mt-0.5 font-medium">{row.birthDate}</dd>
-                            </div>
-                          ) : null}
-                          {row.address ? (
-                            <div className="sm:col-span-2">
-                              <dt className="text-xs font-semibold text-p-black/72">العنوان</dt>
-                              <dd className="mt-0.5 font-medium">{row.address}</dd>
-                            </div>
-                          ) : null}
-                          <div>
-                            <dt className="text-xs font-semibold text-p-black/72">تاريخ الطلب</dt>
-                            <dd className="mt-0.5 text-sm">
-                              <DateCell value={row.createdAt} />
-                            </dd>
-                          </div>
-                          {showStatus ? (
-                            <div>
-                              <dt className="text-xs font-semibold text-p-black/72">الحالة</dt>
-                              <dd className="mt-1">{statusBadge(row.status)}</dd>
-                            </div>
-                          ) : null}
-                          {(variant === "approved" || showStatus) && row.status === "approved" ? (
-                            <div>
-                              <dt className="text-xs font-semibold text-p-black/72">الاعتماد</dt>
-                              <dd className="mt-0.5">
-                                <p className="font-medium">{row.approvedByName ?? "—"}</p>
-                                {row.approvedAt ? (
-                                  <div className="mt-0.5 text-xs text-p-black/72">
-                                    <DateCell value={row.approvedAt} />
-                                  </div>
-                                ) : null}
-                              </dd>
-                            </div>
-                          ) : null}
-                          {row.notes ? (
-                            <div className="sm:col-span-2 lg:col-span-3">
-                              <dt className="text-xs font-semibold text-p-black/72">ملاحظات</dt>
-                              <dd className="mt-1">
-                                <ExpandableText maxLines={3} className="text-sm text-p-black/78">
-                                  {row.notes}
-                                </ExpandableText>
-                              </dd>
-                            </div>
-                          ) : null}
-                        </dl>
-
-                        <div className="flex flex-wrap gap-2 border-t border-neutral-100 pt-3">
-                          {row.status === "pending" ? (
-                            <Button
-                              type="button"
-                              className="gap-1.5 px-3 py-1.5 text-xs"
-                              onClick={() => onApprove(row)}
-                            >
-                              <Check className="h-3.5 w-3.5" />
-                              اعتماد
-                            </Button>
-                          ) : null}
-                          {row.status === "approved" ? (
-                            <>
-                              {row.approvedStudentId ? (
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  className="gap-1.5 px-3 py-1.5 text-xs"
-                                  onClick={() => onView(row)}
-                                >
-                                  <Eye className="h-3.5 w-3.5" />
-                                  عرض
-                                </Button>
-                              ) : null}
-                              <Button
-                                type="button"
-                                variant="outline"
-                                className="gap-1.5 px-3 py-1.5 text-xs text-amber-700 hover:text-amber-800"
-                                onClick={() => onUnapprove(row)}
-                              >
-                                <RotateCcw className="h-3.5 w-3.5" />
-                                تراجع
-                              </Button>
-                            </>
-                          ) : null}
-                          {row.status === "pending" ? (
-                            <Button
-                              type="button"
-                              variant="outline"
-                              className="gap-1.5 px-3 py-1.5 text-xs text-p-red hover:text-p-red"
-                              onClick={() => onDelete(row)}
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                              حذف
-                            </Button>
-                          ) : null}
-                        </div>
-                      </div>
-                    )}
+                <tr key={row.id} className={cn(index % 2 === 1 && "bg-neutral-50/70", "hover:bg-neutral-50")}>
+                  <td className={TABLE_TD}>
+                    <Link
+                      href={`/admin/admissions/${row.id}`}
+                      prefetch={false}
+                      className="font-semibold text-p-black hover:text-brand-blue"
+                    >
+                      {row.studentName}
+                    </Link>
+                    {row.nationalId ? (
+                      <p className="mt-0.5 text-xs text-p-black/50" dir="ltr">
+                        {row.nationalId}
+                      </p>
+                    ) : null}
                   </td>
-                  {!open ? (
-                    <td className={TABLE_TD}>
-                      <button
-                        type="button"
-                        className="font-mono text-sm text-p-black/80"
-                        dir="ltr"
-                        onClick={() => setExpandedId(row.id)}
-                      >
-                        {row.nationalId || "—"}
-                      </button>
-                    </td>
-                  ) : null}
+                  <td className={TABLE_TD}>{row.parentName}</td>
+                  <td className={TABLE_TD}>{row.grade || "—"}</td>
+                  {variant === "all" ? <td className={TABLE_TD}>{statusBadge(row.status)}</td> : null}
+                  <td className={TABLE_TD}>{date}</td>
+                  <td className={TABLE_TD}>
+                    <Link
+                      href={`/admin/admissions/${row.id}`}
+                      prefetch={false}
+                      className="inline-flex items-center gap-1 text-sm font-semibold text-brand-blue hover:underline"
+                    >
+                      فتح
+                      <ChevronLeft className="h-4 w-4" />
+                    </Link>
+                  </td>
                 </tr>
               );
             })}

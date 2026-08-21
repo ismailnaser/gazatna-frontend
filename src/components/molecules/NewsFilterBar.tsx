@@ -18,10 +18,10 @@ export function NewsFilterBar({
           type="button"
           onClick={() => onChange(f)}
           className={cn(
-            "rounded-full px-4 py-1.5 text-sm font-medium transition-colors",
+            "rounded-full px-4 py-1.5 text-sm font-extrabold transition-transform hover:-translate-y-0.5",
             filter === f
-              ? "bg-[var(--brand-teal)] text-white"
-              : "border border-neutral-200 bg-white text-[#1a1a1a]/70 hover:border-[var(--brand-teal)]/30"
+              ? "bg-brand-blue text-white shadow-[-3px_3px_0_0_rgba(249,180,40,0.7)]"
+              : "border-2 border-black/10 bg-white text-p-black/70 hover:border-brand-yellow"
           )}
         >
           {f}

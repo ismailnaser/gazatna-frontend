@@ -86,7 +86,7 @@ export default function RegisterPage() {
     >
       <form
         onSubmit={handleSubmit}
-        className="mx-auto max-w-xl space-y-4 rounded-2xl border border-neutral-100 bg-neutral-50 p-6 shadow-sm"
+        className="mx-auto max-w-xl space-y-4 rounded-[2rem_1rem_2rem_1.2rem] border-[3px] border-brand-blue/20 bg-white p-6 shadow-[-7px_8px_0_0_rgba(66,76,243,0.16)]"
       >
         {error && <Alert variant="error">{error}</Alert>}
         <Input label="اسم الطالب" name="studentName" required />

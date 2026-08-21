@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { FeaturedNewsCard } from "@/components/molecules/FeaturedNewsCard";
 import { NewsFilterBar } from "@/components/molecules/NewsFilterBar";
 import { PublicPage } from "@/components/molecules/PublicPage";
@@ -23,34 +23,44 @@ export function NewsListClient() {
       .finally(() => setLoading(false));
   }, []);
 
-  const filtered = useMemo(() => {
-    if (filter === "الكل") return items;
-    return items.filter((item) => item.category === filter);
-  }, [filter, items]);
+  useEffect(() => {
+    if (loading || items.length === 0) return;
+    const hash = window.location.hash.replace("#", "");
+    if (!hash) return;
+    const target = document.getElementById(hash);
+    target?.scrollIntoView({ block: "start" });
+  }, [loading, items]);
+
+  const filtered = filter === "الكل" ? items : items.filter((item) => item.category === filter);
 
   return (
-    <PublicPage
-      title="أخبار المدرسة"
-      description="جميع الأخبار والفعاليات والإنجازات في مدرستنا"
-    >
-      <div className="mb-8">
+    <PublicPage title="أخبار المدرسة" description="اسحب لتحت على خيط البوستات">
+      <div className="mx-auto mb-8 max-w-lg">
         <NewsFilterBar filter={filter} onChange={setFilter} />
       </div>
 
       {loading ? (
-        <div className="space-y-6">
-          <div className="h-56 animate-pulse rounded-2xl bg-neutral-100" />
-          <div className="h-32 animate-pulse rounded-2xl bg-neutral-100" />
+        <div className="mx-auto max-w-lg space-y-6">
+          <div className="aspect-square animate-pulse rounded-[1.6rem] bg-white/80" />
+          <div className="h-24 animate-pulse rounded-[1.6rem] bg-white/80" />
         </div>
       ) : filtered.length === 0 ? (
-        <p className="text-center text-neutral-700">
+        <p className="text-center font-semibold text-p-black/60">
           {items.length === 0 ? "لا توجد أخبار حالياً." : "لا توجد أخبار في هذا التصنيف."}
         </p>
       ) : (
-        <div className="mx-auto max-w-3xl space-y-8">
-          {filtered.map((item) => (
-            <FeaturedNewsCard key={item.id} item={item} />
-          ))}
+        <div className="relative mx-auto max-w-lg ps-7">
+          <span
+            className="candy-thread pointer-events-none absolute inset-y-3 start-0 w-2.5"
+            aria-hidden
+          />
+          <div className="relative space-y-8">
+            {filtered.map((item) => (
+              <div key={item.id} id={`reel-${item.id}`} className="scroll-mt-24">
+                <FeaturedNewsCard item={item} />
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </PublicPage>

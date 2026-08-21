@@ -95,7 +95,7 @@ export default function AdminFeePlanCreatePage() {
     setValidationError("");
     try {
       await api.createAdminFeePlan(formatPlanPayload(planForm));
-      router.push("/admin/finance?tab=plans");
+      router.push("/admin/finance/plans");
     } catch (err) {
       setError(err instanceof Error ? err.message : "تعذر حفظ خطة الرسوم");
     } finally {
@@ -111,7 +111,7 @@ export default function AdminFeePlanCreatePage() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <PageHeader title="خطة رسوم جديدة" description="إنشاء خطة أقساط للمراحل الدراسية" />
-        <Button href="/admin/finance?tab=plans" variant="outline" className="gap-2">
+        <Button href="/admin/finance/plans" variant="outline" className="gap-2">
           <ArrowRight className="h-4 w-4" />
           العودة للمالية
         </Button>
@@ -131,7 +131,7 @@ export default function AdminFeePlanCreatePage() {
           saving={saving}
           validationError={validationError}
           onSubmit={savePlan}
-          onCancel={() => router.push("/admin/finance?tab=plans")}
+          onCancel={() => router.push("/admin/finance/plans")}
         />
       </Card>
     </div>

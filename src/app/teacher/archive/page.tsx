@@ -5,7 +5,8 @@ import { Alert } from "@/components/atoms/Alert";
 import { Badge } from "@/components/atoms/Badge";
 import { Button } from "@/components/atoms/Button";
 import { Card } from "@/components/atoms/Card";
-import { PageBusy, PageHeader } from "@/components/molecules/PageHeader";
+import { WorkspacePage } from "@/components/dashboard/WorkspacePage";
+import { EmptyState } from "@/components/molecules/EmptyState";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { ChevronLeft } from "lucide-react";
@@ -128,29 +129,23 @@ export default function TeacherArchivePage() {
     setStudents([]);
   }
 
-  if (loading) {
-    return (
-      <PageBusy
-        title="أرشيف السنوات السابقة"
-        description="عرض علامات الطلاب في الفصول المنتهية — للقراءة فقط"
-      />
-    );
-  }
-
   return (
-    <div className="space-y-4">
-      <PageHeader
-        title="أرشيف السنوات السابقة"
-        description="عرض علامات الطلاب في الفصول المنتهية — للقراءة فقط"
-      />
-
+    <WorkspacePage
+      title="أرشيف السنوات السابقة"
+      description="عرض علامات الطلاب في الفصول المنتهية — للقراءة فقط"
+      breadcrumbs={[
+        { label: "فصولي", href: "/teacher" },
+        { label: "الأرشيف" },
+      ]}
+      loading={loading}
+    >
       {error ? <Alert variant="error">{error}</Alert> : null}
 
       {!hasContent ? (
-        <Card className="p-6 text-sm text-p-black/78">
-          لا يوجد أرشيف بعد. بعد إغلاق فصل دراسي ستظهر هنا علامات الطلاب التي أدخلتها في الفصول
-          السابقة.
-        </Card>
+        <EmptyState
+          title="لا يوجد أرشيف بعد"
+          description="بعد إغلاق فصل دراسي ستظهر هنا علامات الطلاب التي أدخلتها في الفصول السابقة."
+        />
       ) : null}
 
       {selectedClass && selectedTerm ? (
@@ -274,6 +269,6 @@ export default function TeacherArchivePage() {
           </Card>
         ))
       )}
-    </div>
+    </WorkspacePage>
   );
 }

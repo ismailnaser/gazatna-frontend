@@ -6,8 +6,8 @@ export function formatExportDate() {
   return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
 }
 
-export function escapeHtml(text: string) {
-  return text
+export function escapeHtml(text: unknown) {
+  return String(text ?? "")
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
@@ -20,18 +20,19 @@ export function getSchoolLogoUrl() {
 }
 
 export async function loadSchoolLogoDataUrl() {
-  const response = await fetch(getSchoolLogoUrl());
-  if (!response.ok) {
-    throw new Error("failed to load school logo");
+  try {
+    const response = await fetch(getSchoolLogoUrl());
+    if (!response.ok) return "";
+    const blob = await response.blob();
+    return await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result || ""));
+      reader.onerror = () => reject(new Error("failed to read school logo"));
+      reader.readAsDataURL(blob);
+    });
+  } catch {
+    return "";
   }
-
-  const blob = await response.blob();
-  return new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result));
-    reader.onerror = () => reject(new Error("failed to read school logo"));
-    reader.readAsDataURL(blob);
-  });
 }
 
 export function buildPdfBrandedHeaderHtml(options: {
@@ -54,14 +55,18 @@ export function buildPdfBrandedHeaderHtml(options: {
 
   return `
     <header style="display:flex;align-items:center;gap:20px;border-bottom:2px solid #424cf3;padding-bottom:16px;margin-bottom:18px;">
-      <img
+      ${
+        logoDataUrl
+          ? `<img
         src="${logoDataUrl}"
         alt="شعار المدرسة"
         style="height:76px;width:auto;max-width:340px;object-fit:contain;display:block;flex-shrink:0;"
-      />
+      />`
+          : ""
+      }
       <div style="flex:1;min-width:0;text-align:right;">
         ${schoolLine}
-        <h1 style="margin:0;font-size:22px;font-weight:700;color:#111111;line-height:1.35;">${escapeHtml(title)}</h1>
+        <h1 style="margin:0;font-family:var(--font-kids),'Baloo Bhaijaan 2',Tahoma,Arial,sans-serif;font-size:22px;font-weight:800;color:#111111;line-height:1.35;">${escapeHtml(title)}</h1>
         ${metaLines}
       </div>
     </header>

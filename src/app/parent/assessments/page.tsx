@@ -4,8 +4,9 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Badge } from "@/components/atoms/Badge";
 import { Card } from "@/components/atoms/Card";
-import { PageHeader } from "@/components/molecules/PageHeader";
-import { api } from "@/lib/api";
+import { WorkspacePage } from "@/components/dashboard/WorkspacePage";
+import { EmptyState } from "@/components/molecules/EmptyState";
+import { api, peekCachedList } from "@/lib/api";
 import type { ParentAssessmentItem } from "@/types";
 import { ClipboardList, PenLine } from "lucide-react";
 
@@ -21,34 +22,32 @@ function formatAt(value?: string | null) {
 }
 
 export default function ParentAssessmentsPage() {
-  const [items, setItems] = useState<ParentAssessmentItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const cached = peekCachedList<ParentAssessmentItem>("/parent/assessments/");
+  const [items, setItems] = useState<ParentAssessmentItem[]>(cached ?? []);
+  const [loading, setLoading] = useState(!cached);
 
   useEffect(() => {
     api
       .getParentAssessments()
       .then((data) => setItems(data as ParentAssessmentItem[]))
-      .catch(() => setItems([]))
+      .catch(() => {
+        if (!cached) setItems([]);
+      })
       .finally(() => setLoading(false));
   }, []);
 
   return (
-    <div>
-      <PageHeader
-        title="التقييمات"
-        description="علامات الواجبات والاختبارات التي أظهرها المعلم"
-        className="mb-6"
-      />
-
-      {loading ? (
-        <div className="space-y-3">
-          <div className="h-24 animate-pulse rounded-2xl bg-neutral-100" />
-          <div className="h-24 animate-pulse rounded-2xl bg-neutral-100" />
-        </div>
-      ) : items.length === 0 ? (
-        <Card className="text-center text-neutral-700">
-          لا توجد تقييمات منشورة بعد. ستظهر هنا عندما يُظهر المعلم علامة واجب أو اختبار.
-        </Card>
+    <WorkspacePage
+      title="التقييمات"
+      description="علامات الواجبات والاختبارات اللي ظهرها المعلم — كل علامة نجمة."
+      breadcrumbs={[
+        { label: "الرئيسية", href: "/parent" },
+        { label: "التقييمات" },
+      ]}
+      loading={loading}
+    >
+      {items.length === 0 ? (
+        <EmptyState title="لسه ما في تحديات ظاهرة. أول ما المعلم يظهر علامة، بتصير هون." />
       ) : (
         <Card className="overflow-x-auto p-0">
           <table className="w-full min-w-[560px] text-sm">
@@ -106,6 +105,6 @@ export default function ParentAssessmentsPage() {
           </table>
         </Card>
       )}
-    </div>
+    </WorkspacePage>
   );
 }

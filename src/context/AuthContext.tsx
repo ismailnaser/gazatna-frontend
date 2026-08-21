@@ -22,7 +22,7 @@ import type { AuthUser } from "@/types";
 type AuthContextValue = {
   user: AuthUser | null;
   loading: boolean;
-  login: (username: string, password: string) => Promise<boolean>;
+  login: (username: string, password: string, rememberMe?: boolean) => Promise<boolean>;
   logout: () => void;
 };
 
@@ -114,8 +114,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [router]);
 
   const login = useCallback(
-    async (username: string, password: string) => {
-      const result = await authLogin(username, password);
+    async (username: string, password: string, rememberMe = true) => {
+      const result = await authLogin(username, password, rememberMe);
       if (!result) return false;
       setUser(result);
       router.replace(getDashboardPath(result.role));

@@ -4,9 +4,9 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { Alert } from "@/components/atoms/Alert";
 import { Button } from "@/components/atoms/Button";
-import { Card } from "@/components/atoms/Card";
 import { ConfirmDialog } from "@/components/molecules/ConfirmDialog";
-import { PageBusy, PageHeader } from "@/components/molecules/PageHeader";
+import { EmptyState } from "@/components/molecules/EmptyState";
+import { WorkspacePage } from "@/components/dashboard/WorkspacePage";
 import { TeacherMaterialGroupCard } from "@/components/teacher/TeacherMaterialGroupCard";
 import { useAuth } from "@/context/AuthContext";
 import { useSchool } from "@/context/SchoolContext";
@@ -59,34 +59,28 @@ export default function TeacherMaterialsPage() {
     return () => clearTimeout(t);
   }, [saved]);
 
-  if (loading || fetching) {
-    return (
-      <PageBusy
-        title="مرفقات المواد"
-        description="ارفع كتب المادة وسلايدات ومصادر تظهر للطلاب ضمن محتوى المواد"
-      />
-    );
-  }
-
-  if (!teacher) {
+  if (!teacher && !loading) {
     return <p className="text-neutral-700">لم يتم ربط حسابك بملف معلم.</p>;
   }
 
   return (
-    <div>
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-        <PageHeader
-          title="مرفقات المواد"
-          description="ارفع كتب المادة وسلايدات ومصادر تظهر للطلاب ضمن محتوى المواد"
-        />
-        <Link href="/teacher/materials/new">
+    <WorkspacePage
+      title="مرفقات المواد"
+      description="ارفع كتب المادة وسلايدات ومصادر تظهر للطلاب ضمن محتوى المواد"
+      breadcrumbs={[
+        { label: "فصولي", href: "/teacher" },
+        { label: "مرفقات المواد" },
+      ]}
+      loading={loading || fetching}
+      actions={
+        <Link href="/teacher/materials/new" prefetch={false}>
           <Button>
             <Plus className="h-4 w-4" />
             مرفق جديد
           </Button>
         </Link>
-      </div>
-
+      }
+    >
       {saved && (
         <Alert variant="success" className="mb-4">
           تم حفظ المرفق بنجاح
@@ -94,9 +88,9 @@ export default function TeacherMaterialsPage() {
       )}
 
       {classes.length === 0 ? (
-        <Card className="text-center text-neutral-700">لا توجد فصول مسندة إليك.</Card>
+        <EmptyState title="لا توجد فصول مسندة إليك." />
       ) : groupedItems.length === 0 ? (
-        <Card className="text-center text-neutral-700">لا توجد مرفقات بعد.</Card>
+        <EmptyState title="لا توجد مرفقات بعد." />
       ) : (
         <div className="space-y-3">
           {groupedItems.map((group) => (
@@ -138,6 +132,6 @@ export default function TeacherMaterialsPage() {
           }
         }}
       />
-    </div>
+    </WorkspacePage>
   );
 }

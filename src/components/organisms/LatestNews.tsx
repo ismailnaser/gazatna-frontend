@@ -1,17 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { motion } from "framer-motion";
 import { Newspaper } from "lucide-react";
 import { FeaturedNewsCard } from "@/components/molecules/FeaturedNewsCard";
-import { NewsListItem } from "@/components/molecules/NewsListItem";
-import { NewsFilterBar } from "@/components/molecules/NewsFilterBar";
 import { api } from "@/lib/api";
-import { mapNewsItem, type NewsFilter, type PublicNewsItem } from "@/types/news";
+import { mapNewsItem, type PublicNewsItem } from "@/types/news";
 
 export function LatestNews() {
-  const [filter, setFilter] = useState<NewsFilter>("الكل");
   const [items, setItems] = useState<PublicNewsItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [shouldLoad, setShouldLoad] = useState(false);
@@ -36,89 +32,52 @@ export function LatestNews() {
   useEffect(() => {
     if (!shouldLoad) return;
     setLoading(true);
-    api.getNews()
+    api
+      .getNews()
       .then((data) => {
         const mapped = (data as Array<Record<string, unknown>>).map((n) => mapNewsItem(n));
-        setItems(mapped);
+        setItems(mapped.slice(0, 3));
       })
       .catch(() => setItems([]))
       .finally(() => setLoading(false));
   }, [shouldLoad]);
 
-  const filtered = useMemo(() => {
-    if (filter === "الكل") return items;
-    return items.filter((item) => item.category === filter);
-  }, [filter, items]);
-
-  const featured = filtered.find((item) => item.featured) ?? filtered[0];
-  const listItems = filtered.filter((item) => item.id !== featured?.id);
-
   return (
-    <section ref={sectionRef} className="bg-white py-16 sm:py-20">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="mb-6 flex justify-end">
+    <section ref={sectionRef} className="relative py-16 sm:py-20">
+      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+        <div className="mb-6 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <span className="flex h-11 w-11 items-center justify-center rounded-full bg-brand-yellow/80 shadow-[-3px_3px_0_0_rgba(234,102,34,0.35)]">
+              <Newspaper className="h-5 w-5 text-p-black" />
+            </span>
+            <div>
+              <h2 className="font-display text-2xl font-extrabold text-brand-blue">آخر الأخبار</h2>
+              <p className="text-sm font-semibold text-p-black/50">أحدث 3 بوستات</p>
+            </div>
+          </div>
           <Link
             href="/news"
             prefetch={false}
-            className="text-sm font-semibold text-[var(--brand-magenta)] hover:underline"
+            className="text-sm font-extrabold text-brand-orange hover:underline"
           >
             عرض الكل
           </Link>
         </div>
 
         {!shouldLoad || loading ? (
-          <div className="grid gap-6 lg:grid-cols-5">
-            <div className="h-40 animate-pulse rounded-2xl bg-neutral-100 lg:col-span-2" />
-            <div className="h-72 animate-pulse rounded-2xl bg-neutral-100 lg:col-span-3" />
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-3 sm:gap-4">
+            <div className="aspect-square animate-pulse rounded-[1.6rem] bg-neutral-100" />
+            <div className="aspect-square animate-pulse rounded-[1.6rem] bg-neutral-100" />
+            <div className="aspect-square animate-pulse rounded-[1.6rem] bg-neutral-100" />
           </div>
         ) : items.length === 0 ? (
-          <p className="text-center text-neutral-700">لا توجد أخبار حالياً.</p>
+          <p className="text-center font-semibold text-p-black/60">لا توجد أخبار حالياً.</p>
         ) : (
-        <div className="flex flex-col gap-8 lg:grid lg:grid-cols-5 lg:gap-10">
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="order-1 lg:col-span-2 lg:row-start-1"
-          >
-            <div className="mb-6 flex items-center gap-3">
-              <span className="flex h-11 w-11 items-center justify-center rounded-full bg-[var(--brand-teal)]/10">
-                <Newspaper className="h-5 w-5 text-[var(--brand-teal)]" />
-              </span>
-              <div>
-                <h2 className="text-2xl font-bold text-[var(--brand-teal)]">آخر الأخبار</h2>
-                <p className="mt-1 text-sm text-[#1a1a1a]/50">
-                  أحدث الفعاليات والإنجازات في مدرستنا
-                </p>
-              </div>
-            </div>
-            <NewsFilterBar filter={filter} onChange={setFilter} />
-          </motion.div>
-
-          <div className="order-2 lg:col-span-3 lg:row-span-2 lg:row-start-1">
-            {featured && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: 0.1 }}
-              >
-                <FeaturedNewsCard item={featured} />
-              </motion.div>
-            )}
-          </div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="order-3 space-y-4 lg:col-span-2 lg:row-start-2"
-          >
-            {listItems.map((item) => (
-              <NewsListItem key={item.id} item={item} />
+          <div className="grid grid-cols-1 items-stretch gap-5 sm:grid-cols-3 sm:gap-4">
+            {items.map((item) => (
+              <FeaturedNewsCard key={item.id} item={item} compact />
             ))}
-          </motion.div>
-        </div>
+          </div>
         )}
       </div>
     </section>

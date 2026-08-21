@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Alert } from "@/components/atoms/Alert";
 import { Button } from "@/components/atoms/Button";
 import { Card } from "@/components/atoms/Card";
+import { Checkbox } from "@/components/atoms/Checkbox";
 import { DashboardLoadingState } from "@/components/dashboard/DashboardLoadingState";
 import { SaveFeedback } from "@/components/molecules/SaveFeedback";
 import {
@@ -113,12 +114,10 @@ function GradeSubjectMultiSelect({
                   </span>
                   <span className="font-semibold text-p-black">{name}</span>
                 </div>
-                <input
-                  type="checkbox"
+                <Checkbox
                   checked={checked}
                   disabled={disabled}
                   onChange={() => toggleSubject(name)}
-                  className="h-4 w-4 shrink-0 accent-brand-teal disabled:cursor-not-allowed"
                 />
               </label>
             );

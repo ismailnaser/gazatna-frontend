@@ -1,11 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { use, useEffect, useState } from "react";
+import { Suspense, use, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Badge } from "@/components/atoms/Badge";
 import { Button } from "@/components/atoms/Button";
-import { Card } from "@/components/atoms/Card";
-import { PageHeader } from "@/components/molecules/PageHeader";
+import { HubCard, HubGrid } from "@/components/dashboard/HubCard";
+import { WorkspacePage } from "@/components/dashboard/WorkspacePage";
+import { EmptyState } from "@/components/molecules/EmptyState";
 import { isHomeworkMissed } from "@/components/parent/HomeworkWindowBanner";
 import { SubjectCardShell, SubjectMetaGrid } from "@/components/parent/ParentSubjectItemCard";
 import { useAssignments } from "@/context/AssignmentsContext";
@@ -263,13 +265,30 @@ function SubjectItemRow({
   );
 }
 
-export default function ParentSubjectAssignmentsPage({
+const KIND_CARDS = [
+  { kind: "homework" as const, title: "مهام الواجب", description: "مهامك الصغيرة داخل المادة.", icon: PenLine, tone: "warning" as const },
+  { kind: "quiz" as const, title: "تحديات الاختبار", description: "اختبر نفسك واجمع النقاط.", icon: ClipboardList, tone: "default" as const },
+  { kind: "announcement" as const, title: "رسائل المعلم", description: "كلام المعلم لهالمادة.", icon: Megaphone, tone: "default" as const },
+  { kind: "material" as const, title: "صندوق الكنوز", description: "كتب وشرائح ومصادر ملوّنة.", icon: FolderOpen, tone: "success" as const },
+];
+
+export default function ParentSubjectPage(props: { params: Promise<{ subject: string }> }) {
+  return (
+    <Suspense fallback={<WorkspacePage title="محتوى المادة" loading />}>
+      <ParentSubjectAssignmentsPage {...props} />
+    </Suspense>
+  );
+}
+
+function ParentSubjectAssignmentsPage({
   params,
 }: {
   params: Promise<{ subject: string }>;
 }) {
   const { subject } = use(params);
   const decodedSubject = decodeURIComponent(subject);
+  const searchParams = useSearchParams();
+  const kind = searchParams.get("kind");
   const { user } = useAuth();
   const [child, setChild] = useState<ParentChild | undefined>();
   const [detail, setDetail] = useState<ParentSubjectDetail | null>(null);
@@ -290,42 +309,65 @@ export default function ParentSubjectAssignmentsPage({
       .finally(() => setLoading(false));
   }, [decodedSubject]);
 
+  const counts = useMemo(() => {
+    const items = detail?.items ?? [];
+    return {
+      homework: items.filter((item) => item.kind === "homework").length,
+      quiz: items.filter((item) => item.kind === "quiz").length,
+      announcement: items.filter((item) => item.kind === "announcement").length,
+      material: items.filter((item) => item.kind === "material").length,
+    };
+  }, [detail]);
+
+  const filteredItems = useMemo(() => {
+    if (!detail || !kind) return [];
+    return detail.items.filter((item) => item.kind === kind);
+  }, [detail, kind]);
+
+  const kindLabel = KIND_CARDS.find((card) => card.kind === kind)?.title;
+  const subjectPath = `/parent/homework/subject/${encodeURIComponent(decodedSubject)}`;
+
   if (!child && !loading) {
     return <p className="text-neutral-700">لم يتم ربط حسابك بملف طالب.</p>;
   }
 
   return (
-    <div>
-      <Link
-        href="/parent/homework"
-        className="mb-4 inline-flex items-center gap-1 text-sm font-semibold text-brand-blue hover:underline"
-      >
-        <ChevronRight className="h-4 w-4" />
-        جميع المواد
-      </Link>
-
-      <PageHeader
-        title={decodedSubject}
-        description={
-          detail?.teacherName
-            ? `المعلم: ${detail.teacherName}`
-            : `محتوى المادة — ${child?.name ?? ""}`
-        }
-      />
-
-      {loading ? (
-        <div className="space-y-3">
-          <div className="h-24 animate-pulse rounded-2xl bg-neutral-100" />
-          <div className="h-24 animate-pulse rounded-2xl bg-neutral-100" />
-        </div>
-      ) : !detail || detail.items.length === 0 ? (
-        <Card className="text-center text-neutral-700">
-          <BookOpen className="mx-auto mb-2 h-8 w-8 text-neutral-300" />
-          لا يوجد محتوى في هذه المادة بعد.
-        </Card>
+    <WorkspacePage
+      title={decodedSubject}
+      description={
+        detail?.teacherName
+          ? `المعلم: ${detail.teacherName}`
+          : `محتوى المادة — ${child?.name ?? ""}`
+      }
+      breadcrumbs={[
+        { label: "الرئيسية", href: "/parent" },
+        { label: "مهام المغامرة", href: "/parent/homework" },
+        { label: decodedSubject, href: kind ? subjectPath : undefined },
+        ...(kindLabel ? [{ label: kindLabel }] : []),
+      ]}
+      loading={loading}
+    >
+      {!detail || detail.items.length === 0 ? (
+        <EmptyState title="لا يوجد محتوى في هذه المادة بعد." />
+      ) : !kind ? (
+        <HubGrid>
+          {KIND_CARDS.map((card) => (
+            <HubCard
+              key={card.kind}
+              href={`${subjectPath}?kind=${card.kind}`}
+              icon={card.icon}
+              title={card.title}
+              description={card.description}
+              tone={card.tone}
+              meta={`${counts[card.kind]} عنصر`}
+            />
+          ))}
+        </HubGrid>
+      ) : filteredItems.length === 0 ? (
+        <EmptyState title="لا يوجد محتوى في هذا القسم بعد." />
       ) : (
         <div className="space-y-3">
-          {detail.items.map((item) => (
+          {filteredItems.map((item) => (
             <SubjectItemRow
               key={`${item.kind}-${
                 item.kind === "homework"
@@ -344,6 +386,6 @@ export default function ParentSubjectAssignmentsPage({
           ))}
         </div>
       )}
-    </div>
+    </WorkspacePage>
   );
 }

@@ -12,6 +12,7 @@ type NewsImageCarouselProps = {
   alt?: string;
   href?: string;
   compact?: boolean;
+  variant?: "default" | "reels";
   children?: React.ReactNode;
 };
 
@@ -22,6 +23,7 @@ export function NewsImageCarousel({
   alt = "",
   href,
   compact = false,
+  variant = "default",
   children,
 }: NewsImageCarouselProps) {
   const [index, setIndex] = useState(0);
@@ -43,6 +45,7 @@ export function NewsImageCarousel({
     <div className={cn("absolute inset-0 bg-gradient-to-br", gradient)} />
   );
 
+  const isReels = variant === "reels";
   const buttonClass = compact
     ? "pointer-events-auto absolute top-1/2 z-20 flex h-7 w-7 shrink-0 -translate-y-1/2 items-center justify-center rounded-full bg-black/55 text-white shadow-md backdrop-blur-sm transition-colors hover:bg-black/70"
     : "pointer-events-auto absolute top-1/2 z-20 flex h-9 w-9 shrink-0 -translate-y-1/2 items-center justify-center rounded-full bg-black/55 text-white shadow-md backdrop-blur-sm transition-colors hover:bg-black/70";
@@ -66,7 +69,11 @@ export function NewsImageCarousel({
           <div
             className={cn(
               "pointer-events-none absolute z-10 flex items-center gap-1 rounded-full bg-black/50 text-white backdrop-blur-sm",
-              compact ? "start-1.5 top-1.5 px-1.5 py-0.5 text-[10px]" : "start-3 top-3 px-2 py-1 text-xs"
+              compact
+                ? "start-1.5 top-1.5 px-1.5 py-0.5 text-[10px]"
+                : isReels
+                  ? "start-3 top-4 px-2 py-1 text-xs"
+                  : "start-3 top-3 px-2 py-1 text-xs"
             )}
           >
             <Images className={compact ? "h-3 w-3" : "h-3.5 w-3.5"} />
@@ -103,7 +110,7 @@ export function NewsImageCarousel({
           <div
             className={cn(
               "absolute inset-x-0 z-20 flex items-center justify-center gap-1",
-              compact ? "bottom-1.5" : "bottom-3"
+              compact ? "bottom-1.5" : isReels ? "bottom-36" : "bottom-3"
             )}
           >
             {images.map((_, dotIndex) => (

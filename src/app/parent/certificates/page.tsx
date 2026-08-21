@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { PageBusy, PageHeader } from "@/components/molecules/PageHeader";
+import { WorkspacePage } from "@/components/dashboard/WorkspacePage";
 import { ParentCertificatesPanel } from "@/components/parent/ParentCertificatesPanel";
 import { api } from "@/lib/api";
 import type { ParentCertificatesResponse } from "@/types/academic";
@@ -45,22 +45,21 @@ export default function ParentCertificatesPage() {
       .catch(() => {});
   }, [loadCertificates]);
 
-  if (loading) {
-    return <PageBusy title="الشهادات" description="شهادات الفصل الدراسي الحالي" />;
-  }
-
   return (
-    <div>
-      <PageHeader
-        title="الشهادات"
-        description="شهادات الفصل الحالي والفصول المنتهية مؤخراً (أسبوعان) — ثم تنتقل إلى أرشيف الشهادات"
-      />
-
+    <WorkspacePage
+      title="أوسمتي"
+      description="شهادات الفصل الحالي — أوسمتك اللي تستاهلها."
+      breadcrumbs={[
+        { label: "الرئيسية", href: "/parent" },
+        { label: "أوسمتي" },
+      ]}
+      loading={loading}
+    >
       <ParentCertificatesPanel
         data={data}
         schoolName={schoolName}
         emptyDescription="بعد إغلاق الفصل تبقى شهادته هنا أسبوعين ثم تنتقل إلى أرشيف الشهادات."
       />
-    </div>
+    </WorkspacePage>
   );
 }

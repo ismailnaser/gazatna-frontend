@@ -1,6 +1,7 @@
 ﻿"use client";
 
-import { useEffect, useMemo, useRef } from "react";
+import { useMemo } from "react";
+import { Checkbox } from "@/components/atoms/Checkbox";
 import { cn } from "@/lib/utils";
 import {
   getClassDisplayLabel,
@@ -21,30 +22,12 @@ function TriStateCheckbox({
   checked,
   indeterminate,
   onChange,
-  className,
 }: {
   checked: boolean;
   indeterminate: boolean;
   onChange: (checked: boolean) => void;
-  className?: string;
 }) {
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (inputRef.current) {
-      inputRef.current.indeterminate = indeterminate;
-    }
-  }, [indeterminate]);
-
-  return (
-    <input
-      ref={inputRef}
-      type="checkbox"
-      checked={checked}
-      onChange={(event) => onChange(event.target.checked)}
-      className={cn("h-4 w-4 shrink-0 accent-brand-teal", className)}
-    />
-  );
+  return <Checkbox checked={checked} indeterminate={indeterminate} onChange={onChange} />;
 }
 
 export function SubjectClassAssigner({
@@ -157,11 +140,9 @@ export function SubjectClassAssigner({
                         : "border-neutral-200 bg-neutral-50/50"
                     )}
                   >
-                    <input
-                      type="checkbox"
+                    <Checkbox
                       checked={enabled}
-                      onChange={(event) => toggleClass(schoolClass.id, event.target.checked)}
-                      className="h-4 w-4 shrink-0 accent-brand-teal"
+                      onChange={(checkedValue) => toggleClass(schoolClass.id, checkedValue)}
                     />
                     <span className="font-semibold text-p-black">
                       {getClassDisplayLabel(schoolClass)}

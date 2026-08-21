@@ -1,6 +1,5 @@
 ﻿"use client";
 
-import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { Alert } from "@/components/atoms/Alert";
 import { Button } from "@/components/atoms/Button";
@@ -15,7 +14,7 @@ import { PageHeader } from "@/components/molecules/PageHeader";
 import { useSchool } from "@/context/SchoolContext";
 import { exportStaffToExcel } from "@/lib/exportStaffExcel";
 import { cn } from "@/lib/utils";
-import { BookMarked, Download, GraduationCap, Layers, Plus, Search, Users } from "lucide-react";
+import { Download, GraduationCap, Layers, Plus, Search, Users } from "lucide-react";
 
 const statusFilterOptions = [
   { value: "", label: "كل الحالات" },
@@ -58,8 +57,7 @@ function StatChip({
 }
 
 export default function AdminTeachersPage() {
-  const router = useRouter();
-  const { teachers, classes, grades, subjects, assignments, updateTeacher } = useSchool();
+  const { teachers, classes, grades, subjects, assignments } = useSchool();
   const { staffTypes, setStaffTypes } = useAdminStaffTypes();
 
   const [search, setSearch] = useState("");
@@ -67,8 +65,6 @@ export default function AdminTeachersPage() {
   const [subjectFilters, setSubjectFilters] = useState<string[]>([]);
   const [classFilters, setClassFilters] = useState<string[]>([]);
   const [statusFilter, setStatusFilter] = useState("");
-  const [togglingTeacherId, setTogglingTeacherId] = useState<string | null>(null);
-  const [statusMessage, setStatusMessage] = useState("");
   const [exportingExcel, setExportingExcel] = useState(false);
   const [exportMessage, setExportMessage] = useState<{ type: "success" | "error"; text: string } | null>(
     null
@@ -157,25 +153,6 @@ export default function AdminTeachersPage() {
     }
   }
 
-  async function toggleTeacherStatus(teacher: (typeof teachers)[number]) {
-    if (!teacher.isTeacher) return;
-    const nextStatus = teacher.status === "inactive" ? "active" : "inactive";
-    setTogglingTeacherId(teacher.id);
-    setStatusMessage("");
-    try {
-      await updateTeacher(teacher.id, { status: nextStatus });
-      setStatusMessage(
-        nextStatus === "active"
-          ? `تم تفعيل «${teacher.name}».`
-          : `تم تعطيل «${teacher.name}».`
-      );
-    } catch {
-      setStatusMessage("تعذّر تغيير الحالة");
-    } finally {
-      setTogglingTeacherId(null);
-    }
-  }
-
   return (
     <div>
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -198,12 +175,6 @@ export default function AdminTeachersPage() {
       <div className="mb-4">
         <StaffTypeManager types={staffTypes} onChange={setStaffTypes} />
       </div>
-
-      {statusMessage ? (
-        <p className="mb-4 rounded-xl border border-p-green/20 bg-p-green/5 px-4 py-3 text-sm text-p-green">
-          {statusMessage}
-        </p>
-      ) : null}
 
       <Card className="p-4 sm:p-5">
         {exportMessage ? (
@@ -289,12 +260,7 @@ export default function AdminTeachersPage() {
 
         <AdminTeachersTable
           teachers={filteredTeachers}
-          assignments={assignments}
-          classes={classes}
           hasActiveFilters={hasActiveFilters}
-          togglingId={togglingTeacherId}
-          onEdit={(id) => router.push(`/admin/teachers/${id}`)}
-          onToggleStatus={toggleTeacherStatus}
         />
       </Card>
     </div>

@@ -90,7 +90,7 @@ export function InstallmentSchedule({
               </p>
             </div>
           </div>
-          <div className="text-end text-sm">
+          <div className="text-start text-sm">
             <p className="font-medium text-p-black">{inst.amount} ₪</p>
             {(inst.paidToward ?? 0) > 0 && (
               <p className="text-p-green">مدفوع: {inst.paidToward} ₪</p>

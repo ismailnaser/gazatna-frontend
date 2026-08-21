@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { ChevronDown } from "lucide-react";
+import { Checkbox } from "@/components/atoms/Checkbox";
 import { cn } from "@/lib/utils";
 
 type MultiSelectOption = {
@@ -115,12 +116,10 @@ export function MultiSelect({
                       checked && !disabled && "bg-p-green/5 font-medium text-p-green"
                     )}
                   >
-                    <input
-                      type="checkbox"
+                    <Checkbox
                       checked={checked}
                       disabled={disabled}
                       onChange={() => toggle(opt.value)}
-                      className="rounded text-p-green disabled:cursor-not-allowed"
                     />
                     <span className="min-w-0 truncate">
                       {opt.label}

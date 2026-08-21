@@ -6,10 +6,10 @@ import { selectControlClassName } from "@/components/atoms/Select";
 import { cn } from "@/lib/utils";
 import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 
-export const TABLE_WRAP = "overflow-hidden rounded-xl border border-neutral-200 bg-white";
-export const TABLE_BASE = "w-full border-collapse text-sm";
+export const TABLE_WRAP = "overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm";
+export const TABLE_BASE = "w-full min-w-[640px] border-collapse text-sm";
 export const TABLE_TH =
-  "border-b border-neutral-200 bg-neutral-50 px-4 py-3 text-start text-xs font-bold text-p-black/75";
+  "sticky top-0 border-b border-neutral-200 bg-neutral-50 px-4 py-3 text-start text-xs font-semibold uppercase tracking-wide text-p-black/60";
 export const TABLE_TD = "border-b border-neutral-100 px-4 py-3 align-middle text-p-black";
 
 export function useClientPagination<T>(items: T[], pageSize = 10) {
@@ -64,7 +64,7 @@ export function TablePagination({
   const to = Math.min(total, page * pageSize);
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 border-t border-neutral-100 bg-neutral-50/80 px-4 py-3">
+    <div className="flex flex-wrap items-center justify-between gap-3 border-t border-neutral-200 bg-neutral-50 px-4 py-3">
       <p className="text-sm text-p-black/78">
         عرض {from}–{to} من {total}
       </p>

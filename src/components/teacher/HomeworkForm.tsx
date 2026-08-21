@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/atoms/Button";
 import { Card } from "@/components/atoms/Card";
+import { Checkbox } from "@/components/atoms/Checkbox";
 import { Input } from "@/components/atoms/Input";
 import { Select } from "@/components/atoms/Select";
 import { Textarea } from "@/components/atoms/Textarea";
@@ -277,15 +278,13 @@ export function HomeworkForm({
             ]}
           />
         </div>
-        <label className="flex items-start gap-2.5 rounded-xl border border-neutral-100 bg-neutral-50 px-3 py-3 text-sm text-p-black/80">
-          <input
-            type="checkbox"
+        <div className="rounded-xl border border-neutral-100 bg-neutral-50 px-3 py-3">
+          <Checkbox
             name="gradesVisible"
             defaultChecked={initial?.gradesVisible}
-            className="mt-0.5 rounded text-brand-blue"
+            label="إظهار العلامة والملاحظة للطالب بعد التقييم"
           />
-          <span>إظهار العلامة والملاحظة للطالب بعد التقييم</span>
-        </label>
+        </div>
       </FormSection>
 
       <FormSection title="المرفقات" description="صور أو PDF — اختياري">

@@ -121,15 +121,15 @@ export function Hero() {
           transition={{ duration: 0.6 }}
           className="max-w-2xl pb-16 text-start"
         >
-          <p className="text-xl font-medium text-brand-black sm:text-2xl">{hero.welcome}</p>
+          <p className="font-display text-xl font-extrabold text-brand-black sm:text-2xl">{hero.welcome}</p>
 
-          <h1 className="mt-3 text-5xl font-extrabold leading-tight sm:text-6xl lg:text-7xl">
+          <h1 className="font-display mt-3 text-5xl font-extrabold leading-tight sm:text-6xl lg:text-7xl">
             <span className="text-brand-black">{firstWord} </span>
             {restTitle ? <span className="text-brand-orange">{restTitle}</span> : null}
           </h1>
           <div className="mt-4 h-1.5 w-56 rounded-full bg-brand-blue sm:w-72" />
 
-          <p className="mt-8 text-2xl font-bold text-brand-black sm:text-3xl lg:text-4xl">
+          <p className="font-display mt-8 text-2xl font-extrabold text-brand-black sm:text-3xl lg:text-4xl">
             {hero.tagline}
           </p>
 

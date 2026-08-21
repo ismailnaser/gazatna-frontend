@@ -6,7 +6,9 @@ export const revalidate = 300;
 export default function ParentLayout({ children }: { children: React.ReactNode }) {
   return (
     <DashboardShell area="parent">
-      <ParentFeeGuard>{children}</ParentFeeGuard>
+      <ParentFeeGuard>
+        <div className="student-play">{children}</div>
+      </ParentFeeGuard>
     </DashboardShell>
   );
 }

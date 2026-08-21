@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { Checkbox } from "@/components/atoms/Checkbox";
 import { cn } from "@/lib/utils";
 import type { OccupiedPair } from "@/lib/adminTeacherAssignments";
 import { findSubjectConflict } from "@/lib/adminTeacherAssignments";
@@ -64,14 +65,12 @@ export function TeacherSubjectPicker({
                 : !disabled && "border-neutral-200 bg-white text-p-black/70 hover:border-brand-teal/30"
             )}
           >
-            <input
-              type="checkbox"
+            <Checkbox
               checked={checked}
               disabled={disabled}
               onChange={() => {
                 if (!disabled) toggle(subject.id);
               }}
-              className="accent-brand-teal disabled:cursor-not-allowed"
             />
             {subject.name}
           </label>

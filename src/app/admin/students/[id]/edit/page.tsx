@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/atoms/Button";
 import { AdminStudentFormPanel } from "@/components/admin/AdminStudentFormPanel";
-import { PageBusy, PageHeader } from "@/components/molecules/PageHeader";
+import { WorkspacePage } from "@/components/dashboard/WorkspacePage";
 import { useSchool } from "@/context/SchoolContext";
 import { mapAdminStudent } from "@/lib/adminStudents";
 import { api } from "@/lib/api";
@@ -84,7 +84,7 @@ export default function AdminStudentEditPage() {
         isActive: form.get("isActive") === "true",
         is_active: form.get("isActive") === "true",
       });
-      router.push("/admin/students");
+      router.push(`/admin/students/${student.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "فشل تحديث الطالب");
     } finally {
@@ -92,46 +92,60 @@ export default function AdminStudentEditPage() {
     }
   }
 
-  if (loading) {
-    return <PageBusy title="تعديل طالب" description="تحديث بيانات الطالب" />;
-  }
-
-  if (!student) {
+  if (!student && !loading) {
     return (
-      <div className="space-y-4">
-        <PageHeader title="تعديل طالب" description="تعذر العثور على الطالب" />
+      <WorkspacePage
+        title="تعديل طالب"
+        description="تعذر العثور على الطالب"
+        breadcrumbs={[
+          { label: "الطلاب", href: "/admin/students" },
+          { label: "تعديل" },
+        ]}
+      >
         <Button href="/admin/students" variant="outline">
           العودة للقائمة
         </Button>
-      </div>
+      </WorkspacePage>
     );
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <PageHeader title="تعديل طالب" description={student.name} />
-        <Button href="/admin/students" variant="outline" className="gap-2">
-          <ArrowRight className="h-4 w-4" />
-          العودة للقائمة
-        </Button>
-      </div>
-
-      <AdminStudentFormPanel
-        key={student.id}
-        mode="edit"
-        editing={student}
-        classes={classes}
-        grades={grades}
-        editingClassId={editingClassId}
-        existingStudents={students}
-        docRows={docRows}
-        onDocRowsChange={setDocRows}
-        error={error}
-        submitting={submitting}
-        onSubmit={handleUpdate}
-        onClose={() => router.push("/admin/students")}
-      />
-    </div>
+    <WorkspacePage
+      title="تعديل طالب"
+      description={student?.name}
+      breadcrumbs={[
+        { label: "الطلاب", href: "/admin/students" },
+        { label: student?.name ?? "الطالب", href: student ? `/admin/students/${student.id}` : undefined },
+        { label: "تعديل" },
+      ]}
+      loading={loading}
+      loadingMessage="جاري تحميل بيانات الطالب..."
+      actions={
+        student ? (
+          <Button href={`/admin/students/${student.id}`} variant="outline" className="gap-2">
+            <ArrowRight className="h-4 w-4" />
+            عرض الملف
+          </Button>
+        ) : null
+      }
+    >
+      {student ? (
+        <AdminStudentFormPanel
+          key={student.id}
+          mode="edit"
+          editing={student}
+          classes={classes}
+          grades={grades}
+          editingClassId={editingClassId}
+          existingStudents={students}
+          docRows={docRows}
+          onDocRowsChange={setDocRows}
+          error={error}
+          submitting={submitting}
+          onSubmit={handleUpdate}
+          onClose={() => router.push(`/admin/students/${student.id}`)}
+        />
+      ) : null}
+    </WorkspacePage>
   );
 }

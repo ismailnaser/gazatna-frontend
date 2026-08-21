@@ -1,11 +1,18 @@
 import { api, clearTokens, getStoredUser, setStoredUser, setTokens } from "@/lib/api";
 import { isAdminRole } from "@/lib/adminRoles";
+import { setAuthPersistence, setRememberedUsername } from "@/lib/authStorage";
 import type { AuthUser, UserRole } from "@/types";
 
-export async function login(username: string, password: string): Promise<AuthUser | null> {
+export async function login(
+  username: string,
+  password: string,
+  rememberMe = true
+): Promise<AuthUser | null> {
   try {
     const data = await api.login(username, password);
     const user = data.user as AuthUser;
+    setAuthPersistence(rememberMe);
+    setRememberedUsername(rememberMe ? username : null);
     setTokens(data.access, data.refresh);
     setStoredUser(user);
     return user;

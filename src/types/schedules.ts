@@ -72,7 +72,13 @@ export const CLASS_DURATION_OPTIONS = [
 
 export const DEFAULT_CLASS_DURATION = "60";
 
-export function parseClassDurationMinutes(value?: string | null): number {
+export function asScheduleText(value: unknown, fallback = ""): string {
+  if (value == null) return fallback;
+  const text = String(value).trim();
+  return text || fallback;
+}
+
+export function parseClassDurationMinutes(value?: string | number | null): number {
   const parsed = Number(value);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : Number(DEFAULT_CLASS_DURATION);
 }
@@ -445,17 +451,30 @@ export function validateClassScheduleGrid(
 
 /** يتوافق مع الجداول القديمة التي دمجت الحصة والوقت في حقل واحد */
 export function normalizeClassEntry(entry: ClassScheduleEntry): ClassScheduleEntry {
-  const duration = entry.duration?.trim() ? entry.duration : DEFAULT_CLASS_DURATION;
-  if (entry.time?.trim()) {
-    return { ...entry, duration };
+  const duration = asScheduleText(entry.duration, DEFAULT_CLASS_DURATION);
+  const time = asScheduleText(entry.time);
+  const period = asScheduleText(entry.period);
+  const day = asScheduleText(entry.day);
+  const subject = asScheduleText(entry.subject);
+  const teacher = asScheduleText(entry.teacher);
+  const room = asScheduleText(entry.room);
+  const notes = asScheduleText(entry.notes);
+  if (time) {
+    return { day, period, time, duration, subject, teacher, room, notes };
   }
-  const timeMatch = entry.period?.match(/\b(\d{1,2}:\d{2})\b/);
-  if (!timeMatch) return { ...entry, duration };
+  const timeMatch = period.match(/\b(\d{1,2}:\d{2})\b/);
+  if (!timeMatch) {
+    return { day, period, time, duration, subject, teacher, room, notes };
+  }
   return {
-    ...entry,
-    duration,
+    day,
+    period: period.replace(/\s*\(?\d{1,2}:\d{2}[^)]*\)?/g, "").trim(),
     time: timeMatch[1],
-    period: entry.period.replace(/\s*\(?\d{1,2}:\d{2}[^)]*\)?/g, "").trim(),
+    duration,
+    subject,
+    teacher,
+    room,
+    notes,
   };
 }
 
@@ -876,13 +895,13 @@ export function validateClassScheduleEntries(entries: ClassScheduleEntry[]): str
   for (const [day, dayEntries] of byDay) {
     for (let i = 0; i < dayEntries.length; i += 1) {
       const entry = dayEntries[i];
-      if (!entry.period.trim()) {
+      if (!asScheduleText(entry.period)) {
         return `أدخل رقم الحصة في ${day}`;
       }
-      if (!entry.time.trim()) {
+      if (!asScheduleText(entry.time)) {
         return `أدخل موعد الحصة في ${day}`;
       }
-      if (!entry.duration.trim()) {
+      if (!asScheduleText(entry.duration)) {
         return `أدخل مدة الحصة في ${day}`;
       }
       const conflict = getClassLessonConflict(dayEntries, i, {});
@@ -930,17 +949,25 @@ export function validateClassScheduleClassTargets(
 }
 
 export function mapSchedule(raw: Record<string, unknown>): Schedule {
+  const scheduleType = (raw.scheduleType as ScheduleType) ?? "exam";
+  const rawEntries = Array.isArray(raw.entries) ? raw.entries : [];
+  const entries =
+    scheduleType === "class"
+      ? (rawEntries as ClassScheduleEntry[]).map(normalizeClassEntry)
+      : (rawEntries as ExamScheduleEntry[]).map((entry) => ({
+          subject: asScheduleText(entry.subject),
+          date: asScheduleText(entry.date),
+          time: asScheduleText(entry.time),
+          duration: asScheduleText(entry.duration),
+          notes: asScheduleText(entry.notes),
+        }));
   return {
     id: String(raw.id),
     name: String(raw.name ?? ""),
-    scheduleType: (raw.scheduleType as ScheduleType) ?? "exam",
+    scheduleType,
     classIds: Array.isArray(raw.classIds) ? raw.classIds.map(String) : [],
     classLabels: Array.isArray(raw.classLabels) ? raw.classLabels.map(String) : [],
-    entries: Array.isArray(raw.entries)
-      ? (raw.scheduleType as ScheduleType) === "class"
-        ? (raw.entries as ClassScheduleEntry[]).map(normalizeClassEntry)
-        : (raw.entries as ScheduleEntry[])
-      : [],
+    entries,
     isPublished: Boolean(raw.isPublished ?? true),
     createdAt: String(raw.createdAt ?? ""),
     updatedAt: String(raw.updatedAt ?? ""),

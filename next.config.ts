@@ -76,8 +76,12 @@ const nextConfig: NextConfig = {
     // locally-built .next does not hardcode 127.0.0.1 into rewrites.
     return [
       {
+        source: "/api/:path*/",
+        destination: `${backendOrigin}/api/:path*/`,
+      },
+      {
         source: "/api/:path*",
-        destination: `${backendOrigin}/api/:path*`,
+        destination: `${backendOrigin}/api/:path*/`,
       },
       {
         source: "/media/:path*",

@@ -71,6 +71,10 @@ type AssignmentsContextValue = AssignmentsState & {
   refresh: () => Promise<void>;
 };
 
+function asArray<T>(value: unknown): T[] {
+  return Array.isArray(value) ? (value as T[]) : [];
+}
+
 function normalizeQuiz(q: Quiz): Quiz {
   return {
     ...q,
@@ -151,19 +155,24 @@ export function AssignmentsProvider({ children }: { children: React.ReactNode })
         }
         const results = await Promise.all(requests);
         let cursor = 0;
-        setState((prev) => {
-          const next = { ...prev };
-          if (loadLists) {
-            next.homework = results[cursor] as Homework[];
-            next.quizzes = (results[cursor + 1] as Quiz[]).map(normalizeQuiz);
-            cursor += 2;
-          }
-          if (loadAssessments) {
-            const assessments = results[cursor] as Array<{ submissions: HomeworkSubmission[] }>;
-            next.homeworkSubmissions = assessments.flatMap((row) => row.submissions ?? []);
-          }
-          return next;
-        });
+        let homework: Homework[] | undefined;
+        let quizzes: Quiz[] | undefined;
+        let homeworkSubmissions: HomeworkSubmission[] | undefined;
+        if (loadLists) {
+          homework = asArray<Homework>(results[cursor]);
+          quizzes = asArray<Quiz>(results[cursor + 1]).map(normalizeQuiz);
+          cursor += 2;
+        }
+        if (loadAssessments) {
+          homeworkSubmissions = asArray<{ submissions: HomeworkSubmission[] }>(results[cursor]).flatMap(
+            (row) => row.submissions ?? []
+          );
+        }
+        setState((prev) => ({
+          ...prev,
+          ...(loadLists ? { homework, quizzes } : {}),
+          ...(loadAssessments ? { homeworkSubmissions } : {}),
+        }));
         if (loadLists) listsLoadedRef.current = true;
         if (loadAssessments) assessmentsLoadedRef.current = true;
         hasDataRef.current = true;
@@ -195,12 +204,15 @@ export function AssignmentsProvider({ children }: { children: React.ReactNode })
         api.getParentQuizzes(),
         api.getParentSubmissions(),
       ]);
-      const subs = submissions as { homework: HomeworkSubmission[]; quizzes: QuizSubmission[] };
+      const subs =
+        submissions && typeof submissions === "object"
+          ? (submissions as { homework?: HomeworkSubmission[]; quizzes?: QuizSubmission[] })
+          : {};
       setState({
-        homework: homework as Homework[],
-        quizzes: (quizzes as Quiz[]).map(normalizeQuiz),
-        homeworkSubmissions: subs.homework,
-        quizSubmissions: subs.quizzes,
+        homework: asArray<Homework>(homework),
+        quizzes: asArray<Quiz>(quizzes).map(normalizeQuiz),
+        homeworkSubmissions: asArray<HomeworkSubmission>(subs.homework),
+        quizSubmissions: asArray<QuizSubmission>(subs.quizzes),
       });
       parentLoadedRef.current = true;
       hasDataRef.current = true;

@@ -73,7 +73,12 @@ export function MobileNav({
   return (
     <>
       <nav
-        className="fixed bottom-0 start-0 end-0 z-40 flex border-t border-neutral-200 bg-white pb-[env(safe-area-inset-bottom)] md:hidden"
+        className={cn(
+          "fixed bottom-0 start-0 end-0 z-40 flex pb-[env(safe-area-inset-bottom)] md:hidden",
+          role === "parent"
+            ? "border-t-[3px] border-brand-yellow bg-[#fff8ec]"
+            : "border-t border-neutral-200 bg-white"
+        )}
         aria-label="التنقل السريع"
       >
         {mainItems.map((item) => {
@@ -88,11 +93,18 @@ export function MobileNav({
               prefetch={false}
               className={cn(
                 "relative flex min-h-[56px] flex-1 flex-col items-center justify-center gap-0.5 px-1 py-2 text-[11px] font-medium leading-tight",
-                active ? "text-p-green" : "text-p-black/72"
+                active ? "text-brand-blue" : "text-p-black/72"
               )}
             >
               <span className="relative">
-                <Icon className="h-5 w-5 shrink-0" />
+                <span
+                  className={cn(
+                    "flex h-8 w-8 items-center justify-center rounded-full",
+                    active && role === "parent" && "bg-brand-yellow shadow-[-2px_2px_0_0_rgba(234,102,34,0.35)]"
+                  )}
+                >
+                  <Icon className="h-5 w-5 shrink-0" />
+                </span>
                 {showParentGradesBadge && (
                   <span className="absolute -top-1.5 -start-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-amber-500 px-1 text-[10px] font-bold text-white">
                     {newGradesCount > 9 ? "9+" : newGradesCount}
@@ -146,7 +158,7 @@ export function MobileNav({
                   <h2 id="mobile-nav-sheet-title" className="text-base font-bold text-p-black">
                     القائمة
                   </h2>
-                  <p className="text-xs text-p-black/72">اختر القسم الذي تريد فتحه</p>
+                  <p className="text-xs text-p-black/72">الأقسام الأخرى في الحساب</p>
                 </div>
               </div>
               <button

@@ -1,7 +1,6 @@
 ﻿"use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
 import { Alert } from "@/components/atoms/Alert";
 import { Button } from "@/components/atoms/Button";
 import { Select } from "@/components/atoms/Select";
@@ -18,7 +17,6 @@ import type { AccountCredentials, AdminStudent } from "@/types";
 import { Download, Plus, Search, Users } from "lucide-react";
 
 export default function AdminStudentsPage() {
-  const router = useRouter();
   const { classes, grades } = useSchool();
   const [students, setStudents] = useState<AdminStudent[]>([]);
   const [loading, setLoading] = useState(true);
@@ -473,14 +471,6 @@ export default function AdminStudentsPage() {
             <AdminStudentsTable
               students={filteredStudents}
               hasActiveFilters={hasActiveFilters}
-              togglingId={togglingStudentId}
-              onEdit={(student) => router.push(`/admin/students/${student.id}/edit`)}
-              onResetPassword={setConfirmReset}
-              onToggleActive={toggleStudentActive}
-              onDelete={(student) => {
-                setError("");
-                setConfirmDeleteStudent(student);
-              }}
             />
           )}
         </div>

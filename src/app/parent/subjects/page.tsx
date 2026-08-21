@@ -3,90 +3,94 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Card } from "@/components/atoms/Card";
-import { PageHeader } from "@/components/molecules/PageHeader";
+import { WorkspacePage } from "@/components/dashboard/WorkspacePage";
+import { EmptyState } from "@/components/molecules/EmptyState";
 import {
   isParentFeeRestricted,
   ParentAccessBlockedCard,
   ParentNoStudentCard,
   type ParentStudentResponse,
 } from "@/components/parent/ParentAccessCards";
-import { api } from "@/lib/api";
+import { useParentStudent } from "@/hooks/useParentStudent";
+import { api, peekCachedList } from "@/lib/api";
 import { formatClassLabel } from "@/lib/adminStudents";
 import type { ParentSubjectSummary, Student } from "@/types";
 import { BookMarked, BookOpen, ChevronLeft } from "lucide-react";
 
 export default function ParentSubjectsPage() {
-  const [student, setStudent] = useState<Student | null>(null);
-  const [subjects, setSubjects] = useState<ParentSubjectSummary[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { student, loading: studentLoading } = useParentStudent();
+  const cached = peekCachedList<ParentSubjectSummary>("/parent/subjects/");
+  const [subjects, setSubjects] = useState<ParentSubjectSummary[]>(cached ?? []);
+  const [loadingSubjects, setLoadingSubjects] = useState(!cached);
+  const access = student as (Student & ParentStudentResponse) | null;
+  const restricted = isParentFeeRestricted(access);
 
   useEffect(() => {
-    let cancelled = false;
-    async function load() {
-      setLoading(true);
-      try {
-        const s = await api.getParentStudent().catch(() => null);
-        if (cancelled) return;
-        setStudent(s as Student | null);
-        if (!s || isParentFeeRestricted(s as Student & ParentStudentResponse)) {
-          return;
-        }
-        const data = await api.getParentSubjects().catch(() => []);
-        if (cancelled) return;
-        setSubjects(data as ParentSubjectSummary[]);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
+    if (!student || restricted) {
+      setLoadingSubjects(false);
+      return;
     }
-    void load();
+    let cancelled = false;
+    api
+      .getParentSubjects()
+      .then((data) => {
+        if (!cancelled) setSubjects(data as ParentSubjectSummary[]);
+      })
+      .catch(() => {
+        if (!cancelled && !cached) setSubjects([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingSubjects(false);
+      });
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [student, restricted]);
 
   const classLabel = student ? formatClassLabel(student.grade, student.section) : "";
 
-  return (
-    <div>
-      <PageHeader
-        title="المواد المسندة"
-        description="المواد المرتبطة بفصل وشعبة الطالب — حسب إسناد المعلمين"
-      />
+  if (!student && !studentLoading) {
+    return <ParentNoStudentCard />;
+  }
 
-      {loading ? (
-        <div className="space-y-3">
-          <div className="h-24 animate-pulse rounded-2xl bg-neutral-100" />
-          <div className="h-24 animate-pulse rounded-2xl bg-neutral-100" />
-        </div>
-      ) : !student ? (
-        <ParentNoStudentCard />
-      ) : isParentFeeRestricted(student as Student & ParentStudentResponse) ? (
-        <ParentAccessBlockedCard
-          message={
-            (student as Student & ParentStudentResponse).accessRestrictionMessage ||
-            "تم إيقاف الوصول إلى حساب الطالب بسبب الرسوم المستحقة."
+  if (student && restricted) {
+    return (
+      <ParentAccessBlockedCard
+        message={
+          access?.accessRestrictionMessage ||
+          "تم إيقاف الوصول إلى حساب الطالب بسبب الرسوم المستحقة."
+        }
+        studentName={student.name}
+      />
+    );
+  }
+
+  return (
+    <WorkspacePage
+      title="موادي"
+      description="مواد صفّك الملونة — كل مادة باب لمغامرة."
+      breadcrumbs={[
+        { label: "الرئيسية", href: "/parent" },
+        { label: "موادي" },
+      ]}
+      loading={studentLoading || loadingSubjects}
+    >
+      {subjects.length === 0 ? (
+        <EmptyState
+          title="لسه ما في مواد بهالصف."
+          description={
+            classLabel
+              ? `صفك: ${classLabel}. الإدارة رح تسند المواد قريب.`
+              : "الإدارة رح تسند المواد قريب."
           }
-          studentName={student.name}
         />
-      ) : subjects.length === 0 ? (
-        <Card className="space-y-2 text-center text-neutral-700">
-          <p>لا توجد مواد مسندة لفصل الطالب حالياً.</p>
-          {classLabel ? (
-            <p className="text-sm text-p-black/78">
-              فصل الطالب: <span className="font-semibold text-p-black">{classLabel}</span>
-            </p>
-          ) : null}
-          <p className="text-sm leading-relaxed text-p-black/75">
-            يجب على الإدارة إسناد معلم ومواد لهذه الشعبة تحديداً من لوحة{" "}
-            <span className="font-semibold">الكادر → تعديل المعلم → الفصول المسندة</span>.
-          </p>
-        </Card>
       ) : (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="card-grid">
           {subjects.map((row) => (
             <Link
               key={row.subject}
               href={`/parent/homework/subject/${encodeURIComponent(row.subject)}`}
+              prefetch={false}
               className="block"
             >
               <Card className="h-full p-4 transition-shadow hover:shadow-md sm:p-5">
@@ -119,6 +123,6 @@ export default function ParentSubjectsPage() {
           ))}
         </div>
       )}
-    </div>
+    </WorkspacePage>
   );
 }

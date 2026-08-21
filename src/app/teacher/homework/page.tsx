@@ -4,15 +4,13 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { Alert } from "@/components/atoms/Alert";
 import { Button } from "@/components/atoms/Button";
-import { Card } from "@/components/atoms/Card";
 import { ConfirmDialog } from "@/components/molecules/ConfirmDialog";
-import { PageBusy, PageHeader } from "@/components/molecules/PageHeader";
+import { EmptyState } from "@/components/molecules/EmptyState";
+import { WorkspacePage } from "@/components/dashboard/WorkspacePage";
 import { TeacherHomeworkGroupCard } from "@/components/teacher/TeacherHomeworkGroupCard";
-import { TeacherSubmissionAlerts } from "@/components/teacher/TeacherSubmissionAlerts";
 import { useAssignments } from "@/context/AssignmentsContext";
 import { useAuth } from "@/context/AuthContext";
 import { useSchool } from "@/context/SchoolContext";
-import { useTeacherAlerts } from "@/hooks/useTeacherAlerts";
 import { groupHomeworkList, type HomeworkGroup } from "@/lib/homeworkGroups";
 import { Plus } from "lucide-react";
 
@@ -21,7 +19,6 @@ export default function TeacherHomeworkPage() {
   const { getTeacherClassesByUserId, currentTeacher, loading } = useSchool();
   const { getHomeworkByTeacher, deleteHomework, getHomeworkSubmissions } =
     useAssignments();
-  const { alerts, refresh } = useTeacherAlerts();
 
   const classes = user ? getTeacherClassesByUserId(user.id) : [];
   const teacher = currentTeacher;
@@ -48,82 +45,63 @@ export default function TeacherHomeworkPage() {
     return () => clearTimeout(t);
   }, [saved]);
 
-
-  const homeworkAlerts = useMemo(
-    () => alerts.filter((a) => a.type === "homework_submission"),
-    [alerts]
-  );
-
-  if (loading) {
-    return <PageBusy title="الواجبات" description="إدارة وتوزيع الواجبات على فصولك" />;
-  }
-
-  if (!teacher) {
+  if (!teacher && !loading) {
     return <p className="text-neutral-700">لم يتم ربط حسابك بملف معلم.</p>;
   }
 
   return (
-    <div>
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-        <PageHeader
-          title="الواجبات"
-          description="إدارة وتوزيع الواجبات على فصولك"
-        />
-        <Link href="/teacher/homework/new">
+    <WorkspacePage
+      title="الواجبات"
+      description="إدارة وتوزيع الواجبات على فصولك"
+      breadcrumbs={[
+        { label: "فصولي", href: "/teacher" },
+        { label: "الواجبات" },
+      ]}
+      loading={loading}
+      actions={
+        <Link href="/teacher/homework/new" prefetch={false}>
           <Button>
             <Plus className="h-4 w-4" />
             واجب جديد
           </Button>
         </Link>
-      </div>
-
+      }
+    >
       {saved && (
         <Alert variant="success" className="mb-4">
           تم حفظ الواجب بنجاح
         </Alert>
       )}
 
-      <TeacherSubmissionAlerts
-        alerts={homeworkAlerts}
-        limit={5}
-        title="تسليمات الواجبات"
-        onAlertOpen={refresh}
-      />
-
       {classes.length === 0 ? (
-        <Card className="text-center text-neutral-700">لا توجد فصول مسندة إليك.</Card>
+        <EmptyState title="لا توجد فصول مسندة إليك." />
+      ) : groupedItems.length === 0 ? (
+        <EmptyState title="لا توجد واجبات بعد." />
       ) : (
-        <>
-          <h2 className="mb-4 text-lg font-bold text-neutral-900">جميع الواجبات</h2>
-          {groupedItems.length === 0 ? (
-            <Card className="text-center text-neutral-700">لا توجد واجبات بعد.</Card>
-          ) : (
-            <div className="space-y-3">
-              {groupedItems.map((group) => {
-                const isOpen = expandedGroupId === group.groupId;
-                const submissionTotal =
-                  group.totalSubmissions ||
-                  group.targets.reduce(
-                    (sum, target) =>
-                      sum + (target.submissionCount ?? getHomeworkSubmissions(target.id).length),
-                    0
-                  );
+        <div className="space-y-3">
+          {groupedItems.map((group) => {
+            const isOpen = expandedGroupId === group.groupId;
+            const submissionTotal =
+              group.totalSubmissions ||
+              group.targets.reduce(
+                (sum, target) =>
+                  sum + (target.submissionCount ?? getHomeworkSubmissions(target.id).length),
+                0
+              );
 
-                return (
-                  <TeacherHomeworkGroupCard
-                    key={group.groupId}
-                    group={group}
-                    isOpen={isOpen}
-                    submissionTotal={submissionTotal}
-                    onToggle={() => setExpandedGroupId(isOpen ? "" : group.groupId)}
-                    onDelete={() => setConfirmDeleteGroup(group)}
-                    getHomeworkSubmissions={getHomeworkSubmissions}
-                  />
-                );
-              })}
-            </div>
-          )}
-        </>
+            return (
+              <TeacherHomeworkGroupCard
+                key={group.groupId}
+                group={group}
+                isOpen={isOpen}
+                submissionTotal={submissionTotal}
+                onToggle={() => setExpandedGroupId(isOpen ? "" : group.groupId)}
+                onDelete={() => setConfirmDeleteGroup(group)}
+                getHomeworkSubmissions={getHomeworkSubmissions}
+              />
+            );
+          })}
+        </div>
       )}
 
       <ConfirmDialog
@@ -153,6 +131,6 @@ export default function TeacherHomeworkPage() {
           }
         }}
       />
-    </div>
+    </WorkspacePage>
   );
 }

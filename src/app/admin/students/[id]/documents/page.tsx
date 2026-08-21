@@ -160,8 +160,12 @@ export default function AdminStudentDocumentsPage() {
           title={`وثائق الطالب${studentName ? ` — ${studentName}` : ""}`}
           description="عرض وإضافة وتعديل وحذف الوثائق المرفقة للطالب"
         />
-        <Link href="/admin/students" className="text-sm text-brand-blue hover:underline">
-          رجوع للطلاب
+        <Link
+          href={`/admin/students/${studentId}`}
+          prefetch={false}
+          className="text-sm text-brand-blue hover:underline"
+        >
+          رجوع لملف الطالب
         </Link>
       </div>
 

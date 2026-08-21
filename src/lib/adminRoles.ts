@@ -22,10 +22,20 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
-type NavItem = {
+export type AdminNavGroup = "overview" | "people" | "academics" | "operations";
+
+export const adminNavGroupLabels: Record<AdminNavGroup, string> = {
+  overview: "نظرة عامة",
+  people: "الأشخاص",
+  academics: "الدراسة",
+  operations: "التشغيل",
+};
+
+export type AdminNavItem = {
   href: string;
   label: string;
   icon: LucideIcon;
+  group: AdminNavGroup;
 };
 
 export const SUPER_ADMIN_ROLE = "admin" as const;
@@ -63,33 +73,33 @@ export const adminRoleDescriptions: Record<AdminRole, string> = {
   admin_staff: "إدارة الكادر التعليمي وملفات المعلمين.",
 };
 
-const academicAdminNav: NavItem[] = [
-  { href: "/admin/academic-years", label: "السنوات الدراسية", icon: CalendarRange },
-  { href: "/admin/academic-terms", label: "الفصول الدراسية", icon: CalendarDays },
-  { href: "/admin/promotion-policies", label: "سياسات الترفيع", icon: Scale },
-  { href: "/admin/certificate-settings", label: "إعدادات الشهادات", icon: Medal },
-  { href: "/admin/term-end", label: "نهاية الفصل", icon: Flag },
-  { href: "/admin/year-end", label: "نهاية السنة", icon: Play },
-  { href: "/admin/academic-archive", label: "أرشيف السنوات", icon: Archive },
+const academicAdminNav: AdminNavItem[] = [
+  { href: "/admin/academic-years", label: "السنوات الدراسية", icon: CalendarRange, group: "academics" },
+  { href: "/admin/academic-terms", label: "الفصول الدراسية", icon: CalendarDays, group: "academics" },
+  { href: "/admin/promotion-policies", label: "سياسات الترفيع", icon: Scale, group: "academics" },
+  { href: "/admin/certificate-settings", label: "إعدادات الشهادات", icon: Medal, group: "academics" },
+  { href: "/admin/term-end", label: "نهاية الفصل", icon: Flag, group: "academics" },
+  { href: "/admin/year-end", label: "نهاية السنة", icon: Play, group: "academics" },
+  { href: "/admin/academic-archive", label: "أرشيف السنوات", icon: Archive, group: "academics" },
 ];
 
-const allAdminNav: NavItem[] = [
-  { href: "/admin", label: "الرئيسية", icon: BarChart3 },
-  { href: "/admin/analytics", label: "التحليلات", icon: LineChart },
-  { href: "/admin/notifications", label: "التنبيهات", icon: Bell },
-  { href: "/admin/students", label: "الطلاب", icon: Users },
-  { href: "/admin/admissions", label: "طلبات التسجيل", icon: ClipboardList },
-  { href: "/admin/classes", label: "المراحل الدراسية", icon: Layers },
+const allAdminNav: AdminNavItem[] = [
+  { href: "/admin", label: "الرئيسية", icon: BarChart3, group: "overview" },
+  { href: "/admin/analytics", label: "التحليلات", icon: LineChart, group: "overview" },
+  { href: "/admin/notifications", label: "التنبيهات", icon: Bell, group: "overview" },
+  { href: "/admin/students", label: "الطلاب", icon: Users, group: "people" },
+  { href: "/admin/admissions", label: "طلبات التسجيل", icon: ClipboardList, group: "people" },
+  { href: "/admin/teachers", label: "الكادر", icon: GraduationCap, group: "people" },
+  { href: "/admin/users", label: "المستخدمون", icon: Settings, group: "people" },
+  { href: "/admin/classes", label: "المراحل الدراسية", icon: Layers, group: "academics" },
   ...academicAdminNav,
-  { href: "/admin/schedules", label: "الجداول", icon: CalendarDays },
-  { href: "/admin/grade-schemes", label: "تقسيمة العلامات", icon: Layers },
-  { href: "/admin/subjects", label: "المواد", icon: BookMarked },
-  { href: "/admin/finance", label: "المالية", icon: CreditCard },
-  { href: "/admin/content", label: "المحتوى", icon: Newspaper },
-  { href: "/admin/messages", label: "رسائل التواصل", icon: Mail },
-  { href: "/admin/site", label: "إعدادات الموقع", icon: Settings2 },
-  { href: "/admin/teachers", label: "الكادر", icon: GraduationCap },
-  { href: "/admin/users", label: "المستخدمون", icon: Settings },
+  { href: "/admin/schedules", label: "الجداول", icon: CalendarDays, group: "academics" },
+  { href: "/admin/grade-schemes", label: "تقسيمة العلامات", icon: Layers, group: "academics" },
+  { href: "/admin/subjects", label: "المواد", icon: BookMarked, group: "academics" },
+  { href: "/admin/finance", label: "المالية", icon: CreditCard, group: "operations" },
+  { href: "/admin/content", label: "المحتوى", icon: Newspaper, group: "operations" },
+  { href: "/admin/messages", label: "رسائل التواصل", icon: Mail, group: "operations" },
+  { href: "/admin/site", label: "إعدادات الموقع", icon: Settings2, group: "operations" },
 ];
 
 const roleNavPaths: Record<AdminRole, string[]> = {
@@ -141,9 +151,24 @@ export function canManageAdminClasses(role: AdminRole): boolean {
   return role === SUPER_ADMIN_ROLE;
 }
 
-export function getAdminNav(role: AdminRole): NavItem[] {
+export function getAdminNav(role: AdminRole): AdminNavItem[] {
   const allowed = new Set(roleNavPaths[role]);
   return allAdminNav.filter((item) => allowed.has(item.href));
+}
+
+export function groupAdminNav(items: AdminNavItem[]): Array<{
+  id: AdminNavGroup;
+  label: string;
+  items: AdminNavItem[];
+}> {
+  const order: AdminNavGroup[] = ["overview", "people", "academics", "operations"];
+  return order
+    .map((id) => ({
+      id,
+      label: adminNavGroupLabels[id],
+      items: items.filter((item) => item.group === id),
+    }))
+    .filter((group) => group.items.length > 0);
 }
 
 export function canAccessAdminPath(role: AdminRole, pathname: string): boolean {

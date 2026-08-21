@@ -43,7 +43,7 @@ export function ProgramsSection() {
   }
 
   return (
-    <section className="bg-neutral-50 py-16 sm:py-20">
+    <section className="relative py-16 sm:py-20">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 16 }}
@@ -56,7 +56,7 @@ export function ProgramsSection() {
               <GraduationCap className="h-5 w-5 text-brand-blue" />
             </span>
             <div>
-              <h2 className="text-2xl font-bold text-p-green">البرامج التعليمية</h2>
+              <h2 className="font-display text-2xl font-extrabold text-brand-blue">البرامج التعليمية</h2>
               <p className="mt-1 text-sm text-p-black/50">
                 مسارات تعليمية حسب الصفوف الدراسية في مدرسة غَزتنا
               </p>
@@ -72,13 +72,13 @@ export function ProgramsSection() {
         </motion.div>
 
         {loading ? (
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            <div className="h-40 animate-pulse rounded-2xl bg-white" />
-            <div className="h-40 animate-pulse rounded-2xl bg-white" />
-            <div className="h-40 animate-pulse rounded-2xl bg-white" />
+          <div className="card-grid card-grid-lg">
+            <div className="h-40 animate-pulse rounded-[1.65rem_0.55rem_1.65rem_0.85rem] bg-white" />
+            <div className="h-40 animate-pulse rounded-[1.65rem_0.55rem_1.65rem_0.85rem] bg-white" />
+            <div className="h-40 animate-pulse rounded-[1.65rem_0.55rem_1.65rem_0.85rem] bg-white" />
           </div>
         ) : visible.length === 0 ? null : (
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="card-grid card-grid-lg">
           {visible.map((p, i) => (
             <motion.article
               key={p.grade}
@@ -86,7 +86,7 @@ export function ProgramsSection() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.4, delay: i * 0.06 }}
-              className="flex flex-col overflow-hidden rounded-2xl border border-neutral-100 bg-neutral-50 shadow-sm transition-shadow hover:shadow-md"
+              className="group flex flex-col overflow-hidden rounded-[1.65rem_0.55rem_1.65rem_0.85rem] border-[3px] border-black/10 bg-[#fff8ec] shadow-[-7px_7px_0_0_rgba(26,26,26,0.08)] transition duration-300 hover:-translate-y-1 hover:rotate-[0.4deg] hover:shadow-[-11px_11px_0_0_rgba(66,76,243,0.18)]"
             >
               <div
                 className={[
@@ -98,7 +98,7 @@ export function ProgramsSection() {
                   <BookOpen className="h-5 w-5 text-white" />
                 </span>
                 <div>
-                  <h3 className="font-bold text-white">الصف {p.grade}</h3>
+                  <h3 className="font-display font-extrabold text-white">الصف {p.grade}</h3>
                   <p className="text-xs text-white/80">برنامج تعليمي</p>
                 </div>
               </div>

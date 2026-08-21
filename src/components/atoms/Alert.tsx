@@ -21,7 +21,7 @@ export function Alert({
 }) {
   const { bg, icon: Icon } = styles[variant];
   return (
-    <div className={cn("flex items-start gap-3 rounded-xl border p-4 text-sm", bg, className)}>
+    <div className={cn("flex items-start gap-3 rounded-2xl border-2 p-4 text-sm font-semibold", bg, className)}>
       <Icon className="mt-0.5 h-5 w-5 shrink-0" />
       <div>{children}</div>
     </div>

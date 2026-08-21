@@ -1,0 +1,93 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1000" viewBox="0 0 1600 1000" fill="none">
+  <!-- top-left -->
+  <path d="M92 72l14 28 32 4-24 21 7 30-29-16-29 16 7-30-24-21 32-4z" fill="#F9B428" fill-opacity=".72" stroke="#EA6622" stroke-width="2.6" stroke-linejoin="round"/>
+  <ellipse cx="250" cy="88" rx="26" ry="32" fill="#424CF3" fill-opacity=".5" stroke="#424CF3" stroke-width="2.6"/>
+  <path d="M250 120c0 16-9 26-9 40" stroke="#1A1A1A" stroke-opacity=".45" stroke-width="2" stroke-linecap="round"/>
+  <path d="M242 118h16l-8 8z" fill="#F9B428"/>
+  <g transform="translate(360 58) rotate(24)">
+    <rect x="0" y="8" width="62" height="14" rx="3" fill="#EA6622" fill-opacity=".7" stroke="#EA6622" stroke-width="2"/>
+    <path d="M62 8l16 7-16 7z" fill="#F9B428" stroke="#EA6622" stroke-width="1.8" stroke-linejoin="round"/>
+  </g>
+
+  <!-- top-right -->
+  <g transform="translate(1120 48)">
+    <path d="M8 10c20-9 40-9 60 0v50c-20-7-40-7-60 0z" fill="#4BC2FC" fill-opacity=".55" stroke="#424CF3" stroke-width="2.4"/>
+    <path d="M38 8v54" stroke="#424CF3" stroke-width="2"/>
+  </g>
+  <circle cx="1360" cy="92" r="28" fill="#EA6622" fill-opacity=".5" stroke="#EA6622" stroke-width="2.6"/>
+  <path d="M1336 92h48M1360 68c10 10 10 36 0 48M1360 68c-10 10-10 36 0 48" stroke="#1A1A1A" stroke-opacity=".4" stroke-width="1.9"/>
+  <g transform="translate(1470 54)">
+    <circle cx="28" cy="28" r="15" fill="#F9B428" fill-opacity=".75" stroke="#EA6622" stroke-width="2.3"/>
+    <path d="M28 2v8M28 46v8M2 28h8M46 28h8M9 9l6 6M41 41l6 6M9 47l6-6M41 15l6-6" stroke="#F9B428" stroke-width="2.4" stroke-linecap="round"/>
+  </g>
+
+  <!-- left side -->
+  <g transform="translate(48 250) rotate(-16)">
+    <rect x="0" y="6" width="78" height="12" rx="2" fill="#F9B428" fill-opacity=".78" stroke="#EA6622" stroke-width="2"/>
+    <path d="M78 6l18 6-18 6z" fill="#1A1A1A" fill-opacity=".7"/>
+    <rect x="-10" y="6" width="10" height="12" rx="1" fill="#EA6622"/>
+  </g>
+  <g transform="translate(40 430)" fill="#4BC2FC" fill-opacity=".5" stroke="#4BC2FC" stroke-width="2.3">
+    <circle cx="24" cy="24" r="17"/>
+    <circle cx="48" cy="20" r="20"/>
+    <circle cx="72" cy="26" r="15"/>
+    <rect x="14" y="24" width="68" height="20" rx="10"/>
+  </g>
+  <g transform="translate(36 640)">
+    <path d="M8 30L78 8 44 58 34 36z" fill="#4BC2FC" fill-opacity=".55" stroke="#424CF3" stroke-width="2.4" stroke-linejoin="round"/>
+    <path d="M34 36l44-28" stroke="#424CF3" stroke-width="1.9"/>
+  </g>
+
+  <!-- right side -->
+  <g transform="translate(1450 250)">
+    <path d="M34 4l30 34-30 22L8 38z" fill="#424CF3" fill-opacity=".5" stroke="#424CF3" stroke-width="2.5" stroke-linejoin="round"/>
+    <path d="M34 38c8 14 4 24 14 38" stroke="#EA6622" stroke-width="2" stroke-linecap="round"/>
+  </g>
+  <g transform="translate(1468 430)" font-family="Arial, sans-serif" font-size="22" font-weight="700">
+    <rect x="0" y="10" width="34" height="34" rx="6" fill="#F9B428" fill-opacity=".72" stroke="#EA6622" stroke-width="2"/>
+    <text x="8" y="34" fill="#EA6622">A</text>
+    <rect x="40" y="0" width="34" height="34" rx="6" fill="#424CF3" fill-opacity=".5" stroke="#424CF3" stroke-width="2"/>
+    <text x="48" y="24" fill="#424CF3">B</text>
+    <rect x="80" y="12" width="34" height="34" rx="6" fill="#4BC2FC" fill-opacity=".62" stroke="#4BC2FC" stroke-width="2"/>
+    <text x="88" y="36" fill="#1A1A1A" fill-opacity=".7">C</text>
+  </g>
+  <path d="M1488 620c0-12 9-20 20-20 9 0 15 5 18 11 3-6 9-11 18-11 11 0 20 9 20 20 0 24-38 42-38 42s-38-18-38-42z" fill="#EA6622" fill-opacity=".55" stroke="#EA6622" stroke-width="2.3"/>
+
+  <!-- bottom -->
+  <g transform="translate(90 860)" stroke="#424CF3" stroke-width="2" fill="#4BC2FC" fill-opacity=".35">
+    <rect x="18" y="0" width="24" height="24" rx="4"/>
+    <rect x="6" y="26" width="24" height="24" rx="4"/>
+    <rect x="30" y="26" width="24" height="24" rx="4"/>
+    <rect x="18" y="52" width="24" height="24" rx="4"/>
+  </g>
+  <g transform="translate(280 870)">
+    <ellipse cx="20" cy="20" rx="17" ry="13" fill="#424CF3" fill-opacity=".5" stroke="#424CF3" stroke-width="2"/>
+    <ellipse cx="54" cy="20" rx="17" ry="13" fill="#EA6622" fill-opacity=".55" stroke="#EA6622" stroke-width="2"/>
+    <ellipse cx="22" cy="42" rx="13" ry="10" fill="#F9B428" fill-opacity=".65" stroke="#EA6622" stroke-width="1.8"/>
+    <ellipse cx="52" cy="42" rx="13" ry="10" fill="#4BC2FC" fill-opacity=".55" stroke="#4BC2FC" stroke-width="1.8"/>
+    <path d="M37 12v36" stroke="#1A1A1A" stroke-opacity=".45" stroke-width="2.2" stroke-linecap="round"/>
+  </g>
+  <g transform="translate(520 860)" fill="none" stroke-width="6" stroke-linecap="round">
+    <path d="M8 54c10-32 32-46 58-46 26 0 48 14 58 46" stroke="#EA6622" stroke-opacity=".7"/>
+    <path d="M18 54c8-24 24-36 48-36 24 0 40 12 48 36" stroke="#F9B428" stroke-opacity=".85"/>
+    <path d="M28 54c6-16 16-24 38-24s32 8 38 24" stroke="#424CF3" stroke-opacity=".7"/>
+  </g>
+  <g transform="translate(760 870)">
+    <rect x="10" y="32" width="30" height="30" rx="5" fill="#EA6622" fill-opacity=".6" stroke="#EA6622" stroke-width="2"/>
+    <rect x="40" y="16" width="30" height="30" rx="5" fill="#F9B428" fill-opacity=".75" stroke="#EA6622" stroke-width="2"/>
+    <rect x="24" y="0" width="30" height="30" rx="5" fill="#424CF3" fill-opacity=".5" stroke="#424CF3" stroke-width="2"/>
+  </g>
+  <g transform="translate(1000 880)">
+    <rect x="8" y="16" width="64" height="22" rx="9" fill="#424CF3" fill-opacity=".55" stroke="#424CF3" stroke-width="2.2"/>
+    <rect x="24" y="4" width="32" height="16" rx="6" fill="#4BC2FC" fill-opacity=".6" stroke="#424CF3" stroke-width="1.9"/>
+    <circle cx="24" cy="40" r="8" fill="#1A1A1A" fill-opacity=".45"/>
+    <circle cx="56" cy="40" r="8" fill="#1A1A1A" fill-opacity=".45"/>
+  </g>
+  <g transform="translate(1280 860)">
+    <rect x="4" y="18" width="70" height="16" rx="4" fill="#F9B428" fill-opacity=".72" stroke="#EA6622" stroke-width="2.1"/>
+    <path d="M74 18l18 8-18 8z" fill="#EA6622"/>
+    <circle cx="18" cy="26" r="4" fill="#fff" fill-opacity=".7"/>
+    <circle cx="34" cy="26" r="4" fill="#fff" fill-opacity=".7"/>
+    <circle cx="50" cy="26" r="4" fill="#fff" fill-opacity=".7"/>
+  </g>
+</svg>

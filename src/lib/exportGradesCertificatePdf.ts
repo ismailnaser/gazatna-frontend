@@ -40,7 +40,7 @@ function formatScore(score: number | null, maxScore: number) {
 
 function buildGradesTable(grades: Grade[]) {
   const thStyle =
-    "border:1px solid #d4d4d4;background:#f5f5f5;padding:8px 10px;text-align:center;font-size:11px;font-weight:700;color:#111;";
+    "border:1px solid #d4d4d4;background:#424CF3;padding:8px 10px;text-align:center;font-size:11px;font-weight:800;color:#fff;";
   const tdStyle =
     "border:1px solid #d4d4d4;padding:8px 10px;font-size:12px;color:#111;vertical-align:middle;text-align:center;";
   const subjectTdStyle = `${tdStyle}text-align:right;font-weight:600;`;
@@ -103,7 +103,7 @@ async function buildGradesCertificateElement({
   const exportDate = formatExportDate();
 
   return mountPdfElement(`
-    <div dir="rtl" style="font-family:Tahoma,Arial,sans-serif;background:#ffffff;color:#111111;width:746px;">
+    <div dir="rtl" style="font-family:var(--font-cairo),'Cairo',Tahoma,Arial,sans-serif;background:#ffffff;color:#1a1a1a;width:746px;">
       ${buildPdfBrandedHeaderHtml({
         logoDataUrl,
         schoolName,
@@ -111,7 +111,12 @@ async function buildGradesCertificateElement({
         lines: [`تاريخ الإصدار: ${exportDate}`],
       })}
 
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px 16px;margin-bottom:20px;padding:14px;background:#fffdf8;border:1px solid #ececec;border-radius:8px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px 16px;margin-bottom:20px;padding:14px;background:#fff8ec;border:3px solid #F9B42855;border-radius:16px;">
+        <div><span style="font-size:11px;font-weight:800;color:#EA6622;">اسم الطالب</span><p style="margin:2px 0 0;font-family:var(--font-kids),'Baloo Bhaijaan 2',Tahoma,Arial,sans-serif;font-size:16px;font-weight:800;">${escapeHtml(student.name)}</p></div>
+        <div><span style="font-size:11px;font-weight:800;color:#424CF3;">رقم الطالب</span><p style="margin:2px 0 0;font-size:15px;font-weight:800;direction:ltr;text-align:right;">${escapeHtml(student.studentNumber || "—")}</p></div>
+        <div><span style="font-size:11px;color:#666;font-weight:700;">الصف</span><p style="margin:2px 0 0;font-size:14px;font-weight:800;">${escapeHtml(student.grade || "—")}</p></div>
+        <div><span style="font-size:11px;color:#666;font-weight:700;">الشعبة</span><p style="margin:2px 0 0;font-size:14px;font-weight:800;">${escapeHtml(student.section || "—")}</p></div>
+      </div>
         <div><span style="font-size:11px;color:#666;">اسم الطالب</span><p style="margin:2px 0 0;font-size:14px;font-weight:700;">${escapeHtml(student.name)}</p></div>
         <div><span style="font-size:11px;color:#666;">رقم الطالب</span><p style="margin:2px 0 0;font-size:14px;font-weight:700;direction:ltr;text-align:right;">${escapeHtml(student.studentNumber || "—")}</p></div>
         <div><span style="font-size:11px;color:#666;">الصف</span><p style="margin:2px 0 0;font-size:14px;font-weight:700;">${escapeHtml(student.grade || "—")}</p></div>

@@ -158,6 +158,18 @@ function isRetriableFetchError(err: unknown): boolean {
   );
 }
 
+function isBackendDownError(err: unknown): boolean {
+  if (!(err instanceof Error)) return false;
+  const message = err.message.toLowerCase();
+  return (
+    message === "backend_unavailable" ||
+    message.includes("econnrefused") ||
+    message.includes("failed to fetch") ||
+    message.includes("networkerror") ||
+    message.includes("load failed")
+  );
+}
+
 let refreshInFlight: Promise<string | null> | null = null;
 
 function accessTokenLooksValid(token: string): boolean {
@@ -281,8 +293,10 @@ function localizeApiErrorMessage(message: string): string {
 
 async function parseFailedResponse(res: Response): Promise<string> {
   const fallback =
-    res.status === 500
-      ? "خطأ في الخادم. تأكد أن الباكند شغال وتم تنفيذ migrate."
+    res.status === 502 || res.status === 503 || res.status === 504
+      ? "الخادم الخلفي غير متاح حالياً. انتظر ثانية ثم أعد تحميل الصفحة."
+      : res.status === 500
+        ? "تعذر إكمال الطلب. أعد تحميل الصفحة بعد لحظات."
       : res.status === 401
         ? "انتهت جلسة الدخول. سجّل الدخول من جديد."
         : res.status === 403
@@ -292,13 +306,16 @@ async function parseFailedResponse(res: Response): Promise<string> {
             : "حدث خطأ في الاتصال بالخادم";
   const text = await res.text();
   if (!text.trim()) {
-    throw new Error("empty_response");
+    throw new Error(res.status >= 500 ? "backend_unavailable" : "empty_response");
+  }
+  if (/^\s*</.test(text) || text.includes("<!DOCTYPE")) {
+    throw new Error("backend_unavailable");
   }
   let err: unknown = null;
   try {
     err = JSON.parse(text);
   } catch {
-    throw new Error("invalid_json");
+    return fallback;
   }
   return localizeApiErrorMessage(formatApiError(err, fallback));
 }
@@ -308,6 +325,9 @@ export function formatClientFetchError(err: unknown, fallback: string): string {
   const message = err.message.toLowerCase();
   if (message === "empty_response" || message === "invalid_json") {
     return "تعذر قراءة استجابة الخادم. أعد تحميل الصفحة.";
+  }
+  if (message === "backend_unavailable") {
+    return "الخادم الخلفي غير متاح حالياً. أعد تحميل الصفحة بعد لحظات.";
   }
   if (message === "timeout" || message.includes("timeout")) {
     return "انتهت مهلة الاتصال بالخادم. تحقق أن الخادم الخلفي يعمل ثم أعد المحاولة.";
@@ -334,6 +354,19 @@ function rebuildFormData(entries: [string, FormDataEntryValue][]): FormData {
 
 let inflightGets = new Map<string, Promise<unknown>>();
 
+export function peekCachedGet<T>(path: string): T | null {
+  if (!isCacheableGet(path, "GET")) return null;
+  return readApiCache<T>(getCacheKey(path, "GET"));
+}
+
+export function peekCachedList<T>(path: string): T[] | null {
+  const cached = peekCachedGet<T[] | { results?: T[] }>(path);
+  if (!cached) return null;
+  if (Array.isArray(cached)) return cached;
+  if (Array.isArray(cached.results)) return cached.results;
+  return null;
+}
+
 export async function apiFetch<T>(
   path: string,
   options: RequestInit = {}
@@ -354,11 +387,15 @@ export async function apiFetch<T>(
   const request = apiFetchOnce<T>(path, options, cacheKey, method);
   if (method === "GET") {
     inflightGets.set(cacheKey, request);
-    void request.finally(() => {
-      if (inflightGets.get(cacheKey) === request) {
-        inflightGets.delete(cacheKey);
-      }
-    });
+    void request
+      .finally(() => {
+        if (inflightGets.get(cacheKey) === request) {
+          inflightGets.delete(cacheKey);
+        }
+      })
+      .catch(() => {
+        /* swallow so Next.js does not show an unhandledRejection overlay */
+      });
   }
   return request;
 }
@@ -391,13 +428,25 @@ async function apiFetchOnce<T>(
     if (path.startsWith("/admin/finance") || path.includes("/fee-access")) {
       invalidateApiCache("/admin/analytics");
       invalidateApiCache("/admin/finance");
+      invalidateApiCache("/admin/notifications");
       invalidateApiCache("/parent/fees");
     }
     if (path.startsWith("/admin/classes")) invalidateApiCache("/admin/classes");
-    if (path.startsWith("/admin/grades")) invalidateApiCache("/admin/grades");
+    if (path.startsWith("/admin/grades")) {
+      invalidateApiCache("/admin/grades");
+      invalidateApiCache("/admin/classes");
+    }
     if (path.startsWith("/admin/subjects")) invalidateApiCache("/admin/subjects");
     if (path.startsWith("/admin/teachers")) invalidateApiCache("/admin/teachers");
-    if (path.startsWith("/admin/students")) invalidateApiCache("/admin/students");
+    if (path.startsWith("/admin/students")) {
+      invalidateApiCache("/admin/students");
+      invalidateApiCache("/admin/notifications");
+    }
+    if (path.startsWith("/admin/admissions")) {
+      invalidateApiCache("/admin/admissions");
+      invalidateApiCache("/admin/students");
+      invalidateApiCache("/admin/analytics");
+    }
     if (path.startsWith("/admin/users") || path.startsWith("/auth/users")) {
       invalidateApiCache("/admin/users");
       invalidateApiCache("/auth/users");
@@ -463,6 +512,9 @@ async function apiFetchOnce<T>(
       return data;
     } catch (err) {
       lastErr = err;
+      if (isBackendDownError(err)) {
+        break;
+      }
       if (attempt + 1 < maxAttempts && isRetriableFetchError(err)) {
         continue;
       }

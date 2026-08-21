@@ -10,13 +10,19 @@ export function adminPathNeedsCatalog(pathname: string) {
   if (!pathname.startsWith("/admin")) return false;
   if (pathname === "/admin") return false;
   if (pathname.startsWith("/admin/analytics")) return false;
-  if (pathname.startsWith("/admin/finance")) return false;
-  if (pathname.startsWith("/admin/grade-schemes")) return false;
   if (pathname.startsWith("/admin/notifications")) return false;
   if (pathname.startsWith("/admin/users")) return false;
   if (pathname.startsWith("/admin/content")) return false;
   if (pathname.startsWith("/admin/messages")) return false;
-  if (pathname.startsWith("/admin/site")) return false;
+  if (pathname === "/admin/admissions") return false;
+  if (pathname === "/admin/site" || pathname.startsWith("/admin/site/hero") || pathname.startsWith("/admin/site/about") || pathname.startsWith("/admin/site/contact")) {
+    return false;
+  }
+  if (pathname.startsWith("/admin/finance")) {
+    return pathname.includes("/plans/");
+  }
+  if (pathname.startsWith("/admin/grade-schemes")) return false;
+  if (pathname === "/admin/schedules") return false;
   return true;
 }
 
@@ -25,13 +31,9 @@ export function adminPathNeedsStaff(pathname: string) {
   return (
     pathname.startsWith("/admin/teachers") ||
     pathname.startsWith("/admin/subjects") ||
-    pathname.startsWith("/admin/classes") ||
-    pathname.startsWith("/admin/schedules") ||
-    pathname.startsWith("/admin/academic") ||
-    pathname.startsWith("/admin/promotion-policies") ||
-    pathname.startsWith("/admin/certificate-settings") ||
-    pathname.startsWith("/admin/term-end") ||
-    pathname.startsWith("/admin/year-end")
+    /\/admin\/classes\/[^/]+\/sections\//.test(pathname) ||
+    pathname.startsWith("/admin/schedules/create") ||
+    /\/admin\/schedules\/[^/]+/.test(pathname)
   );
 }
 
@@ -39,6 +41,7 @@ export function teacherPathNeedsSchool(pathname: string) {
   if (!pathname.startsWith("/teacher")) return false;
   if (pathname.startsWith("/teacher/schedules")) return false;
   if (pathname.startsWith("/teacher/archive")) return false;
+  if (pathname === "/teacher/alerts") return false;
   return true;
 }
 

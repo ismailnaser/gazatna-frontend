@@ -60,30 +60,33 @@ export default function ContactPage() {
   }
 
   const contactItems = [
-    { icon: MapPin, text: contact.address },
-    { icon: Phone, text: contact.phone, href: `tel:${contact.phone.replace(/[^\d+]/g, "")}` },
-    { icon: Mail, text: contact.email, href: `mailto:${contact.email}` },
+    { icon: MapPin, text: contact.address, tone: "bg-brand-yellow text-p-black" },
+    { icon: Phone, text: contact.phone, href: `tel:${contact.phone.replace(/[^\d+]/g, "")}`, tone: "bg-brand-blue text-white" },
+    { icon: Mail, text: contact.email, href: `mailto:${contact.email}`, tone: "bg-brand-orange text-white" },
   ];
 
   return (
     <PublicPage title="تواصل معنا" description="نحن هنا للإجابة على استفساراتكم.">
       <div className="grid gap-8 lg:grid-cols-2">
         <div className="space-y-4">
-          {contactItems.map(({ icon: Icon, text, href }) => (
-            <div key={text} className="flex items-center gap-3 text-p-black/60">
-              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-p-green/10">
-                <Icon className="h-5 w-5 text-p-green" />
+          {contactItems.map(({ icon: Icon, text, href, tone }) => (
+            <div
+              key={text}
+              className="flex items-center gap-3 rounded-[1.4rem] border-[3px] border-black/10 bg-white px-4 py-3 shadow-[-4px_5px_0_0_rgba(66,76,243,0.1)]"
+            >
+              <span className={`flex h-11 w-11 items-center justify-center rounded-full ${tone}`}>
+                <Icon className="h-5 w-5" />
               </span>
               {href ? (
                 <a
                   href={href}
-                  className="text-p-black/70 transition-colors hover:text-brand-blue"
+                  className="font-semibold text-p-black/80 transition-colors hover:text-brand-blue"
                   dir={text.startsWith("+") ? "ltr" : undefined}
                 >
                   {text}
                 </a>
               ) : (
-                <span dir={text.startsWith("+") ? "ltr" : undefined}>{text}</span>
+                <span className="font-semibold" dir={text.startsWith("+") ? "ltr" : undefined}>{text}</span>
               )}
             </div>
           ))}
@@ -94,7 +97,7 @@ export default function ContactPage() {
         ) : (
           <form
             onSubmit={handleSubmit}
-            className="space-y-4 rounded-2xl border border-neutral-100 bg-neutral-50 p-6 shadow-sm"
+            className="space-y-4 rounded-[2rem_1rem_2rem_1.2rem] border-[3px] border-brand-blue/20 bg-white p-6 shadow-[-7px_8px_0_0_rgba(66,76,243,0.16)]"
           >
             {error && <Alert variant="error">{error}</Alert>}
             <Input label="الاسم" name="name" required />

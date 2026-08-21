@@ -36,7 +36,7 @@ function FormSection({
         <h3 className="text-sm font-bold text-p-black">{title}</h3>
         {description ? <p className="mt-0.5 text-xs text-p-black/72">{description}</p> : null}
       </header>
-      <div className="space-y-3 p-3 sm:space-y-4 sm:p-4">{children}</div>
+      <div className="space-y-4 p-4 sm:p-5">{children}</div>
     </section>
   );
 }
@@ -126,15 +126,15 @@ export function AdminStudentFormPanel({
         </button>
       </header>
 
-      <div className="space-y-4 p-4 sm:p-5">
+      <div className="space-y-5 p-4 sm:p-5">
         {error || formError ? <Alert variant="error">{error || formError}</Alert> : null}
 
-        <form onSubmit={handleFormSubmit} className="space-y-4">
+        <form onSubmit={handleFormSubmit} className="space-y-5">
           <FormSection
             title="البيانات الأساسية"
             description="اسم الطالب والفصل الدراسي المسجّل فيه."
           >
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid gap-4 sm:grid-cols-2">
               <Input
                 label="اسم الطالب"
                 name="name"
@@ -197,7 +197,7 @@ export function AdminStudentFormPanel({
             title="التواصل والتقييم"
             description="بيانات التواصل مع ولي الأمر وتقييم موجز للطالب."
           >
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid gap-4 sm:grid-cols-2">
               <Input
                 label="رقم جوال ولي الأمر"
                 name="parentPhone"
