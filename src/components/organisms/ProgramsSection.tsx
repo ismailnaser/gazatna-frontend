@@ -35,7 +35,6 @@ function ProgramCard({
           </span>
           <div>
             <h3 className="font-display font-extrabold text-white">الصف {program.grade}</h3>
-            <p className="text-xs text-white/80">برنامج تعليمي</p>
           </div>
         </div>
         {expanded && description ? (
