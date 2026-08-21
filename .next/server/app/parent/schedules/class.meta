@@ -1,0 +1,17 @@
+{
+  "headers": {
+    "x-nextjs-stale-time": "300",
+    "x-nextjs-prerender": "1",
+    "x-next-cache-tags": "_N_T_/layout,_N_T_/parent/layout,_N_T_/parent/schedules/layout,_N_T_/parent/schedules/class/layout,_N_T_/parent/schedules/class/page,_N_T_/parent/schedules/class"
+  },
+  "segmentPaths": [
+    "/_tree",
+    "/_full",
+    "/parent/schedules/class/__PAGE__",
+    "/parent/schedules/class",
+    "/parent/schedules",
+    "/parent",
+    "/_index",
+    "/_head"
+  ]
+}

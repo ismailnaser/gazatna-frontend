@@ -46,8 +46,13 @@
     "beforeFiles": [],
     "afterFiles": [
       {
+        "source": "/api/:path*/",
+        "destination": "http://127.0.0.1:8000/api/:path*/",
+        "regex": "^/api(?:/((?:[^/]+?)(?:/(?:[^/]+?))*))?/(?:/)?$"
+      },
+      {
         "source": "/api/:path*",
-        "destination": "http://127.0.0.1:8000/api/:path*",
+        "destination": "http://127.0.0.1:8000/api/:path*/",
         "regex": "^/api(?:/((?:[^/]+?)(?:/(?:[^/]+?))*))?(?:/)?$"
       },
       {
@@ -59,6 +64,31 @@
     "fallback": []
   },
   "dynamicRoutes": [
+    {
+      "page": "/admin/admissions/[id]",
+      "regex": "^/admin/admissions/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/admin/admissions/(?<nxtPid>[^/]+?)(?:/)?$"
+    },
+    {
+      "page": "/admin/classes/[gradeId]",
+      "regex": "^/admin/classes/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPgradeId": "nxtPgradeId"
+      },
+      "namedRegex": "^/admin/classes/(?<nxtPgradeId>[^/]+?)(?:/)?$"
+    },
+    {
+      "page": "/admin/classes/[gradeId]/sections/[classId]",
+      "regex": "^/admin/classes/([^/]+?)/sections/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPgradeId": "nxtPgradeId",
+        "nxtPclassId": "nxtPclassId"
+      },
+      "namedRegex": "^/admin/classes/(?<nxtPgradeId>[^/]+?)/sections/(?<nxtPclassId>[^/]+?)(?:/)?$"
+    },
     {
       "page": "/admin/content/[id]/edit",
       "regex": "^/admin/content/([^/]+?)/edit(?:/)?$",
@@ -108,6 +138,22 @@
       "namedRegex": "^/admin/students/(?<nxtPid>[^/]+?)/edit(?:/)?$"
     },
     {
+      "page": "/admin/subjects/[id]",
+      "regex": "^/admin/subjects/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/admin/subjects/(?<nxtPid>[^/]+?)(?:/)?$"
+    },
+    {
+      "page": "/admin/subjects/[id]/classes",
+      "regex": "^/admin/subjects/([^/]+?)/classes(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/admin/subjects/(?<nxtPid>[^/]+?)/classes(?:/)?$"
+    },
+    {
       "page": "/admin/subjects/[id]/edit",
       "regex": "^/admin/subjects/([^/]+?)/edit(?:/)?$",
       "routeKeys": {
@@ -116,12 +162,28 @@
       "namedRegex": "^/admin/subjects/(?<nxtPid>[^/]+?)/edit(?:/)?$"
     },
     {
+      "page": "/admin/subjects/[id]/teachers",
+      "regex": "^/admin/subjects/([^/]+?)/teachers(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/admin/subjects/(?<nxtPid>[^/]+?)/teachers(?:/)?$"
+    },
+    {
       "page": "/admin/teachers/[id]",
       "regex": "^/admin/teachers/([^/]+?)(?:/)?$",
       "routeKeys": {
         "nxtPid": "nxtPid"
       },
       "namedRegex": "^/admin/teachers/(?<nxtPid>[^/]+?)(?:/)?$"
+    },
+    {
+      "page": "/admin/teachers/[id]/edit",
+      "regex": "^/admin/teachers/([^/]+?)/edit(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/admin/teachers/(?<nxtPid>[^/]+?)/edit(?:/)?$"
     },
     {
       "page": "/admin/users/[id]/edit",
@@ -328,6 +390,12 @@
       "namedRegex": "^/admin/classes(?:/)?$"
     },
     {
+      "page": "/admin/classes/new",
+      "regex": "^/admin/classes/new(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/classes/new(?:/)?$"
+    },
+    {
       "page": "/admin/content",
       "regex": "^/admin/content(?:/)?$",
       "routeKeys": {},
@@ -344,6 +412,30 @@
       "regex": "^/admin/finance(?:/)?$",
       "routeKeys": {},
       "namedRegex": "^/admin/finance(?:/)?$"
+    },
+    {
+      "page": "/admin/finance/access",
+      "regex": "^/admin/finance/access(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/finance/access(?:/)?$"
+    },
+    {
+      "page": "/admin/finance/manual",
+      "regex": "^/admin/finance/manual(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/finance/manual(?:/)?$"
+    },
+    {
+      "page": "/admin/finance/payments",
+      "regex": "^/admin/finance/payments(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/finance/payments(?:/)?$"
+    },
+    {
+      "page": "/admin/finance/plans",
+      "regex": "^/admin/finance/plans(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/finance/plans(?:/)?$"
     },
     {
       "page": "/admin/finance/plans/create",
@@ -370,6 +462,18 @@
       "namedRegex": "^/admin/notifications(?:/)?$"
     },
     {
+      "page": "/admin/notifications/fees",
+      "regex": "^/admin/notifications/fees(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/notifications/fees(?:/)?$"
+    },
+    {
+      "page": "/admin/notifications/inactive",
+      "regex": "^/admin/notifications/inactive(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/notifications/inactive(?:/)?$"
+    },
+    {
       "page": "/admin/promotion-policies",
       "regex": "^/admin/promotion\\-policies(?:/)?$",
       "routeKeys": {},
@@ -392,6 +496,36 @@
       "regex": "^/admin/site(?:/)?$",
       "routeKeys": {},
       "namedRegex": "^/admin/site(?:/)?$"
+    },
+    {
+      "page": "/admin/site/about",
+      "regex": "^/admin/site/about(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/site/about(?:/)?$"
+    },
+    {
+      "page": "/admin/site/contact",
+      "regex": "^/admin/site/contact(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/site/contact(?:/)?$"
+    },
+    {
+      "page": "/admin/site/hero",
+      "regex": "^/admin/site/hero(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/site/hero(?:/)?$"
+    },
+    {
+      "page": "/admin/site/programs",
+      "regex": "^/admin/site/programs(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/site/programs(?:/)?$"
+    },
+    {
+      "page": "/admin/site/registration",
+      "regex": "^/admin/site/registration(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/site/registration(?:/)?$"
     },
     {
       "page": "/admin/students",
@@ -508,6 +642,12 @@
       "namedRegex": "^/parent(?:/)?$"
     },
     {
+      "page": "/parent/alerts",
+      "regex": "^/parent/alerts(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/parent/alerts(?:/)?$"
+    },
+    {
       "page": "/parent/archive",
       "regex": "^/parent/archive(?:/)?$",
       "routeKeys": {},
@@ -538,6 +678,24 @@
       "namedRegex": "^/parent/fees(?:/)?$"
     },
     {
+      "page": "/parent/fees/balance",
+      "regex": "^/parent/fees/balance(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/parent/fees/balance(?:/)?$"
+    },
+    {
+      "page": "/parent/fees/history",
+      "regex": "^/parent/fees/history(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/parent/fees/history(?:/)?$"
+    },
+    {
+      "page": "/parent/fees/pay",
+      "regex": "^/parent/fees/pay(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/parent/fees/pay(?:/)?$"
+    },
+    {
       "page": "/parent/grades",
       "regex": "^/parent/grades(?:/)?$",
       "routeKeys": {},
@@ -560,6 +718,18 @@
       "regex": "^/parent/schedules(?:/)?$",
       "routeKeys": {},
       "namedRegex": "^/parent/schedules(?:/)?$"
+    },
+    {
+      "page": "/parent/schedules/class",
+      "regex": "^/parent/schedules/class(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/parent/schedules/class(?:/)?$"
+    },
+    {
+      "page": "/parent/schedules/exam",
+      "regex": "^/parent/schedules/exam(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/parent/schedules/exam(?:/)?$"
     },
     {
       "page": "/parent/subjects",
@@ -604,6 +774,12 @@
       "namedRegex": "^/teacher(?:/)?$"
     },
     {
+      "page": "/teacher/alerts",
+      "regex": "^/teacher/alerts(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/teacher/alerts(?:/)?$"
+    },
+    {
       "page": "/teacher/announcements",
       "regex": "^/teacher/announcements(?:/)?$",
       "routeKeys": {},
@@ -632,6 +808,18 @@
       "regex": "^/teacher/grade\\-entry(?:/)?$",
       "routeKeys": {},
       "namedRegex": "^/teacher/grade\\-entry(?:/)?$"
+    },
+    {
+      "page": "/teacher/grade-entry/assessments",
+      "regex": "^/teacher/grade\\-entry/assessments(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/teacher/grade\\-entry/assessments(?:/)?$"
+    },
+    {
+      "page": "/teacher/grade-entry/grades",
+      "regex": "^/teacher/grade\\-entry/grades(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/teacher/grade\\-entry/grades(?:/)?$"
     },
     {
       "page": "/teacher/homework",

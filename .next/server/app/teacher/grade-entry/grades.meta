@@ -1,0 +1,17 @@
+{
+  "headers": {
+    "x-nextjs-stale-time": "300",
+    "x-nextjs-prerender": "1",
+    "x-next-cache-tags": "_N_T_/layout,_N_T_/teacher/layout,_N_T_/teacher/grade-entry/layout,_N_T_/teacher/grade-entry/grades/layout,_N_T_/teacher/grade-entry/grades/page,_N_T_/teacher/grade-entry/grades"
+  },
+  "segmentPaths": [
+    "/_tree",
+    "/_full",
+    "/teacher/grade-entry/grades/__PAGE__",
+    "/teacher/grade-entry/grades",
+    "/teacher/grade-entry",
+    "/teacher",
+    "/_index",
+    "/_head"
+  ]
+}

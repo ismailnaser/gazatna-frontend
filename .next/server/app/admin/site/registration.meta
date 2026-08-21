@@ -1,0 +1,17 @@
+{
+  "headers": {
+    "x-nextjs-stale-time": "300",
+    "x-nextjs-prerender": "1",
+    "x-next-cache-tags": "_N_T_/layout,_N_T_/admin/layout,_N_T_/admin/site/layout,_N_T_/admin/site/registration/layout,_N_T_/admin/site/registration/page,_N_T_/admin/site/registration"
+  },
+  "segmentPaths": [
+    "/_tree",
+    "/_full",
+    "/admin/site/registration/__PAGE__",
+    "/admin/site/registration",
+    "/admin/site",
+    "/admin",
+    "/_index",
+    "/_head"
+  ]
+}

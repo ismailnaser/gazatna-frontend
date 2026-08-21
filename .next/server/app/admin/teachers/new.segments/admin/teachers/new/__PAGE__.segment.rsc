@@ -1,9 +1,9 @@
 1:"$Sreact.fragment"
-2:I[47257,["/_next/static/chunks/0zgjic1rx5ol5.js","/_next/static/chunks/1tsi4h8sy8700.js","/_next/static/chunks/085kuron11zly.js","/_next/static/chunks/14mrh2-p_w84d.js"],"ClientPageRoot"]
-3:I[21733,["/_next/static/chunks/0zgjic1rx5ol5.js","/_next/static/chunks/1tsi4h8sy8700.js","/_next/static/chunks/085kuron11zly.js","/_next/static/chunks/14mrh2-p_w84d.js","/_next/static/chunks/0cjq21j9sri3h.js","/_next/static/chunks/3_l_gcpih3cyk.js","/_next/static/chunks/3elok11kgtib7.js"],"default"]
-6:I[97367,["/_next/static/chunks/0zgjic1rx5ol5.js","/_next/static/chunks/1tsi4h8sy8700.js","/_next/static/chunks/085kuron11zly.js","/_next/static/chunks/14mrh2-p_w84d.js"],"OutletBoundary"]
+2:I[61304,[],"ClientPageRoot"]
+3:I[51565,["8500","static/chunks/8500-f62a38ff68ab7f42.js","6446","static/chunks/6446-bda142cb8122c429.js","5474","static/chunks/5474-24d696648b358f35.js","5616","static/chunks/5616-641fd65d560fc47b.js","8676","static/chunks/8676-aadfb709c6b56a22.js","6265","static/chunks/6265-4e74eb9098a0e9bd.js","985","static/chunks/app/admin/teachers/new/page-6592015a413827e9.js"],"default"]
+6:I[90484,[],"OutletBoundary"]
 7:"$Sreact.suspense"
-0:{"rsc":["$","$1","c",{"children":[["$","$L2",null,{"Component":"$3","serverProvidedParams":{"searchParams":{},"params":{},"promises":["$@4","$@5"]}}],[["$","script","script-0",{"src":"/_next/static/chunks/3_l_gcpih3cyk.js","async":true}],["$","script","script-1",{"src":"/_next/static/chunks/3elok11kgtib7.js","async":true}]],["$","$L6",null,{"children":["$","$7",null,{"name":"Next.MetadataOutlet","children":"$@8"}]}]]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"rKGsngfmJd16BFkmRCCtn"}
+0:{"rsc":["$","$1","c",{"children":[["$","$L2",null,{"Component":"$3","serverProvidedParams":{"searchParams":{},"params":{},"promises":["$@4","$@5"]}}],null,["$","$L6",null,{"children":["$","$7",null,{"name":"Next.MetadataOutlet","children":"$@8"}]}]]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"0T--q2WG6CVRfhpDc95HG"}
 4:{}
 5:"$0:rsc:props:children:0:props:serverProvidedParams:params"
 8:null

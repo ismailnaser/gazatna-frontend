@@ -1,0 +1,17 @@
+{
+  "headers": {
+    "x-nextjs-stale-time": "300",
+    "x-nextjs-prerender": "1",
+    "x-next-cache-tags": "_N_T_/layout,_N_T_/parent/layout,_N_T_/parent/fees/layout,_N_T_/parent/fees/balance/layout,_N_T_/parent/fees/balance/page,_N_T_/parent/fees/balance"
+  },
+  "segmentPaths": [
+    "/_tree",
+    "/_full",
+    "/parent/fees/balance/__PAGE__",
+    "/parent/fees/balance",
+    "/parent/fees",
+    "/parent",
+    "/_index",
+    "/_head"
+  ]
+}
