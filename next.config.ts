@@ -38,9 +38,8 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  experimental: {
-    cpus: 1,
-  },
+  // Limit parallel compile on shared hosting builds; leave local `next dev` free.
+  experimental: process.env.NODE_ENV === "development" ? {} : { cpus: 1 },
   async headers() {
     return [
       {

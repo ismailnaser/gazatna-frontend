@@ -4,12 +4,73 @@ import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { BookOpen, GraduationCap } from "lucide-react";
 import { PremiumPageHero } from "@/components/molecules/PremiumPageHero";
-import { ExpandableText } from "@/components/molecules/ExpandableText";
 import { PublicPage } from "@/components/molecules/PublicPage";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 type ProgramRow = { grade: string; description: string };
+
+function ProgramPageCard({
+  program,
+  index,
+  gradient,
+}: {
+  program: ProgramRow;
+  index: number;
+  gradient: string;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const description = (program.description || "").trim();
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 28 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      transition={{ duration: 0.5, delay: index * 0.08 }}
+      className="flex flex-col"
+    >
+      <article className="group overflow-hidden rounded-[1.8rem_0.8rem_1.8rem_1rem] border-[3px] border-black/10 bg-white shadow-[-6px_8px_0_0_rgba(66,76,243,0.14)]">
+        <div
+          className={cn(
+            "flex flex-col gap-6 bg-linear-to-l p-6 sm:flex-row sm:items-center sm:justify-between sm:p-8 lg:p-10",
+            gradient
+          )}
+        >
+          <div className="flex items-center gap-4">
+            <span className="text-5xl font-extrabold text-white/30 sm:text-6xl">
+              {String(index + 1).padStart(2, "0")}
+            </span>
+            <div>
+              <h3 className="font-display text-xl font-extrabold text-white sm:text-2xl">
+                برنامج الصف {program.grade}
+              </h3>
+              <p className="mt-1 text-sm font-semibold text-white/90">{program.grade}</p>
+            </div>
+          </div>
+          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-sm">
+            <BookOpen className="h-7 w-7 text-white" />
+          </div>
+        </div>
+
+        {expanded && description ? (
+          <div className="p-6 sm:p-8 lg:p-10">
+            <p className="whitespace-pre-wrap text-base leading-relaxed text-neutral-700">{description}</p>
+          </div>
+        ) : null}
+      </article>
+      {description ? (
+        <button
+          type="button"
+          onClick={() => setExpanded((value) => !value)}
+          className="mt-2 self-start px-1 text-sm font-semibold text-brand-blue hover:underline"
+        >
+          {expanded ? "عرض أقل" : "عرض المزيد"}
+        </button>
+      ) : null}
+    </motion.div>
+  );
+}
 
 export default function ProgramsPage() {
   const [items, setItems] = useState<ProgramRow[]>([]);
@@ -65,42 +126,12 @@ export default function ProgramsPage() {
           </p>
         ) : (
           visible.map((p, i) => (
-          <motion.article
-            key={p.grade}
-            initial={{ opacity: 0, y: 28 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5, delay: i * 0.08 }}
-            className="group overflow-hidden rounded-[1.8rem_0.8rem_1.8rem_1rem] border-[3px] border-black/10 bg-white shadow-[-6px_8px_0_0_rgba(66,76,243,0.14)]"
-          >
-            <div
-              className={cn(
-                "flex flex-col gap-6 bg-linear-to-l p-6 sm:flex-row sm:items-center sm:justify-between sm:p-8 lg:p-10",
-                headerGradients[i % headerGradients.length]
-              )}
-            >
-              <div className="flex items-center gap-4">
-                <span className="text-5xl font-extrabold text-white/30 sm:text-6xl">
-                  {String(i + 1).padStart(2, "0")}
-                </span>
-                <div>
-                  <h3 className="font-display text-xl font-extrabold text-white sm:text-2xl">برنامج الصف {p.grade}</h3>
-                  <p className="mt-1 text-sm font-semibold text-white/90">{p.grade}</p>
-                </div>
-              </div>
-              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-sm">
-                <BookOpen className="h-7 w-7 text-white" />
-              </div>
-            </div>
-
-            {(p.description || "").trim() && (
-              <div className="p-6 sm:p-8 lg:p-10">
-                <ExpandableText maxLines={4} className="text-base text-neutral-700">
-                  {p.description}
-                </ExpandableText>
-              </div>
-            )}
-          </motion.article>
+            <ProgramPageCard
+              key={p.grade}
+              program={p}
+              index={i}
+              gradient={headerGradients[i % headerGradients.length]}
+            />
           ))
         )}
       </div>

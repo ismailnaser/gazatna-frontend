@@ -4,10 +4,58 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { BookOpen, GraduationCap } from "lucide-react";
-import { ExpandableText } from "@/components/molecules/ExpandableText";
 import { api } from "@/lib/api";
 
 type ProgramRow = { grade: string; description: string };
+
+function ProgramCard({
+  program,
+  index,
+  gradient,
+}: {
+  program: ProgramRow;
+  index: number;
+  gradient: string;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const description = (program.description || "").trim();
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      transition={{ duration: 0.4, delay: index * 0.06 }}
+      className="flex flex-col"
+    >
+      <article className="group flex flex-col overflow-hidden rounded-[1.65rem_0.55rem_1.65rem_0.85rem] border-[3px] border-black/10 bg-[#fff8ec] shadow-[-7px_7px_0_0_rgba(26,26,26,0.08)] transition duration-300 hover:-translate-y-1 hover:rotate-[0.4deg] hover:shadow-[-11px_11px_0_0_rgba(66,76,243,0.18)]">
+        <div className={["flex items-center gap-3 bg-gradient-to-l px-5 py-4", gradient].join(" ")}>
+          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/20">
+            <BookOpen className="h-5 w-5 text-white" />
+          </span>
+          <div>
+            <h3 className="font-display font-extrabold text-white">الصف {program.grade}</h3>
+            <p className="text-xs text-white/80">برنامج تعليمي</p>
+          </div>
+        </div>
+        {expanded && description ? (
+          <div className="p-5">
+            <p className="whitespace-pre-wrap text-sm leading-relaxed text-p-black/70">{description}</p>
+          </div>
+        ) : null}
+      </article>
+      {description ? (
+        <button
+          type="button"
+          onClick={() => setExpanded((value) => !value)}
+          className="mt-2 self-start px-1 text-sm font-semibold text-brand-blue hover:underline"
+        >
+          {expanded ? "عرض أقل" : "عرض المزيد"}
+        </button>
+      ) : null}
+    </motion.div>
+  );
+}
 
 export function ProgramsSection() {
   const [items, setItems] = useState<ProgramRow[]>([]);
@@ -78,40 +126,16 @@ export function ProgramsSection() {
             <div className="h-40 animate-pulse rounded-[1.65rem_0.55rem_1.65rem_0.85rem] bg-white" />
           </div>
         ) : visible.length === 0 ? null : (
-        <div className="card-grid card-grid-lg">
-          {visible.map((p, i) => (
-            <motion.article
-              key={p.grade}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.4, delay: i * 0.06 }}
-              className="group flex flex-col overflow-hidden rounded-[1.65rem_0.55rem_1.65rem_0.85rem] border-[3px] border-black/10 bg-[#fff8ec] shadow-[-7px_7px_0_0_rgba(26,26,26,0.08)] transition duration-300 hover:-translate-y-1 hover:rotate-[0.4deg] hover:shadow-[-11px_11px_0_0_rgba(66,76,243,0.18)]"
-            >
-              <div
-                className={[
-                  "flex items-center gap-3 bg-gradient-to-l px-5 py-4",
-                  headerGradients[i % headerGradients.length],
-                ].join(" ")}
-              >
-                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/20">
-                  <BookOpen className="h-5 w-5 text-white" />
-                </span>
-                <div>
-                  <h3 className="font-display font-extrabold text-white">الصف {p.grade}</h3>
-                  <p className="text-xs text-white/80">برنامج تعليمي</p>
-                </div>
-              </div>
-              {(p.description || "").trim() && (
-                <div className="flex flex-1 flex-col p-5">
-                  <ExpandableText maxLines={4} className="flex-1 text-sm text-p-black/70">
-                    {p.description}
-                  </ExpandableText>
-                </div>
-              )}
-            </motion.article>
-          ))}
-        </div>
+          <div className="card-grid card-grid-lg">
+            {visible.map((p, i) => (
+              <ProgramCard
+                key={p.grade}
+                program={p}
+                index={i}
+                gradient={headerGradients[i % headerGradients.length]}
+              />
+            ))}
+          </div>
         )}
       </div>
     </section>

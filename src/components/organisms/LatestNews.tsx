@@ -42,6 +42,10 @@ export function LatestNews() {
       .finally(() => setLoading(false));
   }, [shouldLoad]);
 
+  if (shouldLoad && !loading && items.length === 0) {
+    return null;
+  }
+
   return (
     <section ref={sectionRef} className="relative py-16 sm:py-20">
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
@@ -70,8 +74,6 @@ export function LatestNews() {
             <div className="aspect-square animate-pulse rounded-[1.6rem] bg-neutral-100" />
             <div className="aspect-square animate-pulse rounded-[1.6rem] bg-neutral-100" />
           </div>
-        ) : items.length === 0 ? (
-          <p className="text-center font-semibold text-p-black/60">لا توجد أخبار حالياً.</p>
         ) : (
           <div className="grid grid-cols-1 items-stretch gap-5 sm:grid-cols-3 sm:gap-4">
             {items.map((item) => (

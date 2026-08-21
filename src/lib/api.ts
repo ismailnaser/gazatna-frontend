@@ -25,9 +25,10 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "/api";
 const DEFAULT_TIMEOUT_MS = 10000;
 /**
  * Shared hosting (LiteSpeed + few Passenger workers) drops response bodies and
- * hits NPROC when too many Django requests overlap through Next. Keep at 1.
+ * hits NPROC when too many Django requests overlap through Next. Keep at 1
+ * in production; allow modest parallelism only in local `next dev`.
  */
-const API_MAX_CONCURRENT = 1;
+const API_MAX_CONCURRENT = process.env.NODE_ENV === "development" ? 6 : 1;
 const GET_MAX_ATTEMPTS = 3;
 
 let apiInflight = 0;

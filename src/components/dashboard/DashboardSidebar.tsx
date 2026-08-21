@@ -29,7 +29,9 @@ function NavLink({
   return (
     <Link
       href={href}
-      prefetch={false}
+      // Prefetch only in local dev — production sidebar would prefetch every
+      // visible route on load and stress shared hosting.
+      prefetch={process.env.NODE_ENV === "development"}
       className={cn(
         "flex items-center gap-3 rounded-2xl px-3 py-2 text-sm font-extrabold transition-transform hover:-translate-y-0.5",
         active

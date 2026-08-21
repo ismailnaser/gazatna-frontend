@@ -90,7 +90,7 @@ export function MobileNav({
             <Link
               key={item.href + item.label}
               href={item.href}
-              prefetch={false}
+              prefetch={process.env.NODE_ENV === "development"}
               className={cn(
                 "relative flex min-h-[56px] flex-1 flex-col items-center justify-center gap-0.5 px-1 py-2 text-[11px] font-medium leading-tight",
                 active ? "text-brand-blue" : "text-p-black/72"
@@ -182,7 +182,7 @@ export function MobileNav({
                     <Link
                       key={item.href + item.label}
                       href={item.href}
-                      prefetch={false}
+                      prefetch={process.env.NODE_ENV === "development"}
                       onClick={() => setMoreOpen(false)}
                       className={cn(
                         "relative flex min-h-[92px] flex-col items-center justify-center gap-2 rounded-2xl border px-3 py-4 text-center text-sm font-semibold transition-colors",
